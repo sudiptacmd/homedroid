@@ -2,410 +2,863 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <title>Homedroid</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
+/* Design tokens. Light by default; dark follows the system unless a theme is picked. */
 :root {
-  --bg: #f5f6f8; --panel: #fff; --text: #16181d; --muted: #667085; --line: #e3e6eb;
-  --accent: #2f6fed; --accent-text: #fff; --ok: #1f9d55; --warn: #c27c0e; --bad: #d13b3b;
-  --code: #f0f2f5; --radius: 10px;
+  --bg: #f4f5f7; --surface: #ffffff; --surface-2: #f8f9fb; --hover: #eef0f4; --line: #e3e6eb; --line-2: #d3d8e0;
+  --text: #15171c; --text-2: #4b5261; --muted: #6b7384;
+  --accent: #2563eb; --accent-2: #1d4fd8; --accent-soft: #e8efff; --on-accent: #fff;
+  --ok: #15803d; --ok-soft: #e3f5e9; --warn: #b45309; --warn-soft: #fdf1dc; --bad: #c62828; --bad-soft: #fde8e8;
+  --code: #f1f3f6; --shadow: 0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.06);
+  --pop: 0 12px 32px rgba(16,24,40,.16); --r: 12px; --r-sm: 8px; --ease: cubic-bezier(.2,.7,.3,1);
+  --k-video: #7c3aed; --k-video-bg: #efe7ff; --k-image: #15803d; --k-image-bg: #e3f5e9;
+  --k-audio: #b45309; --k-audio-bg: #fdf1dc; --k-archive: #c62828; --k-archive-bg: #fde8e8;
+  color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1115; --panel: #171a21; --text: #e7e9ee; --muted: #8b93a3; --line: #262b35;
-    --accent: #5b8ff9; --accent-text: #0b0d11; --ok: #3fbf7f; --warn: #e0a33a; --bad: #f06a6a; --code: #1e222b;
-  }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0c0e12; --surface: #14171d; --surface-2: #181c23; --hover: #1e232c; --line: #232833; --line-2: #2e3542;
+  --text: #e8eaef; --text-2: #b4bac6; --muted: #8a92a3;
+  --accent: #5b8cff; --accent-2: #7aa2ff; --accent-soft: #18233d; --on-accent: #0a0d14;
+  --ok: #4ade80; --ok-soft: #10261a; --warn: #fbbf24; --warn-soft: #2a2110; --bad: #f87171; --bad-soft: #2d1414;
+  --code: #10131a; --shadow: none; --pop: 0 12px 32px rgba(0,0,0,.5);
+  --k-video: #a78bfa; --k-video-bg: #221a38; --k-image: #4ade80; --k-image-bg: #10261a;
+  --k-audio: #fbbf24; --k-audio-bg: #2a2110; --k-archive: #f87171; --k-archive-bg: #2d1414;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0c0e12; --surface: #14171d; --surface-2: #181c23; --hover: #1e232c; --line: #232833; --line-2: #2e3542;
+  --text: #e8eaef; --text-2: #b4bac6; --muted: #8a92a3;
+  --accent: #5b8cff; --accent-2: #7aa2ff; --accent-soft: #18233d; --on-accent: #0a0d14;
+  --ok: #4ade80; --ok-soft: #10261a; --warn: #fbbf24; --warn-soft: #2a2110; --bad: #f87171; --bad-soft: #2d1414;
+  --code: #10131a; --shadow: none; --pop: 0 12px 32px rgba(0,0,0,.5);
+  --k-video: #a78bfa; --k-video-bg: #221a38; --k-image: #4ade80; --k-image-bg: #10261a;
+  --k-audio: #fbbf24; --k-audio-bg: #2a2110; --k-archive: #f87171; --k-archive-bg: #2d1414;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, sans-serif; }
-header { display: flex; align-items: center; gap: 16px; padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
-header h1 { font-size: 17px; margin: 0; }
-.brand { display: flex; align-items: center; gap: 8px; }
-nav { display: flex; gap: 4px; overflow-x: auto; }
-nav button { background: none; border: 0; color: var(--muted); padding: 6px 10px; border-radius: 8px; font: inherit; cursor: pointer; white-space: nowrap; }
-nav button.on { color: var(--text); background: var(--code); }
-header .spacer { flex: 1; }
-main { max-width: 1000px; margin: 0 auto; padding: 16px; }
-h2 { font-size: 15px; color: var(--muted); font-weight: 600; margin: 24px 0 8px; }
-.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-.stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.stat .v { font-size: 22px; font-weight: 600; }
-.stat .v.text { font-size: 16px; line-height: 1.3; }
-.stat .k { color: var(--muted); font-size: 13px; }
-.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.title { font-weight: 600; font-size: 16px; }
-.muted { color: var(--muted); font-size: 13px; }
-.pill { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--code); color: var(--muted); }
-.pill.running { color: var(--ok); }
-.pill.backoff, .pill.failed { color: var(--bad); }
-.pill.starting { color: var(--warn); }
-button.b { font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
-button.b:hover { border-color: var(--muted); }
-button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
-button.danger { color: var(--bad); }
-button:disabled { opacity: .5; cursor: default; }
-input, select, textarea { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
-label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
-form .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-pre { background: var(--code); border-radius: 8px; padding: 10px; margin: 0; overflow: auto; max-height: 360px; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
-.notice { background: var(--code); border-left: 3px solid var(--warn); padding: 6px 10px; border-radius: 6px; font-size: 13px; }
-a { color: var(--accent); }
-#login { max-width: 340px; margin: 12vh auto; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+svg.i { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .hidden { display: none !important; }
-dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); width: min(900px, 94vw); padding: 16px; }
-dialog::backdrop { background: rgba(0,0,0,.4); }
-.files { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-.files.drop { outline: 2px dashed var(--accent); outline-offset: -6px; }
-.frow { display: grid; grid-template-columns: 1fr 90px 150px 230px; gap: 10px; align-items: center; padding: 8px 12px; border-top: 1px solid var(--line); min-width: 0; }
-.frow:first-child { border-top: 0; }
-.frow.head { color: var(--muted); font-size: 13px; background: var(--code); }
-.frow .name { display: flex; gap: 8px; align-items: center; min-width: 0; }
-.frow .name a, .frow .name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.frow .name a { color: var(--text); text-decoration: none; cursor: pointer; }
-.frow .name a:hover { color: var(--accent); }
-.frow .num { color: var(--muted); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
-.frow .acts { display: flex; gap: 4px; justify-content: flex-end; }
-.frow .acts button { font-size: 13px; padding: 3px 8px; }
-.crumbs { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; font-size: 14px; }
-.crumbs a { cursor: pointer; padding: 2px 4px; border-radius: 6px; }
-.crumbs a:hover { background: var(--code); }
-.bar { height: 6px; background: var(--code); border-radius: 99px; overflow: hidden; }
-.bar > div { height: 100%; background: var(--accent); width: 0; }
-@media (max-width: 640px) {
-  .frow { grid-template-columns: 1fr auto; }
-  .frow .num { display: none; }
+.muted { color: var(--muted); }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+/* Layout: sidebar on wide screens, top bar + bottom tabs on phones. */
+.shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+.side { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 4px; padding: 16px 12px; border-right: 1px solid var(--line); background: var(--surface); }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 16px; padding: 4px 8px 16px; letter-spacing: -.01em; }
+.brand img { width: 28px; height: 28px; }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-sm); color: var(--text-2); font-weight: 500; }
+.nav a:hover { background: var(--hover); text-decoration: none; }
+.nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+.nav .count { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.side-foot .row { justify-content: space-between; }
+.top { display: none; }
+main { min-width: 0; padding: 28px clamp(16px, 4vw, 40px) 48px; max-width: 1180px; width: 100%; }
+.page-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.page-head h1 { font-size: 22px; line-height: 1.2; margin: 0; letter-spacing: -.02em; font-weight: 650; }
+.page-head .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+h2 { font-size: 12px; font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin: 28px 0 10px; }
+@media (max-width: 860px) {
+  .shell { display: block; }
+  .side { display: none; }
+  .top { display: flex; position: sticky; top: 0; z-index: 5; align-items: center; gap: 4px; padding: 8px 12px 8px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .top .brand { padding: 0; font-size: 15px; }
+  .tabbar { position: fixed; z-index: 5; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  .tabbar a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 6px; font-size: 11px; color: var(--muted); font-weight: 550; position: relative; }
+  .tabbar a:hover { text-decoration: none; }
+  .tabbar a[aria-current="page"] { color: var(--accent); }
+  .tabbar .count { position: absolute; top: 6px; left: calc(50% + 7px); width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+  main { padding: 18px 16px 96px; }
+  .page-head h1 { font-size: 20px; }
 }
-.toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 14px; }
+@media (min-width: 861px) { .tabbar { display: none; } }
+
+/* Building blocks */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); min-width: 0; }
+.pad { padding: 16px; }
+.row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.grow { flex: 1; min-width: 0; }
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: var(--r-sm); border: 1px solid var(--line-2); background: var(--surface); color: var(--text); font-weight: 550; font-size: 13.5px; cursor: pointer; white-space: nowrap; transition: background .12s, border-color .12s, color .12s; text-decoration: none !important; }
+.btn:hover { background: var(--hover); }
+.btn:active { transform: translateY(.5px); }
+.btn:disabled { opacity: .5; cursor: default; pointer-events: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+.btn.danger { color: var(--bad); }
+.btn.danger.solid { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--text-2); }
+.btn.ghost:hover { background: var(--hover); color: var(--text); }
+.btn.ghost.danger { color: var(--bad); }
+.btn.icon { width: 34px; padding: 0; }
+.btn.sm { height: 30px; font-size: 13px; padding: 0 10px; }
+.btn.sm.icon { width: 30px; padding: 0; }
+.btn svg.i { width: 16px; height: 16px; }
+
+.badge { display: inline-flex; align-items: center; gap: 6px; height: 21px; padding: 0 8px; border-radius: 99px; font-size: 12px; font-weight: 550; background: var(--code); color: var(--muted); white-space: nowrap; }
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge.plain::before { display: none; }
+.badge.running { background: var(--ok-soft); color: var(--ok); }
+.badge.starting, .badge.building { background: var(--warn-soft); color: var(--warn); }
+.badge.starting::before, .badge.building::before { animation: pulse 1.2s ease-in-out infinite; }
+.badge.backoff, .badge.failed { background: var(--bad-soft); color: var(--bad); }
+@keyframes pulse { 50% { opacity: .25; } }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.running { background: var(--ok); } .dot.starting { background: var(--warn); } .dot.backoff { background: var(--bad); }
+
+.switch { position: relative; width: 38px; height: 22px; border-radius: 99px; border: 0; background: var(--line-2); cursor: pointer; flex: none; transition: background .15s; padding: 0; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s var(--ease); }
+.switch[aria-checked="true"] { background: var(--ok); }
+.switch[aria-checked="true"]::after { transform: translateX(16px); }
+.switch:disabled { opacity: .5; cursor: default; }
+
+input, select, textarea { width: 100%; background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 7px 10px; min-height: 36px; transition: border-color .12s, box-shadow .12s; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+input[type="checkbox"] { width: 16px; height: 16px; min-height: 0; accent-color: var(--accent); margin: 0; flex: none; }
+label.field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 550; color: var(--text-2); }
+label.check { display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; color: var(--text); cursor: pointer; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); }
+label.check:hover { background: var(--surface-2); }
+label.check input { margin-top: 2px; }
+.hint { font-size: 12.5px; color: var(--muted); }
+pre { margin: 0; background: var(--code); border-radius: var(--r-sm); padding: 12px; overflow: auto; font: 12px/1.55 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
+.notice { display: flex; gap: 8px; align-items: flex-start; background: var(--warn-soft); color: var(--text); border-radius: var(--r-sm); padding: 8px 10px; font-size: 12.5px; word-break: break-word; }
+.notice svg.i { color: var(--warn); margin-top: 1px; width: 16px; height: 16px; }
+.meter { height: 6px; border-radius: 99px; background: var(--code); overflow: hidden; }
+.meter > i { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width .4s var(--ease); }
+.meter.ok > i { background: var(--ok); } .meter.warn > i { background: var(--warn); } .meter.bad > i { background: var(--bad); }
+.empty { padding: 36px 16px; text-align: center; color: var(--muted); }
+.empty svg.i { width: 28px; height: 28px; margin-bottom: 6px; opacity: .6; }
+.skeleton { background: var(--code); border-radius: var(--r-sm); min-height: 16px; animation: pulse 1.4s ease-in-out infinite; }
+.spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-2); border-top-color: var(--accent); animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Overview */
+.stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.stat { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.stat .k { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12.5px; font-weight: 550; }
+.stat .v { font-size: 24px; font-weight: 650; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat .v small { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+.stat .s { font-size: 12.5px; color: var(--muted); }
+.reach { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.reach .mono { background: var(--code); border-radius: 6px; padding: 2px 8px; }
+.item { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 16px; border-top: 1px solid var(--line); min-height: 54px; }
+.item:first-child { border-top: 0; }
+.item .name { font-weight: 550; }
+.item .acts { display: flex; gap: 2px; flex: none; }
+
+/* Modules and deployments */
+.mod { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
+.mod-head { display: flex; align-items: center; gap: 12px; }
+.avatar { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; font-size: 15px; color: #fff; flex: none; }
+.mod .title { font-weight: 650; font-size: 15px; line-height: 1.3; margin-bottom: 2px; }
+.mod .desc { color: var(--text-2); font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; max-width: 100%; }
+.chip svg.i { width: 13px; height: 13px; }
+.mod-foot { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 4px; min-height: 34px; }
+.job { margin-bottom: 20px; overflow: hidden; }
+.job-head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 16px; }
+.job pre { border-radius: 0; max-height: 260px; border-top: 1px solid var(--line); }
+
+/* Files */
+.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.toolbar select { width: auto; max-width: 100%; font-weight: 550; }
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-size: 13.5px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.crumbs a { color: var(--text-2); padding: 2px 6px; border-radius: 6px; cursor: pointer; }
+.crumbs a:last-child { color: var(--text); font-weight: 600; }
+.crumbs a:hover { background: var(--hover); text-decoration: none; }
+.crumbs .sep { color: var(--line-2); }
+.ftable { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.ftable th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: 8px 14px; border-bottom: 1px solid var(--line); user-select: none; white-space: nowrap; }
+.ftable th[data-sort] { cursor: pointer; }
+.ftable th[data-sort]:hover { color: var(--text); }
+.ftable td { padding: 6px 14px; border-top: 1px solid var(--line); height: 48px; vertical-align: middle; }
+.ftable tbody tr:first-child td { border-top: 0; }
+.ftable tbody tr:hover { background: var(--surface-2); }
+.ftable .c-size { width: 100px; text-align: right; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.ftable .c-date { width: 180px; text-align: right; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.ftable .c-acts { width: 150px; text-align: right; padding-right: 8px; }
+.fname { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.fname a { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.fname a:hover { color: var(--accent); text-decoration: none; }
+.ficon { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--code); color: var(--muted); }
+.ficon svg.i { width: 16px; height: 16px; }
+.ficon.dir { background: var(--accent-soft); color: var(--accent); }
+.ficon.video { background: var(--k-video-bg); color: var(--k-video); } .ficon.image { background: var(--k-image-bg); color: var(--k-image); }
+.ficon.audio { background: var(--k-audio-bg); color: var(--k-audio); } .ficon.archive { background: var(--k-archive-bg); color: var(--k-archive); }
+.ftable .acts { display: inline-flex; gap: 2px; opacity: 0; transition: opacity .1s; }
+.ftable tr:hover .acts, .ftable tr:focus-within .acts { opacity: 1; }
+@media (hover: none) { .ftable .acts { opacity: 1; } }
+.drop { position: relative; }
+.drop.over::after { content: "Drop to upload here"; position: absolute; inset: 6px; border: 2px dashed var(--accent); border-radius: var(--r); background: var(--accent-soft); opacity: .92; display: grid; place-items: center; font-weight: 600; color: var(--accent); pointer-events: none; }
+.tray { margin-bottom: 12px; overflow: hidden; }
+.tray .up { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 13px; }
+.tray .up .meter { grid-column: 1 / -1; height: 4px; }
+@media (max-width: 640px) {
+  .ftable .c-date, .ftable .c-size, .ftable .acts .wide { display: none; }
+  .ftable .c-acts { width: 46px; }
+  .ftable td { padding: 6px 8px 6px 12px; }
+  .toolbar .lbl { display: none; }
+}
+
+/* Overlays */
+dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); padding: 0; width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 32px); box-shadow: var(--pop); }
+dialog.wide { width: min(920px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgba(8,10,14,.45); }
+dialog[open] { animation: pop .14s var(--ease); }
+@keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.985); } }
+.dlg-head { display: flex; align-items: center; gap: 10px; padding: 16px 12px 6px 18px; }
+.dlg-head h3 { margin: 0; font-size: 16px; font-weight: 650; flex: 1; }
+.dlg-body { padding: 6px 18px 4px; display: flex; flex-direction: column; gap: 12px; color: var(--text-2); }
+/* The confirm button comes first in the markup, so Enter confirms; it still shows on the right. */
+.dlg-foot { display: flex; flex-direction: row-reverse; gap: 8px; padding: 16px 18px; }
+.menu { position: fixed; z-index: 20; min-width: 190px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--pop); padding: 4px; animation: pop .1s var(--ease); }
+.menu button { display: flex; width: 100%; align-items: center; gap: 10px; padding: 8px 10px; border: 0; background: none; border-radius: 6px; cursor: pointer; text-align: left; font-size: 13.5px; }
+.menu button:hover, .menu button:focus-visible { background: var(--hover); outline: none; }
+.menu button.danger { color: var(--bad); }
+.toasts { position: fixed; z-index: 30; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+@media (max-width: 860px) { .toasts { bottom: 76px; } }
+.toast { background: var(--text); color: var(--bg); padding: 9px 14px; border-radius: 10px; font-size: 13.5px; box-shadow: var(--pop); animation: pop .14s var(--ease); max-width: calc(100vw - 32px); }
+.toast.bad { background: var(--bad); color: #fff; }
+
+/* Login */
+.login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.login .card { width: min(380px, 100%); padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+.login .brand { padding: 0; font-size: 20px; }
+.login .brand img { width: 40px; height: 40px; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
 </style>
 </head>
 <body>
-<div id="login" class="card hidden">
-  <div class="title brand"><img src="/favicon.svg" alt="" width="36" height="36">Homedroid</div>
-  <div class="muted">Enter the dashboard password shown in the Homedroid app.</div>
-  <form id="loginForm" class="row">
-    <input id="password" type="password" autocomplete="current-password" placeholder="Password" required>
-    <button class="b primary" type="submit">Log in</button>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-overview" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-modules" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></symbol>
+  <symbol id="i-deploy" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="7" r="2"/><path d="M6 7v10"/><path d="M18 9c0 5-7 4-11 8.5"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2.2h7.5A2.5 2.5 0 0 1 21 9.7v7.8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
+  <symbol id="i-audio" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4"/><path d="M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></symbol>
+  <symbol id="i-restart" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></symbol>
+  <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M8 20h12"/><path d="M4.6 14.6l9-9a2 2 0 0 1 2.8 0l3 3a2 2 0 0 1 0 2.8L12 18.8a4 4 0 0 1-5.6 0l-1.8-1.8a1.7 1.7 0 0 1 0-2.4z"/><path d="M9 10l5 5"/></symbol>
+  <symbol id="i-logs" viewBox="0 0 24 24"><path d="M5 17l5-5-5-5"/><path d="M12 19h7"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-folder-plus" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2.2h7.5A2.5 2.5 0 0 1 21 9.7v7.8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/><path d="M12 11v5M9.5 13.5h5"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill="currentColor"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 16l-4-4 4-4"/><path d="M6 12h10"/></symbol>
+  <symbol id="i-battery" viewBox="0 0 24 24"><rect x="2" y="7" width="17" height="10" rx="2.5"/><path d="M22 11v2"/></symbol>
+  <symbol id="i-memory" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-disk" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5l9.5 17h-19z"/><path d="M12 10v4.5M12 17.5v.1"/></symbol>
+  <symbol id="i-port" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.3 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.3-3.5-8.5s1-6 3.5-8.5z"/></symbol>
+  <symbol id="i-git" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 12h6M15 12h6"/></symbol>
+  <symbol id="i-sync" viewBox="0 0 24 24"><path d="M4 10a8 8 0 0 1 14-4l2 2"/><path d="M20 4v4h-4"/><path d="M20 14a8 8 0 0 1-14 4l-2-2"/><path d="M4 20v-4h4"/></symbol>
+</svg>
+
+<div id="loginView" class="login hidden">
+  <form class="card" id="loginForm">
+    <div class="brand"><img src="/favicon.svg" alt="">Homedroid</div>
+    <div class="muted">Enter the dashboard password shown in the Homedroid app on your phone.</div>
+    <label class="field">Password<input id="password" type="password" autocomplete="current-password" required></label>
+    <div id="loginError" class="hint" style="color:var(--bad)"></div>
+    <button class="btn primary" type="submit" style="height:38px">Log in</button>
   </form>
-  <div id="loginError" class="muted"></div>
 </div>
 
-<div id="app" class="hidden">
-  <header>
-    <h1 class="brand"><img src="/favicon.svg" alt="" width="28" height="28">Homedroid</h1>
-    <nav>
-      <button data-tab="overview" class="on">Overview</button>
-      <button data-tab="modules">Modules</button>
-      <button data-tab="deploys">Deployments</button>
-      <button data-tab="files">Files</button>
+<div id="appView" class="shell hidden">
+  <aside class="side">
+    <div class="brand"><img src="/favicon.svg" alt="">Homedroid</div>
+    <nav class="nav" aria-label="Sections">
+      <a href="#overview" data-tab="overview"><svg class="i"><use href="#i-overview"/></svg>Overview</a>
+      <a href="#modules" data-tab="modules"><svg class="i"><use href="#i-modules"/></svg>Modules<span class="count hidden" data-jobdot title="A job is running"></span></a>
+      <a href="#deploys" data-tab="deploys"><svg class="i"><use href="#i-deploy"/></svg>Deployments</a>
+      <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
     </nav>
-    <div class="spacer"></div>
-    <button class="b" id="logout">Log out</button>
-  </header>
-  <main>
-    <section id="tab-overview">
-      <div class="stats" id="stats"></div>
-      <h2>Running services</h2>
-      <div class="grid" id="services"></div>
-    </section>
-
-    <section id="tab-modules" class="hidden">
-      <h2>Built-in</h2>
-      <div class="grid" id="core"></div>
-      <h2>Apps</h2>
-      <div class="grid" id="apps"></div>
-      <div id="jobBox" class="hidden">
-        <h2 id="jobTitle"></h2>
-        <pre id="jobLog"></pre>
+    <div class="side-foot">
+      <div class="hint ellipsis" id="sideDevice"></div>
+      <div class="row">
+        <button class="btn ghost sm" data-act="theme" title="Switch theme"><svg class="i"><use href="#i-auto" data-themeicon/></svg><span data-themelabel>Auto</span></button>
+        <button class="btn ghost sm" data-act="logout"><svg class="i"><use href="#i-logout"/></svg>Log out</button>
       </div>
+    </div>
+  </aside>
+  <header class="top">
+    <div class="brand"><img src="/favicon.svg" alt="">Homedroid</div>
+    <div class="grow"></div>
+    <button class="btn ghost icon" data-act="theme" title="Switch theme" aria-label="Switch theme"><svg class="i"><use href="#i-auto" data-themeicon/></svg></button>
+    <button class="btn ghost icon" data-act="logout" title="Log out" aria-label="Log out"><svg class="i"><use href="#i-logout"/></svg></button>
+  </header>
+
+  <main>
+    <section data-view="overview">
+      <div class="page-head"><div><h1>Overview</h1><div class="sub" id="ovSub">&nbsp;</div></div></div>
+      <div class="stats" id="ovStats">
+        <div class="card stat"><div class="skeleton" style="width:45%"></div><div class="skeleton" style="height:26px;width:70%"></div></div>
+        <div class="card stat"><div class="skeleton" style="width:45%"></div><div class="skeleton" style="height:26px;width:70%"></div></div>
+        <div class="card stat"><div class="skeleton" style="width:45%"></div><div class="skeleton" style="height:26px;width:70%"></div></div>
+        <div class="card stat"><div class="skeleton" style="width:45%"></div><div class="skeleton" style="height:26px;width:70%"></div></div>
+      </div>
+      <h2>Reach this phone</h2>
+      <div class="card pad reach" id="ovReach"><div class="skeleton" style="width:40%"></div></div>
+      <h2>Services</h2>
+      <div class="card" id="ovServices"><div class="item"><div class="skeleton grow"></div></div></div>
     </section>
 
-    <section id="tab-deploys" class="hidden">
-      <h2>Deploy from GitHub</h2>
-      <form id="deployForm" class="card">
-        <div class="grid">
-          <label>Name<input name="name" required placeholder="my-site"></label>
-          <label>Repository URL<input name="repo" required placeholder="https://github.com/you/repo"></label>
-          <label>Branch<input name="branch" placeholder="main"></label>
-          <label>Port<input name="port" type="number" min="1024" max="65535" required placeholder="3000"></label>
-          <label>Runtime
-            <select name="runtime">
-              <option value="auto">Detect</option><option value="node">Node.js</option>
-              <option value="python">Python</option><option value="static">Static site</option>
-            </select>
-          </label>
-          <label>Build command<input name="build" placeholder="npm run build (default)"></label>
-          <label>Start command<input name="start" placeholder="npm start (default)"></label>
-        </div>
-        <label>Environment variables (one KEY=value per line)<textarea name="env" rows="3"></textarea></label>
-        <label class="row" style="flex-direction:row"><input name="autoDeploy" type="checkbox" style="width:auto"> Redeploy automatically when the branch changes (checked every 5 minutes)</label>
-        <div class="muted">Private repository? Use https://&lt;token&gt;@github.com/you/repo with a read-only token.</div>
-        <div class="row"><button class="b primary" type="submit">Deploy</button></div>
-      </form>
-      <h2>Deployments</h2>
-      <div class="grid" id="deploys"></div>
+    <section data-view="modules" class="hidden">
+      <div class="page-head"><div><h1>Modules</h1><div class="sub">Add, remove and turn things on or off at any time. Nothing you don't use runs.</div></div></div>
+      <div id="jobBox"></div>
+      <h2 style="margin-top:0">Built-in</h2>
+      <div class="grid" id="modCore"></div>
+      <h2>Apps</h2>
+      <div class="grid" id="modApps"></div>
     </section>
 
-    <section id="tab-files" class="hidden">
-      <div class="row" style="margin:8px 0 12px">
-        <select id="fRoot" style="width:auto;max-width:100%"></select>
-        <span class="muted" id="fFree"></span>
-        <div style="flex:1"></div>
-        <button class="b" id="fMkdir">New folder</button>
-        <button class="b" id="fUpDir">Upload folder</button>
-        <button class="b primary" id="fUp">Upload files</button>
+    <section data-view="deploys" class="hidden">
+      <div class="page-head">
+        <div class="grow"><h1>Deployments</h1><div class="sub">Web apps from Git, built and run on the phone: Node.js, Python and static sites.</div></div>
+        <button class="btn primary" data-act="newDeploy"><svg class="i"><use href="#i-plus"/></svg>New deployment</button>
+      </div>
+      <div id="depJob"></div>
+      <div class="grid" id="depList"></div>
+    </section>
+
+    <section data-view="files" class="hidden">
+      <div class="page-head"><div><h1>Files</h1><div class="sub">Move files between this device and the phone.</div></div></div>
+      <div class="toolbar">
+        <select id="fRoot" aria-label="Location"></select>
+        <span class="hint" id="fFree"></span>
+        <div class="grow"></div>
+        <button class="btn" data-act="mkdir" title="New folder"><svg class="i"><use href="#i-folder-plus"/></svg><span class="lbl">New folder</span></button>
+        <button class="btn" data-act="pickDir" title="Upload a folder"><svg class="i"><use href="#i-folder"/></svg><span class="lbl">Upload folder</span></button>
+        <button class="btn primary" data-act="pickFiles"><svg class="i"><use href="#i-upload"/></svg>Upload</button>
         <input type="file" id="fPick" multiple class="hidden">
         <input type="file" id="fPickDir" webkitdirectory multiple class="hidden">
       </div>
-      <div class="crumbs" id="fCrumbs"></div>
-      <div id="fUploads" class="card hidden" style="margin:10px 0"></div>
-      <div class="files" id="fList" style="margin-top:10px"></div>
-      <div class="muted" style="margin-top:8px">Drop files or folders onto the list to upload them here. Folders download as a zip.</div>
+      <div class="card tray hidden" id="fTray"></div>
+      <div class="card drop" id="fBox">
+        <div class="crumbs" id="fCrumbs"></div>
+        <table class="ftable">
+          <thead><tr>
+            <th data-sort="name">Name</th><th class="c-size" data-sort="size">Size</th><th class="c-date" data-sort="modified">Modified</th><th class="c-acts"><span class="sr">Actions</span></th>
+          </tr></thead>
+          <tbody id="fRows"></tbody>
+        </table>
+      </div>
+      <div class="hint" style="margin-top:10px">Drop files or folders on the list to upload them into the open folder. Folders download as zip files.</div>
     </section>
   </main>
+
+  <nav class="tabbar" aria-label="Sections">
+    <a href="#overview" data-tab="overview"><svg class="i"><use href="#i-overview"/></svg>Overview</a>
+    <a href="#modules" data-tab="modules"><svg class="i"><use href="#i-modules"/></svg>Modules<span class="count hidden" data-jobdot></span></a>
+    <a href="#deploys" data-tab="deploys"><svg class="i"><use href="#i-deploy"/></svg>Deploy</a>
+    <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
+  </nav>
 </div>
 
-<dialog id="logDialog">
-  <div class="row"><div class="title" id="logTitle"></div><div class="spacer" style="flex:1"></div><button class="b" id="logClose">Close</button></div>
-  <pre id="logBody" style="max-height:70vh;margin-top:10px"></pre>
+<dialog id="modal"><form method="dialog" id="modalForm"></form></dialog>
+<dialog id="logs" class="wide">
+  <div class="dlg-head"><h3 id="logTitle"></h3><button class="btn ghost icon" data-act="closeLogs" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div style="padding:0 18px 18px"><pre id="logBody" style="height:min(62vh,560px)"></pre></div>
 </dialog>
+<div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script>
+'use strict';
+// ---- Utilities -------------------------------------------------------------------------
 const $ = (s, el = document) => el.querySelector(s);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let tab = 'overview', timer = null, logTimer = null, host = location.hostname;
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const icon = name => `<svg class="i"><use href="#i-${name}"/></svg>`;
+const bytes = n => n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(0) + ' KB' : n < 1073741824 ? (n / 1048576).toFixed(1) + ' MB' : (n / 1073741824).toFixed(2) + ' GB';
+const gb = mb => (mb / 1024).toFixed(1);
+const join = (...p) => p.filter(Boolean).join('/');
+const appUrl = port => `${location.protocol === 'https:' ? 'https' : 'http'}://${location.hostname.includes(':') ? `[${location.hostname}]` : location.hostname}:${port}`;
+function ago(sec) {
+  if (sec < 3600) return Math.max(1, Math.floor(sec / 60)) + ' min';
+  if (sec < 86400) return Math.floor(sec / 3600) + ' h ' + Math.floor(sec % 3600 / 60) + ' min';
+  return Math.floor(sec / 86400) + ' d ' + Math.floor(sec % 86400 / 3600) + ' h';
+}
+/** Replaces an element's HTML only when it changed, so polling doesn't redraw, lose hover or scroll. */
+function setHTML(el, html) {
+  if (el._html === html) return false;
+  el._html = html; el.innerHTML = html; return true;
+}
+function store(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+function stored(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 
-async function api(path, opts = {}) {
+async function api(path, {method = 'GET', body} = {}) {
   const res = await fetch('/api/' + path, {
-    method: opts.method || 'GET',
-    headers: opts.body ? {'Content-Type': 'application/json'} : {},
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
+    method, body: body === undefined ? undefined : JSON.stringify(body),
+    headers: body === undefined ? {} : {'Content-Type': 'application/json'},
   });
-  if (res.status === 401 && path !== 'login') { showLogin(); throw new Error('log in first'); }
+  if (res.status === 401 && path !== 'login') { showLogin(); throw new Error('Log in first'); }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || res.statusText);
   return data;
 }
-function toast(msg) {
-  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
-  document.body.append(t); setTimeout(() => t.remove(), 3500);
+function toast(msg, bad = false) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = msg;
+  $('#toasts').append(t); setTimeout(() => t.remove(), bad ? 5000 : 2800);
 }
-async function act(path, opts, done) {
-  try { await api(path, Object.assign({method: 'POST'}, opts)); if (done) toast(done); refresh(); }
-  catch (e) { toast(e.message); }
+/** Runs an action: toast on success or error, then refresh the view. Resolves true on success. */
+async function run(promise, done) {
+  try { await promise; if (done) toast(done); refresh(); return true; }
+  catch (e) { toast(e.message, true); refresh(); return false; }
 }
 
-function showLogin() { $('#app').classList.add('hidden'); $('#login').classList.remove('hidden'); clearInterval(timer); }
-function showApp() { $('#login').classList.add('hidden'); $('#app').classList.remove('hidden'); refresh(); clearInterval(timer); timer = setInterval(refresh, 3000); }
+// ---- Dialogs and menus -----------------------------------------------------------------
+/** A modal with optional checkboxes and one text field; resolves {checks, value}, or null if cancelled. */
+function ask({title, text = '', html = '', confirm = 'OK', danger = false, checks = [], input = null}) {
+  const dlg = $('#modal'), form = $('#modalForm');
+  form.innerHTML = `
+    <div class="dlg-head"><h3>${esc(title)}</h3></div>
+    <div class="dlg-body">
+      ${text ? `<div>${esc(text)}</div>` : ''}${html}
+      ${checks.map((c, i) => `<label class="check"><input type="checkbox" name="c${i}"><span>${esc(c.label)}${c.hint ? `<br><span class="hint">${esc(c.hint)}</span>` : ''}</span></label>`).join('')}
+      ${input ? `<label class="field">${esc(input.label)}<input name="value" value="${esc(input.value || '')}" placeholder="${esc(input.placeholder || '')}" type="${input.type || 'text'}" autocomplete="off" spellcheck="false"></label>` : ''}
+    </div>
+    <div class="dlg-foot">
+      <button class="btn ${danger ? 'danger solid' : 'primary'}" value="ok">${esc(confirm)}</button>
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+    </div>`;
+  return new Promise(resolve => {
+    dlg.onclose = () => resolve(dlg.returnValue !== 'ok' ? null : {
+      checks: checks.map((_, i) => form.elements['c' + i].checked),
+      value: input ? form.elements.value.value.trim() : '',
+    });
+    dlg.returnValue = '';
+    dlg.showModal();
+    const field = form.elements.value;
+    if (field) { field.focus(); field.select(); } else form.querySelector('.dlg-foot .btn:last-child').focus();
+  });
+}
+let menuEl = null;
+function closeMenu() { menuEl?.remove(); menuEl = null; }
+function openMenu(anchor, items) {
+  closeMenu();
+  menuEl = document.createElement('div');
+  menuEl.className = 'menu'; menuEl.setAttribute('role', 'menu');
+  menuEl.innerHTML = items.map((it, i) => `<button role="menuitem" data-i="${i}" class="${it.danger ? 'danger' : ''}">${icon(it.icon)}${esc(it.label)}</button>`).join('');
+  document.body.append(menuEl);
+  const r = anchor.getBoundingClientRect(), w = menuEl.offsetWidth, h = menuEl.offsetHeight;
+  menuEl.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + 'px';
+  menuEl.style.top = (r.bottom + h + 8 > innerHeight ? Math.max(8, r.top - h - 4) : r.bottom + 4) + 'px';
+  menuEl.onclick = e => { const b = e.target.closest('button'); if (b) { const it = items[b.dataset.i]; closeMenu(); it.run(); } };
+  menuEl.onkeydown = e => {
+    const bs = $$('button', menuEl), i = bs.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); bs[(i + (e.key === 'ArrowDown' ? 1 : bs.length - 1)) % bs.length].focus(); }
+  };
+  menuEl.querySelector('button').focus();
+}
+document.addEventListener('pointerdown', e => { if (menuEl && !menuEl.contains(e.target)) closeMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+addEventListener('resize', closeMenu);
+addEventListener('scroll', closeMenu, true);
 
-$('#loginForm').onsubmit = async e => {
-  e.preventDefault();
-  try { await api('login', {method: 'POST', body: {password: $('#password').value}}); showApp(); }
-  catch (err) { $('#loginError').textContent = err.message; }
-};
-$('#logout').onclick = async () => { await api('logout', {method: 'POST'}).catch(() => {}); showLogin(); };
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
-  tab = b.dataset.tab;
-  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
-  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('hidden', s.id !== 'tab-' + tab));
-  filesLoaded = false;
+// ---- Theme -----------------------------------------------------------------------------
+const THEMES = ['auto', 'light', 'dark'];
+let theme = stored('theme') || 'auto';
+function applyTheme() {
+  if (theme === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = theme;
+  $$('[data-themeicon]').forEach(u => u.setAttribute('href', '#i-' + ({auto: 'auto', light: 'sun', dark: 'moon'})[theme]));
+  $$('[data-themelabel]').forEach(s => s.textContent = theme[0].toUpperCase() + theme.slice(1));
+}
+applyTheme();
+
+// ---- Routing and polling ---------------------------------------------------------------
+// The tab (and the open folder) live in the URL hash, so reloads and the back button work.
+// Only the visible tab polls, never while the page is hidden, faster only while a job runs.
+const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0};
+let tab = 'overview', authed = false, pollTimer = 0, seq = 0, busyJob = false;
+function route() {
+  const [t, ...rest] = location.hash.slice(1).split('/').map(s => { try { return decodeURIComponent(s); } catch (e) { return s; } });
+  tab = t in POLL ? t : 'overview';
+  $$('[data-tab]').forEach(a => a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+  $$('[data-view]').forEach(s => s.classList.toggle('hidden', s.dataset.view !== tab));
+  if (tab === 'files') { files.root = rest[0] || files.root; files.path = rest.slice(1).join('/'); }
+  closeMenu();
   refresh();
-});
-
-function pill(state, restarts) {
-  return `<span class="pill ${esc(state)}">${esc(state)}${restarts ? ` · ${restarts} restarts` : ''}</span>`;
 }
-function link(port) { return port ? `<a href="http://${esc(host)}:${port}" target="_blank" rel="noopener">:${port}</a>` : ''; }
-function gb(mb) { return (mb / 1024).toFixed(1) + ' GB'; }
+addEventListener('hashchange', route);
 
 async function refresh() {
+  clearTimeout(pollTimer);
+  if (!authed) return;
+  const my = ++seq;
   try {
     if (tab === 'overview') await renderOverview();
-    if (tab === 'modules') await renderModules();
-    if (tab === 'deploys') await renderDeploys();
-    if (tab === 'files' && !filesLoaded) await renderFiles();
-  } catch (e) { /* shown via toast on actions; polling stays quiet */ }
+    else if (tab === 'modules') await renderModules();
+    else if (tab === 'deploys') await renderDeploys();
+    else await renderFiles();
+  } catch (e) { /* polling stays quiet; actions report their own errors */ }
+  if (my !== seq || document.hidden) return; // a newer refresh owns the schedule
+  const ms = busyJob && tab !== 'files' ? 1500 : POLL[tab];
+  if (ms) pollTimer = setTimeout(refresh, ms);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(pollTimer); else refresh(); });
+
+function showLogin() {
+  authed = false; clearTimeout(pollTimer);
+  $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden');
+  $('#password').focus();
+}
+function showApp() {
+  authed = true;
+  $('#loginView').classList.add('hidden'); $('#appView').classList.remove('hidden');
+  route();
+}
+$('#loginForm').onsubmit = async e => {
+  e.preventDefault();
+  const btn = e.submitter; if (btn) btn.disabled = true;
+  try { await api('login', {method: 'POST', body: {password: $('#password').value}}); $('#password').value = ''; $('#loginError').textContent = ''; showApp(); }
+  catch (err) { $('#loginError').textContent = err.message; }
+  finally { if (btn) btn.disabled = false; }
+};
+
+function noteJob(job) {
+  busyJob = !!job?.running;
+  $$('[data-jobdot]').forEach(c => c.classList.toggle('hidden', !busyJob));
+}
+function renderJob(job, el) {
+  noteJob(job);
+  if (!job?.title) return setHTML(el, '');
+  const title = job.running ? job.title + '…' : job.error ? `${job.title}: failed` : `${job.title}: done`;
+  const pre = el.querySelector('pre'), atEnd = !pre || pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 24;
+  const open = el._open ?? job.running;
+  setHTML(el, `<div class="card job">
+    <div class="job-head">
+      ${job.running ? '<span class="spinner"></span>' : `<span style="color:var(--${job.error ? 'bad' : 'ok'})">${icon(job.error ? 'alert' : 'check')}</span>`}
+      <div class="grow"><div style="font-weight:600">${esc(title)}</div>${job.error ? `<div class="hint" style="color:var(--bad)">${esc(job.error)}</div>` : ''}</div>
+      <button class="btn ghost sm" data-act="toggleJob">${open ? 'Hide log' : 'Show log'}</button>
+    </div>
+    ${open ? `<pre>${esc(job.log.join('\n'))}</pre>` : ''}</div>`);
+  const p = el.querySelector('pre'); if (p && atEnd) p.scrollTop = p.scrollHeight;
+}
+function badge(state, restarts) {
+  return `<span class="badge ${esc(state)}">${esc(state)}${restarts ? ` · ${restarts} restart${restarts > 1 ? 's' : ''}` : ''}</span>`;
 }
 
+// ---- Overview --------------------------------------------------------------------------
+const level = (pct, low = false) => { const p = low ? 100 - pct : pct; return p > 90 ? 'bad' : p > 75 ? 'warn' : 'ok'; };
+function stat(ic, k, v, sub, pct, cls) {
+  return `<div class="card stat"><div class="k">${icon(ic)}${k}</div><div class="v">${v}</div>
+    <div class="meter ${cls}"><i style="width:${Math.max(2, Math.min(100, pct))}%"></i></div><div class="s">${sub}</div></div>`;
+}
 async function renderOverview() {
-  const [s, m, d, svcs] = await Promise.all([api('status'), api('modules'), api('deploys'), api('services')]);
-  const up = s.uptime > 86400 ? Math.floor(s.uptime / 86400) + ' d' : Math.floor(s.uptime / 3600) + ' h';
-  $('#stats').innerHTML = [
-    ['Battery', `${s.battery}%${s.charging ? ' ⚡' : ''}`, `${s.batteryTemp.toFixed(1)} °C${s.hot ? ' · hot!' : ''}`],
-    ['Memory free', gb(s.ramFreeMb), 'of ' + gb(s.ramTotalMb)],
-    ['Storage free', gb(s.storageFreeMb), 'of ' + gb(s.storageTotalMb)],
-    ['Phone', esc(s.model), `Android ${esc(s.android)} · up ${up}`, 'text'],
-  ].map(([k, v, sub, cls = '']) => `<div class="card stat"><div class="k">${k}</div><div class="v ${cls}">${v}</div><div class="muted">${sub}</div></div>`).join('');
-  // Every supervised process, named and linked through the module it belongs to.
+  const {status: s, modules: m, deploys: d, services} = await api('overview');
+  noteJob(m.job);
+  $('#sideDevice').textContent = `${s.model} · Android ${s.android}`;
+  setHTML($('#ovSub'), `${esc(s.model)} · Android ${esc(s.android)} · up ${ago(s.uptime)}`);
+  const ram = 100 * (1 - s.ramFreeMb / s.ramTotalMb), disk = 100 * (1 - s.storageFreeMb / s.storageTotalMb);
+  const running = services.filter(x => x.state === 'running').length, crashing = services.some(x => x.state === 'backoff');
+  setHTML($('#ovStats'), [
+    stat('battery', 'Battery', `${s.battery}<small>%</small>`, `${s.charging ? 'Charging · ' : ''}${s.batteryTemp.toFixed(1)} °C${s.hot ? ' · <b style="color:var(--bad)">too hot</b>' : ''}`, s.battery, s.hot ? 'bad' : level(s.battery, true)),
+    stat('memory', 'Memory in use', `${gb(s.ramTotalMb - s.ramFreeMb)}<small> / ${gb(s.ramTotalMb)} GB</small>`, `${gb(s.ramFreeMb)} GB free`, ram, level(ram)),
+    stat('disk', 'Storage in use', `${gb(s.storageTotalMb - s.storageFreeMb)}<small> / ${gb(s.storageTotalMb)} GB</small>`, `${gb(s.storageFreeMb)} GB free`, disk, level(disk)),
+    stat('pulse', 'Services', `${running}<small> / ${services.length} running</small>`,
+      crashing ? '<span style="color:var(--bad)">Some keep crashing: check their logs</span>' : s.running ? 'Restarted automatically if they stop' : 'Server stopped',
+      services.length ? 100 * running / services.length : 0, crashing ? 'bad' : running === services.length ? 'ok' : 'warn'),
+  ].join(''));
+  setHTML($('#ovReach'), s.ips.length
+    ? s.ips.map(ip => `<span class="mono">${esc(ip.includes(':') ? `[${ip}]` : ip)}</span>`).join('') + `<span class="hint" style="margin-left:4px">Dashboard on port 8800, SSH and SFTP on 8022</span>`
+    : '<span class="muted">No network connection</span>');
+  // Name each process after the module or deployment it belongs to.
   const owner = {};
-  m.core.forEach(x => owner[{ssh: 'sshd', web: 'caddy', tunnel: 'cloudflared'}[x.id]] = {name: x.name, port: x.port});
+  m.core.forEach(x => owner[{ssh: 'sshd', web: 'caddy', tunnel: 'cloudflared'}[x.id]] = {name: x.name, port: x.id === 'web' ? x.port : 0});
   m.apps.forEach(x => (x.services || [x.id]).forEach((svc, i, all) =>
     owner[svc] = {name: all.length > 1 ? `${x.name} · ${svc.slice(x.id.length + 1)}` : x.name, port: i === all.length - 1 ? x.port : 0}));
   d.forEach(x => owner['deploy-' + x.id] = {name: x.name, port: x.port});
-  const rows = svcs.map(v => ({svc: v.name, state: v.state, restarts: v.restarts, ...(owner[v.name] || {name: v.name, port: 0})}));
-  $('#services').innerHTML = rows.map(r => `
-    <div class="card">
-      <div class="row"><span class="title">${esc(r.name)}</span>${pill(r.state, r.restarts)}<span class="muted">${r.port && r.port !== 8022 ? link(r.port) : r.port ? ':' + r.port : ''}</span></div>
-      <div class="row">
-        <button class="b" onclick="showLogs('${esc(r.svc)}','${esc(r.name)}')">Logs</button>
-        <button class="b" onclick="act('services/${esc(r.svc)}/restart',{},'Restarting ${esc(r.name)}')">Restart</button>
-      </div>
-    </div>`).join('') || '<div class="muted">Nothing running.</div>';
+  setHTML($('#ovServices'), services.map(v => {
+    const o = owner[v.name] || {name: v.name, port: 0};
+    return `<div class="item">
+      <span class="dot ${esc(v.state)}" title="${esc(v.state)}"></span>
+      <div class="grow"><div class="name ellipsis">${esc(o.name)}</div>
+        <div class="hint">${esc(v.state)}${v.restarts ? ` · ${v.restarts} restart${v.restarts > 1 ? 's' : ''}` : ''}</div></div>
+      <div class="acts">
+        ${o.port && v.state === 'running' ? `<a class="btn ghost sm icon" href="${appUrl(o.port)}" target="_blank" rel="noopener" title="Open :${o.port}" aria-label="Open">${icon('external')}</a>` : ''}
+        <button class="btn ghost sm icon" data-act="logs" data-svc="${esc(v.name)}" data-name="${esc(o.name)}" title="Logs" aria-label="Logs">${icon('logs')}</button>
+        <button class="btn ghost sm icon" data-act="restartSvc" data-svc="${esc(v.name)}" data-name="${esc(o.name)}" title="Restart" aria-label="Restart">${icon('restart')}</button>
+      </div></div>`;
+  }).join('') || `<div class="empty">${icon('pulse')}<div>Nothing is running. Turn on a module to start.</div></div>`);
 }
 
+// ---- Modules ---------------------------------------------------------------------------
+const COLORS = {ssh: '#475569', web: '#0f766e', tunnel: '#ea580c', jellyfin: '#7c3aed', qbittorrent: '#2563eb', homeassistant: '#0891b2', immich: '#db2777'};
+let modules = null;
+function modCard(x) {
+  const busy = modules.job.running;
+  const state = !x.installed ? '<span class="badge plain">Not installed</span>' : !x.enabled ? '<span class="badge">off</span>' : badge(x.state, x.restarts);
+  const chips = [];
+  if (x.port) chips.push(`<span class="chip">${icon('port')}Port ${x.port}</span>`);
+  if (x.size) chips.push(`<span class="chip">${icon('download')}${esc(x.size)}</span>`);
+  if (x.storageLabel) chips.push(`<span class="chip" title="${esc(x.storageDir || 'Inside the app')}">${icon('disk')}<span class="ellipsis">${esc(x.storageLabel)}: ${esc(x.storageDir || 'inside the app')}</span></span>`);
+  const openable = x.installed && x.enabled && x.state === 'running' && x.port && x.id !== 'ssh';
+  return `<div class="card mod">
+    <div class="mod-head">
+      <div class="avatar" style="background:${COLORS[x.id] || '#64748b'}">${esc(x.name[0])}</div>
+      <div class="grow"><div class="title ellipsis">${esc(x.name)}</div>${state}</div>
+      ${x.installed ? `<button class="switch" role="switch" aria-checked="${x.enabled}" aria-label="${esc(x.name)} on" title="Turn ${x.enabled ? 'off' : 'on'}" data-act="toggleMod" data-id="${esc(x.id)}"></button>` : ''}
+    </div>
+    <div class="desc">${esc(x.description)}</div>
+    ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}
+    ${x.notice ? `<div class="notice">${icon('alert')}<span>${esc(x.notice)}</span></div>` : ''}
+    <div class="mod-foot">
+      ${!x.installed ? `<button class="btn primary sm" data-act="install" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('download')}Install</button>` : ''}
+      ${openable ? `<a class="btn sm" href="${appUrl(x.port)}" target="_blank" rel="noopener">${icon('external')}Open</a>` : ''}
+      <div class="grow"></div>
+      ${x.kind === 'app' && x.installed ? `
+        <button class="btn ghost sm" data-act="clearMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('eraser')}Clear data</button>
+        <button class="btn ghost sm danger" data-act="removeMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('trash')}Remove</button>` : ''}
+    </div></div>`;
+}
 async function renderModules() {
-  const m = await api('modules');
-  const busy = m.job.running;
-  $('#core').innerHTML = m.core.map(x => `
-    <div class="card">
-      <div class="row"><span class="title">${esc(x.name)}</span>${x.enabled ? pill(x.state, x.restarts) : '<span class="pill">off</span>'}</div>
-      <div class="muted">${esc(x.description)}</div>
-      <div class="row">
-        ${x.enabled
-          ? `<button class="b" onclick="act('modules/${x.id}/disable',{},'Turning off ${esc(x.name)}')">Turn off</button>`
-          : `<button class="b primary" onclick="enableCore('${x.id}','${esc(x.name)}')">Turn on</button>`}
-        ${x.enabled && x.port && x.port !== 8022 ? link(x.port) : ''}
-      </div>
-    </div>`).join('');
-  $('#apps').innerHTML = m.apps.map(x => `
-    <div class="card">
-      <div class="row"><span class="title">${esc(x.name)}</span>${x.installed ? (x.enabled ? pill(x.state, x.restarts) : '<span class="pill">off</span>') : '<span class="pill">not installed</span>'}</div>
-      <div class="muted">${esc(x.description)}</div>
-      <div class="muted">Port ${x.port} · ${esc(x.size)}${x.storageLabel ? ` · ${esc(x.storageLabel)}: ${esc(x.storageDir || 'inside the app')}` : ''}</div>
-      ${x.notice ? `<div class="notice">${esc(x.notice)}</div>` : ''}
-      <div class="row">
-        ${x.installed
-          ? `${x.enabled && x.state === 'running' ? link(x.port) : ''}
-             <button class="b" onclick="act('modules/${x.id}/${x.enabled ? 'disable' : 'enable'}',{},'${x.enabled ? 'Turning off' : 'Turning on'} ${esc(x.name)}')">${x.enabled ? 'Turn off' : 'Turn on'}</button>
-             <button class="b danger" ${busy ? 'disabled' : ''} onclick="if(confirm('Remove ${esc(x.name)}? Its data is kept.'))act('modules/${x.id}/remove',{},'Removing ${esc(x.name)}')">Remove</button>`
-          : `<button class="b primary" ${busy ? 'disabled' : ''} onclick="act('modules/${x.id}/install',{},'Installing ${esc(x.name)}')">Install</button>`}
-      </div>
-    </div>`).join('');
-  showJob(m.job);
+  modules = await api('modules');
+  renderJob(modules.job, $('#jobBox'));
+  setHTML($('#modCore'), modules.core.map(modCard).join(''));
+  setHTML($('#modApps'), modules.apps.map(modCard).join(''));
 }
-
-function showJob(job) {
-  $('#jobBox').classList.toggle('hidden', !job.title);
-  if (!job.title) return;
-  $('#jobTitle').textContent = job.running ? job.title + '…' : job.error ? `${job.title}: failed (${job.error})` : job.title + ': done';
-  const pre = $('#jobLog'), atEnd = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 20;
-  pre.textContent = job.log.join('\n');
-  if (atEnd) pre.scrollTop = pre.scrollHeight;
+const findMod = id => [...modules.core, ...modules.apps].find(x => x.id === id);
+function libraryCheck(x) {
+  if (!x.storageLabel) return [];
+  const shared = x.sharedWith?.length ? ` ${x.sharedWith.join(', ')} uses it too.` : '';
+  return [{label: `Also delete everything in the ${x.storageLabel.toLowerCase()}`, hint: `${x.storageDir || 'Inside the app'}.${shared} These files can't be recovered.`}];
 }
-
-function enableCore(id, name) {
-  const body = {};
-  if (id === 'tunnel') {
-    const t = prompt('Cloudflare tunnel token (leave empty to keep the saved one)');
-    if (t === null) return;
-    if (t.trim()) body.token = t.trim();
+async function removeMod(x) {
+  const r = await ask({
+    title: `Remove ${x.name}?`, confirm: 'Remove', danger: true,
+    text: 'The program is removed. If you keep its data, you can pick up where you left off by installing it again.',
+    checks: [{label: 'Also delete its settings and database', hint: 'Accounts, configuration, history and indexes.'}, ...libraryCheck(x)],
+  });
+  if (!r) return;
+  const library = !!r.checks[1];
+  run(api(`modules/${x.id}/remove`, {method: 'POST', body: {deleteData: r.checks[0] || library, deleteLibrary: library}}), `Removing ${x.name}`);
+}
+async function clearMod(x) {
+  const r = await ask({
+    title: `Clear ${x.name}'s data?`, confirm: 'Clear data', danger: true,
+    text: 'Its settings, accounts and database are deleted, and it starts again like a fresh install.',
+    checks: libraryCheck(x),
+  });
+  if (r) run(api(`modules/${x.id}/clear`, {method: 'POST', body: {deleteLibrary: !!r.checks[0]}}), `Clearing ${x.name}'s data`);
+}
+async function toggleMod(b) {
+  const x = findMod(b.dataset.id), on = !x.enabled, body = {};
+  if (on && x.id === 'tunnel') {
+    const r = await ask({
+      title: 'Turn on Cloudflare Tunnel', confirm: 'Turn on',
+      html: `<div class="hint">In the Cloudflare dashboard, open <b>Zero Trust → Networks → Tunnels</b>, create a <b>Cloudflared</b> tunnel and copy its token (the long string after <span class="mono">--token</span> in the install command). Then add public hostnames pointing to <span class="mono">http://localhost:&lt;port&gt;</span>.</div>`,
+      input: {label: 'Tunnel token (leave empty to keep the saved one)', placeholder: 'eyJhIjoi…', type: 'password'},
+    });
+    if (!r) return;
+    if (r.value) body.token = r.value;
   }
-  act(`modules/${id}/enable`, {body}, 'Turning on ' + name);
+  b.setAttribute('aria-checked', on); b.disabled = true;
+  run(api(`modules/${x.id}/${on ? 'enable' : 'disable'}`, {method: 'POST', body}), `Turning ${on ? 'on' : 'off'} ${x.name}`);
 }
 
+// ---- Deployments -----------------------------------------------------------------------
 async function renderDeploys() {
-  const [list, m] = await Promise.all([api('deploys'), api('modules')]);
-  $('#deploys').innerHTML = list.map(x => `
-    <div class="card">
-      <div class="row"><span class="title">${esc(x.name)}</span>${pill(x.error ? 'failed' : x.commit ? x.state : 'building', x.restarts)}</div>
-      <div class="muted">${esc(x.repo)} · ${esc(x.branch)}${x.commit ? ' · ' + esc(x.commit.slice(0, 7)) : ''}${x.detected ? ' · ' + esc(x.detected) : ''}${x.autoDeploy ? ' · auto-deploy' : ''}</div>
-      <div class="row">
-        ${link(x.port)}
-        <button class="b" onclick="act('deploys/${x.id}/redeploy',{},'Redeploying ${esc(x.name)}')">Redeploy</button>
-        <button class="b" onclick="showLogs('deploy-${x.id}','${esc(x.name)}')">Logs</button>
-        <button class="b danger" onclick="if(confirm('Delete ${esc(x.name)} and its files?'))act('deploys/${x.id}',{method:'DELETE'},'Deleting ${esc(x.name)}')">Delete</button>
-      </div>
-    </div>`).join('') || '<div class="muted">No deployments yet.</div>';
-  showJob(m.job);
-  $('#tab-deploys').append($('#jobBox'));
+  const [list, job] = await Promise.all([api('deploys'), api('job')]);
+  renderJob(job, $('#depJob'));
+  setHTML($('#depList'), list.map(x => {
+    const state = x.error ? 'failed' : x.commit ? x.state : 'building';
+    const chips = [`<span class="chip" title="${esc(x.repo)}">${icon('git')}<span class="ellipsis">${esc(x.repo.replace(/^https:\/\//, ''))}</span></span>`,
+      `<span class="chip">${icon('deploy')}${esc(x.branch)}${x.commit ? ' @ ' + esc(x.commit.slice(0, 7)) : ''}</span>`,
+      `<span class="chip">${icon('port')}Port ${x.port}</span>`];
+    if (x.detected) chips.push(`<span class="chip">${esc(x.detected)}</span>`);
+    if (x.autoDeploy) chips.push(`<span class="chip">${icon('sync')}Auto-deploy</span>`);
+    return `<div class="card mod">
+      <div class="mod-head"><div class="avatar" style="background:#334155">${esc(x.name[0].toUpperCase())}</div>
+        <div class="grow"><div class="title ellipsis">${esc(x.name)}</div>${badge(state, x.restarts)}</div></div>
+      <div class="chips">${chips.join('')}</div>
+      ${x.error ? `<div class="notice">${icon('alert')}<span>${esc(x.error)}</span></div>` : ''}
+      <div class="mod-foot">
+        ${state === 'running' ? `<a class="btn sm" href="${appUrl(x.port)}" target="_blank" rel="noopener">${icon('external')}Open</a>` : ''}
+        <button class="btn sm" data-act="redeploy" data-id="${esc(x.id)}" data-name="${esc(x.name)}">${icon('sync')}Redeploy</button>
+        <div class="grow"></div>
+        <button class="btn ghost sm icon" data-act="logs" data-svc="deploy-${esc(x.id)}" data-name="${esc(x.name)}" title="Logs" aria-label="Logs">${icon('logs')}</button>
+        <button class="btn ghost sm icon danger" data-act="undeploy" data-id="${esc(x.id)}" data-name="${esc(x.name)}" title="Delete" aria-label="Delete">${icon('trash')}</button>
+      </div></div>`;
+  }).join('') || `<div class="card empty" style="grid-column:1/-1">${icon('deploy')}<div>No deployments yet.</div>
+      <div style="margin-top:12px"><button class="btn primary" data-act="newDeploy">${icon('plus')}New deployment</button></div></div>`);
+}
+const DEPLOY_FIELDS = `
+  <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+    <label class="field">Name<input name="name" required placeholder="my-site" autocomplete="off"></label>
+    <label class="field">Port<input name="port" type="number" min="1024" max="65535" required placeholder="3000"></label>
+  </div>
+  <label class="field">Repository URL<input name="repo" required placeholder="https://github.com/you/repo" autocomplete="off" spellcheck="false"></label>
+  <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+    <label class="field">Branch<input name="branch" placeholder="main"></label>
+    <label class="field">Runtime<select name="runtime"><option value="auto">Detect</option><option value="node">Node.js</option><option value="python">Python</option><option value="static">Static site</option></select></label>
+    <label class="field">Build command<input name="build" placeholder="npm run build" spellcheck="false"></label>
+    <label class="field">Start command<input name="start" placeholder="npm start" spellcheck="false"></label>
+  </div>
+  <label class="field">Environment variables<textarea name="env" rows="3" placeholder="KEY=value, one per line" class="mono" spellcheck="false"></textarea></label>
+  <label class="check"><input type="checkbox" name="autoDeploy"><span>Redeploy when the branch changes <span class="hint">(checked every 5 minutes)</span></span></label>
+  <div class="hint">Private repository? Use https://&lt;token&gt;@github.com/you/repo with a read-only token.</div>`;
+function newDeploy(prefill) {
+  const dlg = $('#modal'), form = $('#modalForm');
+  form.innerHTML = `<div class="dlg-head"><h3>New deployment</h3></div><div class="dlg-body">${DEPLOY_FIELDS}</div>
+    <div class="dlg-foot"><button class="btn primary" value="ok">${icon('deploy')}Deploy</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>`;
+  for (const [k, v] of Object.entries(prefill || {})) { const el = form.elements[k]; if (el) el.type === 'checkbox' ? el.checked = v : el.value = v; }
+  dlg.classList.add('wide');
+  dlg.onclose = async () => {
+    dlg.classList.remove('wide');
+    if (dlg.returnValue !== 'ok') return;
+    const f = new FormData(form), env = {}, raw = Object.fromEntries(f);
+    for (const line of (raw.env || '').split('\n')) { const i = line.indexOf('='); if (i > 0) env[line.slice(0, i).trim()] = line.slice(i + 1).trim(); }
+    const body = {name: raw.name, repo: raw.repo, branch: raw.branch, port: Number(raw.port), runtime: raw.runtime,
+      build: raw.build, start: raw.start, env, autoDeploy: raw.autoDeploy === 'on'};
+    // On an error, reopen the form with what was typed.
+    if (!await run(api('deploys', {method: 'POST', body}), 'Deploying ' + body.name)) newDeploy({...raw, autoDeploy: body.autoDeploy});
+  };
+  dlg.returnValue = ''; dlg.showModal(); form.elements.name.focus();
 }
 
-// --- Files ------------------------------------------------------------------------------
-let fRoot = null, fPath = '', filesLoaded = false, uploads = [], uploading = null;
-const size = n => n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(0) + ' KB' : n < 1073741824 ? (n / 1048576).toFixed(1) + ' MB' : (n / 1073741824).toFixed(2) + ' GB';
-const join = (...p) => p.filter(Boolean).join('/');
-const fUrl = (path, extra = '') => `/api/files/${encodeURIComponent(fRoot)}${extra}?path=${encodeURIComponent(path)}`;
-const INLINE = /\.(mp4|m4v|webm|mkv|mov|mp3|m4a|aac|flac|ogg|opus|wav|jpe?g|png|gif|webp|avif|pdf|txt|log|srt|vtt|md|json|conf|ya?ml)$/i;
+// ---- Logs ------------------------------------------------------------------------------
+let logTimer = 0;
+async function showLogs(svc, name) {
+  $('#logTitle').textContent = name + ' · logs';
+  const pre = $('#logBody'); pre.textContent = 'Loading…';
+  const load = async () => {
+    if (document.hidden) return;
+    const atEnd = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 24;
+    try {
+      const r = await api(`services/${encodeURIComponent(svc)}/logs`), t = r.lines.join('\n') || '(no output yet)';
+      if (pre.textContent !== t) { pre.textContent = t; if (atEnd) pre.scrollTop = pre.scrollHeight; }
+    } catch (e) { pre.textContent = e.message; }
+  };
+  $('#logs').showModal(); await load(); pre.scrollTop = pre.scrollHeight;
+  clearInterval(logTimer); logTimer = setInterval(load, 2500);
+}
+$('#logs').addEventListener('close', () => clearInterval(logTimer));
+
+// ---- Files -----------------------------------------------------------------------------
+const files = {root: stored('filesRoot'), path: '', entries: [], sort: 'name', desc: false, uploads: [], active: null};
+const fUrl = (path, dl = false) => `/api/files/${encodeURIComponent(files.root)}${dl ? '/download' : ''}?path=${encodeURIComponent(path)}`;
+const KINDS = {video: /\.(mp4|m4v|mkv|webm|mov|avi|ts|wmv)$/i, image: /\.(jpe?g|png|gif|webp|avif|heic|bmp|svg)$/i, audio: /\.(mp3|m4a|aac|flac|ogg|opus|wav)$/i, archive: /\.(zip|tar|gz|tgz|xz|7z|rar|iso|apk)$/i};
+const OPENABLE = /\.(mp4|m4v|webm|mov|mp3|m4a|aac|flac|ogg|opus|wav|jpe?g|png|gif|webp|avif|bmp|pdf|txt|log|srt|vtt|md|json|conf|ya?ml|csv|xml)$/i;
+const kind = name => Object.keys(KINDS).find(k => KINDS[k].test(name)) || 'file';
+const dateFmt = new Intl.DateTimeFormat(undefined, {dateStyle: 'medium', timeStyle: 'short'});
+function goFiles(root, path) { location.hash = ['files', root, ...(path ? path.split('/') : [])].map(encodeURIComponent).join('/'); }
 
 async function renderFiles() {
   const roots = await api('files');
-  const sel = $('#fRoot');
-  if (!roots.some(r => r.id === fRoot)) { fRoot = roots[0]?.id; fPath = ''; }
-  sel.innerHTML = roots.map(r => `<option value="${esc(r.id)}" ${r.id === fRoot ? 'selected' : ''}>${esc(r.label)}</option>`).join('');
-  if (!fRoot) { $('#fList').innerHTML = '<div class="frow muted">No locations.</div>'; return; }
+  if (!roots.some(r => r.id === files.root)) { files.root = roots[0]?.id; files.path = ''; }
+  setHTML($('#fRoot'), roots.map(r => `<option value="${esc(r.id)}">${esc(r.label)}</option>`).join(''));
+  $('#fRoot').value = files.root || '';
+  if (!files.root) {
+    setHTML($('#fCrumbs'), '');
+    return setHTML($('#fRows'), `<tr><td colspan="4"><div class="empty">No locations yet. Install an app, or allow file access in the phone app.</div></td></tr>`);
+  }
+  store('filesRoot', files.root);
   let d;
-  try { d = await api(`files/${encodeURIComponent(fRoot)}?path=${encodeURIComponent(fPath)}`); }
-  catch (e) { if (fPath) { fPath = ''; return renderFiles(); } throw e; }
-  filesLoaded = true;
-  $('#fFree').textContent = size(d.free) + ' free';
-  const parts = fPath ? fPath.split('/') : [];
-  $('#fCrumbs').innerHTML = [`<a data-p="">${esc(d.label)}</a>`].concat(parts.map((p, i) =>
-    `<span class="muted">/</span><a data-p="${esc(parts.slice(0, i + 1).join('/'))}">${esc(p)}</a>`)).join('');
-  $('#fCrumbs').querySelectorAll('a').forEach(a => a.onclick = () => openDir(a.dataset.p));
-  const rows = d.entries.map((e, i) => {
-    const p = join(fPath, e.name);
-    return `<div class="frow" data-i="${i}">
-      <div class="name">${e.dir ? '📁' : '📄'} ${e.dir
-        ? `<a data-open="${esc(p)}">${esc(e.name)}</a>`
-        : `<a href="${esc(fUrl(p, '/download'))}" download title="Download">${esc(e.name)}</a>`}</div>
-      <div class="num">${e.dir ? '' : size(e.size)}</div>
-      <div class="num">${new Date(e.modified).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'})}</div>
-      <div class="acts">
-        ${!e.dir && INLINE.test(e.name) ? `<a class="b" style="font-size:13px;padding:3px 8px;text-decoration:none;border:1px solid var(--line);border-radius:8px;color:var(--text)" href="${esc(fUrl(p, '/download'))}&inline=1" target="_blank" rel="noopener">Open</a>` : ''}
-        <button class="b" data-dl="${esc(p)}" title="${e.dir ? 'Download as zip' : 'Download'}">⬇</button>
-        <button class="b" data-mv="${esc(p)}" title="Rename or move">Rename</button>
-        <button class="b danger" data-rm="${esc(p)}" data-dir="${e.dir}" title="Delete">✕</button>
-      </div>
-    </div>`;
-  });
-  $('#fList').innerHTML = `<div class="frow head"><div>Name</div><div class="num">Size</div><div class="num">Modified</div><div></div></div>`
-    + (fPath ? `<div class="frow"><div class="name">↩ <a data-open="${esc(parts.slice(0, -1).join('/'))}">..</a></div></div>` : '')
-    + (rows.join('') || '<div class="frow muted">Empty folder. Drop files here to upload.</div>');
-  $('#fList').querySelectorAll('[data-open]').forEach(a => a.onclick = () => openDir(a.dataset.open));
-  $('#fList').querySelectorAll('[data-dl]').forEach(b => b.onclick = () => { location.href = fUrl(b.dataset.dl, '/download'); });
-  $('#fList').querySelectorAll('[data-mv]').forEach(b => b.onclick = () => moveEntry(b.dataset.mv));
-  $('#fList').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => removeEntry(b.dataset.rm, b.dataset.dir === 'true'));
+  try { d = await api(`files/${encodeURIComponent(files.root)}?path=${encodeURIComponent(files.path)}`); }
+  catch (e) { if (files.path) { toast(e.message, true); return goFiles(files.root, ''); } throw e; }
+  files.entries = d.entries;
+  $('#fFree').textContent = bytes(d.free) + ' free';
+  const parts = files.path ? files.path.split('/') : [];
+  setHTML($('#fCrumbs'), [`<a data-act="cd" data-path="">${esc(d.label.replace(/ \(.*\)$/, ''))}</a>`]
+    .concat(parts.map((p, i) => `<span class="sep">/</span><a data-act="cd" data-path="${esc(parts.slice(0, i + 1).join('/'))}">${esc(p)}</a>`)).join(''));
+  drawFiles();
 }
-function openDir(p) { fPath = p; renderFiles().catch(e => toast(e.message)); }
-$('#fRoot').onchange = e => { fRoot = e.target.value; openDir(''); };
-
-async function fileAct(path, opts, done) {
-  try { await api(path, Object.assign({method: 'POST'}, opts)); if (done) toast(done); await renderFiles(); }
-  catch (e) { toast(e.message); }
+function drawFiles() {
+  const {sort, desc} = files, dir = desc ? -1 : 1;
+  const list = [...files.entries].sort((a, b) => (b.dir - a.dir) ||
+    dir * (sort === 'name' ? a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}) : a[sort] - b[sort]));
+  $$('.ftable th[data-sort]').forEach(th => th.dataset.label ??= th.textContent);
+  $$('.ftable th[data-sort]').forEach(th => th.textContent = th.dataset.label + (th.dataset.sort === sort ? (desc ? ' ↓' : ' ↑') : ''));
+  const parent = files.path.split('/').slice(0, -1).join('/');
+  setHTML($('#fRows'), (files.path ? `<tr><td colspan="4"><div class="fname"><span class="ficon">${icon('up')}</span><a data-act="cd" data-path="${esc(parent)}">Up one folder</a></div></td></tr>` : '')
+    + list.map(e => {
+      const p = join(files.path, e.name), k = e.dir ? 'dir' : kind(e.name), url = esc(fUrl(p, true));
+      return `<tr>
+        <td><div class="fname"><span class="ficon ${k}">${icon(e.dir ? 'folder' : k)}</span>${e.dir
+          ? `<a data-act="cd" data-path="${esc(p)}">${esc(e.name)}</a>`
+          : `<a href="${url}" download title="Download ${esc(e.name)}">${esc(e.name)}</a>`}</div></td>
+        <td class="c-size">${e.dir ? '' : bytes(e.size)}</td>
+        <td class="c-date">${dateFmt.format(e.modified)}</td>
+        <td class="c-acts"><div class="acts">
+          ${!e.dir && OPENABLE.test(e.name) ? `<a class="btn ghost sm icon wide" href="${url}&amp;inline=1" target="_blank" rel="noopener" title="Open in the browser" aria-label="Open">${icon('external')}</a>` : ''}
+          <a class="btn ghost sm icon wide" href="${url}" ${e.dir ? '' : 'download'} title="${e.dir ? 'Download as zip' : 'Download'}" aria-label="Download">${icon('download')}</a>
+          <button class="btn ghost sm icon wide" data-act="rename" data-path="${esc(p)}" title="Rename or move" aria-label="Rename">${icon('edit')}</button>
+          <button class="btn ghost sm icon" data-act="fileMenu" data-path="${esc(p)}" data-dir="${e.dir}" title="More" aria-label="More">${icon('more')}</button>
+        </div></td></tr>`;
+    }).join('')
+    + (list.length ? '' : `<tr><td colspan="4"><div class="empty">${icon('folder')}<div>This folder is empty. Drop files here to upload.</div></div></td></tr>`));
 }
-$('#fMkdir').onclick = () => {
-  const name = prompt('Folder name');
-  if (name && name.trim()) fileAct(`files/${encodeURIComponent(fRoot)}/mkdir?path=${encodeURIComponent(join(fPath, name.trim()))}`, {}, 'Created ' + name.trim());
-};
-function moveEntry(p) {
-  const to = prompt('New name, or a path from the top of this location to move it', p.split('/').pop());
-  if (!to || !to.trim()) return;
-  const dest = to.includes('/') ? to.trim().replace(/^\/+/, '') : join(fPath, to.trim());
-  fileAct(`files/${encodeURIComponent(fRoot)}/move?path=${encodeURIComponent(p)}`, {body: {to: dest}}, 'Moved to ' + dest);
+async function mkdir() {
+  const r = await ask({title: 'New folder', confirm: 'Create', input: {label: 'Name', placeholder: 'Movies'}});
+  if (r?.value) run(api(`files/${encodeURIComponent(files.root)}/mkdir?path=${encodeURIComponent(join(files.path, r.value))}`, {method: 'POST'}), 'Created ' + r.value);
 }
-function removeEntry(p, dir) {
-  if (confirm(`Delete ${p.split('/').pop()}${dir ? ' and everything in it' : ''}? This can't be undone.`))
-    fileAct(`files/${encodeURIComponent(fRoot)}?path=${encodeURIComponent(p)}`, {method: 'DELETE'}, 'Deleted');
+async function rename(p) {
+  const r = await ask({title: 'Rename or move', confirm: 'Save', input: {label: 'New name, or a path from the top of this location to move it there', value: p.split('/').pop()}});
+  if (!r?.value) return;
+  const dest = r.value.includes('/') ? r.value.replace(/^\/+/, '') : join(p.split('/').slice(0, -1).join('/'), r.value);
+  if (dest !== p) run(api(`files/${encodeURIComponent(files.root)}/move?path=${encodeURIComponent(p)}`, {method: 'POST', body: {to: dest}}), 'Moved to ' + dest);
+}
+async function removeFile(p, dir) {
+  const name = p.split('/').pop();
+  const r = await ask({title: `Delete ${name}?`, text: dir ? 'The folder and everything in it are deleted for good.' : 'The file is deleted for good.', confirm: 'Delete', danger: true});
+  if (r) run(api(`files/${encodeURIComponent(files.root)}?path=${encodeURIComponent(p)}`, {method: 'DELETE'}), 'Deleted ' + name);
 }
 
-// Uploads go one at a time as raw PUT bodies, streamed to disk on the phone.
+// Uploads go one at a time, as raw PUT bodies the phone streams straight to disk.
 function queueUploads(items) {
-  const root = fRoot, base = fPath;
-  items.forEach(({file, rel}) => uploads.push({file, root, path: join(base, rel || file.name), loaded: 0, state: 'waiting'}));
-  showUploads(); nextUpload();
+  if (!items.length) return;
+  const root = files.root, base = files.path;
+  for (const {file, rel} of items) files.uploads.push({file, root, path: join(base, rel || file.name), loaded: 0, state: 'waiting'});
+  drawTray(); nextUpload();
 }
 function nextUpload() {
-  if (uploading) return;
-  const u = uploads.find(x => x.state === 'waiting');
-  if (!u) { renderFiles().catch(() => {}); return; }
-  uploading = u; u.state = 'sending';
+  if (files.active) return;
+  const u = files.uploads.find(x => x.state === 'waiting');
+  if (!u) { if (tab === 'files') refresh(); return; }
+  files.active = u; u.state = 'sending';
+  let last = 0;
+  const finish = () => { files.active = null; u.xhr = null; drawTray(); nextUpload(); };
   const send = overwrite => {
     const x = u.xhr = new XMLHttpRequest();
     x.open('PUT', `/api/files/${encodeURIComponent(u.root)}?path=${encodeURIComponent(u.path)}${overwrite ? '&overwrite=1' : ''}`);
-    x.upload.onprogress = e => { u.loaded = e.loaded; showUploads(); };
-    x.onload = () => {
-      if (x.status === 409 && !overwrite && confirm(`${u.path} already exists. Replace it?`)) return send(true);
+    // Redrawing on every progress event is wasted work; 4 times a second is plenty.
+    x.upload.onprogress = e => { u.loaded = e.loaded; const now = performance.now(); if (now - last > 250) { last = now; drawTray(); } };
+    x.onload = async () => {
+      if (x.status === 409 && !overwrite) {
+        const r = await ask({title: `Replace ${u.path.split('/').pop()}?`, text: 'A file with this name already exists here.', confirm: 'Replace'});
+        if (r) return send(true);
+        u.state = 'skipped'; return finish();
+      }
       let err = ''; try { err = JSON.parse(x.responseText).error || ''; } catch (e) {}
       u.state = x.status < 300 ? 'done' : 'failed: ' + (err || x.status);
       if (x.status === 401) showLogin();
@@ -415,79 +868,99 @@ function nextUpload() {
     x.onabort = () => { u.state = 'cancelled'; finish(); };
     x.send(u.file);
   };
-  const finish = () => { uploading = null; showUploads(); nextUpload(); };
   send(false);
 }
-function showUploads() {
-  const box = $('#fUploads');
-  box.classList.toggle('hidden', !uploads.length);
-  const active = uploads.filter(u => u.state === 'waiting' || u.state === 'sending');
-  box.innerHTML = `<div class="row"><span class="title">Uploads</span><span class="muted">${active.length ? active.length + ' left' : 'finished'}</span>
-      <div style="flex:1"></div>${active.length ? '<button class="b" id="upCancel">Cancel all</button>' : '<button class="b" id="upClear">Clear</button>'}</div>`
-    + uploads.slice(-8).map(u => `<div><div class="row muted"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.path)}</span>
-      <span>${u.state === 'sending' ? size(u.loaded) + ' / ' + size(u.file.size) : esc(u.state)}</span></div>
-      <div class="bar"><div style="width:${u.state === 'done' ? 100 : u.file.size ? Math.floor(100 * u.loaded / u.file.size) : 0}%"></div></div></div>`).join('');
-  const c = $('#upCancel'); if (c) c.onclick = () => { uploads.forEach(u => { if (u.state === 'waiting') u.state = 'cancelled'; }); uploading?.xhr?.abort(); };
-  const k = $('#upClear'); if (k) k.onclick = () => { uploads = []; showUploads(); };
+function drawTray() {
+  const ups = files.uploads, tray = $('#fTray');
+  tray.classList.toggle('hidden', !ups.length);
+  if (!ups.length) return;
+  const left = ups.filter(u => u.state === 'waiting' || u.state === 'sending');
+  const total = ups.reduce((s, u) => s + u.file.size, 0), sent = ups.reduce((s, u) => s + (u.state === 'done' ? u.file.size : u.state === 'sending' ? u.loaded : 0), 0);
+  tray.innerHTML = `<div class="job-head">${left.length ? '<span class="spinner"></span>' : `<span style="color:var(--ok)">${icon('check')}</span>`}
+      <div class="grow"><div style="font-weight:600">${left.length ? `Uploading ${left.length} file${left.length > 1 ? 's' : ''}` : 'Uploads finished'}</div>
+      <div class="hint">${bytes(sent)} of ${bytes(total)}</div></div>
+      ${left.length ? '<button class="btn sm" data-act="cancelUploads">Cancel</button>' : '<button class="btn ghost sm" data-act="clearUploads">Dismiss</button>'}</div>`
+    + ups.slice(-6).map(u => {
+      const pct = u.state === 'done' ? 100 : u.file.size ? Math.floor(100 * u.loaded / u.file.size) : 0;
+      return `<div class="up"><span class="ellipsis">${esc(u.path)}</span><span class="muted">${u.state === 'sending' ? pct + '%' : esc(u.state)}</span>
+        <div class="meter ${u.state.startsWith('failed') ? 'bad' : 'ok'}"><i style="width:${pct}%"></i></div></div>`;
+    }).join('');
 }
-$('#fUp').onclick = () => $('#fPick').click();
-$('#fUpDir').onclick = () => $('#fPickDir').click();
+addEventListener('beforeunload', e => { if (files.active) e.preventDefault(); });
+$('#fRoot').onchange = e => goFiles(e.target.value, '');
 $('#fPick').onchange = e => { queueUploads([...e.target.files].map(file => ({file}))); e.target.value = ''; };
 $('#fPickDir').onchange = e => { queueUploads([...e.target.files].map(file => ({file, rel: file.webkitRelativePath}))); e.target.value = ''; };
-window.addEventListener('beforeunload', e => { if (uploading) e.preventDefault(); });
-
+$('.ftable thead').onclick = e => {
+  const th = e.target.closest('th[data-sort]'); if (!th) return;
+  files.desc = files.sort === th.dataset.sort ? !files.desc : th.dataset.sort !== 'name';
+  files.sort = th.dataset.sort; drawFiles();
+};
 // Drag and drop, including whole folders.
-const list = $('#fList');
-list.ondragover = e => { e.preventDefault(); list.classList.add('drop'); };
-list.ondragleave = () => list.classList.remove('drop');
-list.ondrop = async e => {
-  e.preventDefault(); list.classList.remove('drop');
-  const entries = [...e.dataTransfer.items].map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+const dropBox = $('#fBox');
+let dragDepth = 0;
+dropBox.addEventListener('dragenter', e => { if (e.dataTransfer.types.includes('Files')) { dragDepth++; dropBox.classList.add('over'); } });
+dropBox.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; dropBox.classList.remove('over'); } });
+dropBox.addEventListener('dragover', e => e.preventDefault());
+dropBox.addEventListener('drop', async e => {
+  e.preventDefault(); dragDepth = 0; dropBox.classList.remove('over');
+  const entries = [...e.dataTransfer.items].map(i => i.webkitGetAsEntry?.()).filter(Boolean);
   if (!entries.length) return queueUploads([...e.dataTransfer.files].map(file => ({file})));
   const out = [];
   const walk = async (entry, prefix) => {
-    if (entry.isFile) out.push({file: await new Promise((ok, no) => entry.file(ok, no)), rel: prefix + entry.name});
-    else {
-      const reader = entry.createReader();
-      for (;;) {
-        const batch = await new Promise((ok, no) => reader.readEntries(ok, no));
-        if (!batch.length) break;
-        for (const child of batch) await walk(child, prefix + entry.name + '/');
-      }
+    if (entry.isFile) return out.push({file: await new Promise((ok, no) => entry.file(ok, no)), rel: prefix + entry.name});
+    const reader = entry.createReader();
+    for (;;) {
+      const batch = await new Promise((ok, no) => reader.readEntries(ok, no));
+      if (!batch.length) break;
+      for (const child of batch) await walk(child, prefix + entry.name + '/');
     }
   };
   for (const entry of entries) await walk(entry, '');
   queueUploads(out);
-};
+});
 
-$('#deployForm').onsubmit = async e => {
+// ---- Actions: one delegated listener for every button ------------------------------------
+const ACT = {
+  theme() { theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]; store('theme', theme === 'auto' ? null : theme); applyTheme(); },
+  async logout() { await api('logout', {method: 'POST'}).catch(() => {}); showLogin(); },
+  logs: b => showLogs(b.dataset.svc, b.dataset.name),
+  closeLogs: () => $('#logs').close(),
+  restartSvc: b => run(api(`services/${encodeURIComponent(b.dataset.svc)}/restart`, {method: 'POST'}), 'Restarting ' + b.dataset.name),
+  toggleJob(b) { const el = b.closest('#jobBox, #depJob'); el._open = !el.querySelector('pre'); el._html = null; refresh(); },
+  install(b) { const x = findMod(b.dataset.id); run(api(`modules/${x.id}/install`, {method: 'POST'}), `Installing ${x.name}`); },
+  toggleMod,
+  clearMod: b => clearMod(findMod(b.dataset.id)),
+  removeMod: b => removeMod(findMod(b.dataset.id)),
+  newDeploy: () => newDeploy(),
+  redeploy: b => run(api(`deploys/${b.dataset.id}/redeploy`, {method: 'POST'}), 'Redeploying ' + b.dataset.name),
+  async undeploy(b) {
+    const r = await ask({title: `Delete ${b.dataset.name}?`, text: 'The deployment is stopped and its files are deleted.', confirm: 'Delete', danger: true});
+    if (r) run(api(`deploys/${b.dataset.id}`, {method: 'DELETE'}), 'Deleting ' + b.dataset.name);
+  },
+  cd: b => goFiles(files.root, b.dataset.path),
+  mkdir,
+  rename: b => rename(b.dataset.path),
+  fileMenu(b) {
+    const p = b.dataset.path, dir = b.dataset.dir === 'true', name = p.split('/').pop(), items = [];
+    if (!dir && OPENABLE.test(name)) items.push({icon: 'external', label: 'Open in the browser', run: () => open(fUrl(p, true) + '&inline=1', '_blank', 'noopener')});
+    items.push({icon: 'download', label: dir ? 'Download as zip' : 'Download', run: () => { location.href = fUrl(p, true); }});
+    items.push({icon: 'edit', label: 'Rename or move…', run: () => rename(p)});
+    items.push({icon: 'trash', label: 'Delete…', danger: true, run: () => removeFile(p, dir)});
+    openMenu(b, items);
+  },
+  pickFiles: () => $('#fPick').click(),
+  pickDir: () => $('#fPickDir').click(),
+  cancelUploads() { files.uploads.forEach(u => { if (u.state === 'waiting') u.state = 'cancelled'; }); files.active?.xhr?.abort(); drawTray(); },
+  clearUploads() { files.uploads = []; drawTray(); },
+};
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]');
+  if (!t || t.disabled) return;
   e.preventDefault();
-  const f = new FormData(e.target), env = {};
-  for (const line of (f.get('env') || '').split('\n')) {
-    const i = line.indexOf('='); if (i > 0) env[line.slice(0, i).trim()] = line.slice(i + 1).trim();
-  }
-  const body = {
-    name: f.get('name'), repo: f.get('repo'), branch: f.get('branch'), port: Number(f.get('port')),
-    runtime: f.get('runtime'), build: f.get('build'), start: f.get('start'), env, autoDeploy: f.get('autoDeploy') === 'on',
-  };
-  try { await api('deploys', {method: 'POST', body}); toast('Deploying ' + body.name); e.target.reset(); refresh(); }
-  catch (err) { toast(err.message); }
-};
+  ACT[t.dataset.act]?.(t, e);
+});
 
-async function showLogs(svc, name) {
-  $('#logTitle').textContent = name + ' logs';
-  const load = async () => {
-    try { const r = await api(`services/${svc}/logs`); const pre = $('#logBody'); pre.textContent = r.lines.join('\n'); pre.scrollTop = pre.scrollHeight; }
-    catch (e) { $('#logBody').textContent = e.message; }
-  };
-  await load();
-  clearInterval(logTimer); logTimer = setInterval(load, 3000);
-  $('#logDialog').showModal();
-}
-$('#logClose').onclick = () => { clearInterval(logTimer); $('#logDialog').close(); };
-document.querySelectorAll('nav button')[1].addEventListener('click', () => $('#tab-modules').append($('#jobBox')));
-
-api('status').then(showApp).catch(() => showLogin());
+api('status').then(showApp).catch(showLogin);
 </script>
 </body>
 </html>

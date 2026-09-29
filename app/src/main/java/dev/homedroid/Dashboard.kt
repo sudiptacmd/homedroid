@@ -29,10 +29,7 @@ class Dashboard(private val ctx: Context) {
     fun stop() = http.stop()
 
     private fun handle(r: Request): Response {
-        if (r.method == "GET" && (r.path == "/" || r.path == "/index.html")) {
-            val html = ctx.assets.open("dashboard.html").use { it.readBytes() }
-            return Response(200, html, "text/html; charset=utf-8", SECURITY_HEADERS)
-        }
+        if (r.method == "GET" && (r.path == "/" || r.path == "/index.html")) return page(r)
         if (r.method == "GET" && r.path == "/favicon.svg") {
             val svg = ctx.assets.open("favicon.svg").use { it.readBytes() }
             return Response(200, svg, "image/svg+xml", mapOf("Cache-Control" to "max-age=86400"))
@@ -43,6 +40,26 @@ class Dashboard(private val ctx: Context) {
         return route(r)
     }
 
+    /**
+     * The single-page UI, gzipped once and revalidated by ETag: it only changes when the app
+     * is updated, so browsers usually get a 304 instead of the page.
+     */
+    private fun page(r: Request): Response {
+        val etag = "\"${ctx.packageManager.getPackageInfo(ctx.packageName, 0).lastUpdateTime}\""
+        val headers = SECURITY_HEADERS + mapOf("ETag" to etag, "Cache-Control" to "no-cache", "Vary" to "Accept-Encoding")
+        if (r.headers["if-none-match"] == etag) return Response(304, ByteArray(0), "text/html; charset=utf-8", headers)
+        val gzip = r.headers["accept-encoding"].orEmpty().contains("gzip")
+        return Response(
+            200, if (gzip) pageGzip else pageRaw, "text/html; charset=utf-8",
+            if (gzip) headers + ("Content-Encoding" to "gzip") else headers,
+        )
+    }
+
+    private val pageRaw by lazy { ctx.assets.open("dashboard.html").use { it.readBytes() } }
+    private val pageGzip by lazy {
+        java.io.ByteArrayOutputStream().also { out -> java.util.zip.GZIPOutputStream(out).use { it.write(pageRaw) } }.toByteArray()
+    }
+
     private fun route(r: Request): Response {
         val seg = r.path.removePrefix("/api/").split('/')
         return when {
@@ -51,6 +68,10 @@ class Dashboard(private val ctx: Context) {
                 Response.json(JSONObject().put("ok", true), headers = mapOf("Set-Cookie" to "$COOKIE=; Max-Age=0; Path=/"))
             }
             r.method == "GET" && seg == listOf("status") -> Response.json(status())
+            // Everything the overview shows, in one request instead of four.
+            r.method == "GET" && seg == listOf("overview") -> Response.json(
+                JSONObject().put("status", status()).put("modules", modules()).put("deploys", deploysJson()).put("services", servicesJson())
+            )
             r.method == "GET" && seg == listOf("modules") -> Response.json(modules())
             r.method == "POST" && seg.size == 3 && seg[0] == "modules" -> moduleAction(seg[1], seg[2], r)
             r.method == "GET" && seg.size == 3 && seg[0] == "services" && seg[2] == "logs" -> logs(seg[1])
@@ -60,13 +81,8 @@ class Dashboard(private val ctx: Context) {
                 Response.ok()
             }
             r.method == "GET" && seg == listOf("job") -> Response.json(job())
-            r.method == "GET" && seg == listOf("services") -> Response.json(jsonArray(
-                ServerService.supervisor?.daemons.orEmpty().map { d ->
-                    JSONObject().put("name", d.spec.name).put("state", d.state.name.lowercase()).put("restarts", d.restarts)
-                }
-            ))
-            r.method == "GET" && seg == listOf("deploys") ->
-                Response.json(jsonArray(deploys.all().map { it.toJson(daemon(it.service), deploys.state(it, alpine)) }))
+            r.method == "GET" && seg == listOf("services") -> Response.json(servicesJson())
+            r.method == "GET" && seg == listOf("deploys") -> Response.json(deploysJson())
             r.method == "POST" && seg == listOf("deploys") -> createDeploy(r)
             r.method == "POST" && seg.size == 3 && seg[0] == "deploys" -> deployAction(seg[1], seg[2])
             r.method == "DELETE" && seg.size == 2 && seg[0] == "deploys" -> deleteDeploy(seg[1])
@@ -122,6 +138,14 @@ class Dashboard(private val ctx: Context) {
             .put("running", ServerService.running)
     }
 
+    private fun servicesJson() = jsonArray(
+        ServerService.supervisor?.daemons.orEmpty().map { d ->
+            JSONObject().put("name", d.spec.name).put("state", d.state.name.lowercase()).put("restarts", d.restarts)
+        }
+    )
+
+    private fun deploysJson() = jsonArray(deploys.all().map { it.toJson(daemon(it.service), deploys.state(it, alpine)) })
+
     private fun daemon(name: String) = ServerService.supervisor?.daemons?.firstOrNull { it.spec.name == name }
 
     private fun serviceJson(o: JSONObject, name: String): JSONObject {
@@ -165,6 +189,7 @@ class Dashboard(private val ctx: Context) {
                 .put("enabled", !cfg.isDisabled(a.id))
                 .put("storageLabel", a.storageLabel ?: JSONObject.NULL)
                 .put("storageDir", cfg.storageDir(a) ?: JSONObject.NULL)
+                .put("sharedWith", jsonArray(apps.sharing(a).map { it.name }))
             a.serviceNames.mapNotNull(::daemon).lastOrNull()?.let { d ->
                 a.noticePattern?.let { p ->
                     d.log.tail(400).asReversed().firstNotNullOfOrNull { l -> p.find(l) }?.let { m ->
@@ -207,10 +232,17 @@ class Dashboard(private val ctx: Context) {
             return Response.ok()
         }
         val app = apps.catalog.firstOrNull { it.id == id } ?: return Response.error(404, "no module $id")
-        if (Jobs.running && action in setOf("install", "remove")) return Response.error(409, "another install is running")
+        if (Jobs.running && action in setOf("install", "remove", "clear")) return Response.error(409, "another install is running")
         when (action) {
             "install" -> ServerService.install(ctx, app)
-            "remove" -> ServerService.uninstall(ctx, app)
+            "remove" -> r.json().let {
+                val library = it.optBoolean("deleteLibrary")
+                ServerService.uninstall(ctx, app, it.optBoolean("deleteData") || library, library)
+            }
+            "clear" -> {
+                if (!apps.isInstalled(app)) return Response.error(409, "${app.name} isn't installed")
+                ServerService.clearData(ctx, app, r.json().optBoolean("deleteLibrary"))
+            }
             "enable", "disable" -> {
                 cfg.setDisabled(app.id, action == "disable")
                 ServerService.restart(ctx)

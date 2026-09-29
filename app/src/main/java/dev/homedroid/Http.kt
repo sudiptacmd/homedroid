@@ -192,6 +192,7 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
         201 -> "Created"
         206 -> "Partial Content"
         302 -> "Found"
+        304 -> "Not Modified"
         400 -> "Bad Request"
         401 -> "Unauthorized"
         403 -> "Forbidden"
