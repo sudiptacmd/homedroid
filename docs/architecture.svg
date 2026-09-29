@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 860" font-family="Inter, 'Noto Sans', 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Homedroid architecture</title>
+  <desc id="d">Clients reach services on the phone. Inside the Homedroid app, a foreground service runs the dashboard and a supervisor, which starts native daemons and apps under proot, in Alpine Linux or container images. Jellyfin's transcodes go through an Android-native FFmpeg to the phone's MediaCodec hardware encoder.</desc>
+  <style>
+    .t { font-size: 15px; }
+    .h { font-size: 17px; font-weight: 700; }
+    .m { font-size: 13px; }
+    .mono { font-family: 'JetBrains Mono', 'DejaVu Sans Mono', monospace; font-size: 13px; }
+    .panel { stroke-width: 1.5; }
+    .panel2 { stroke-width: 1.2; }
+    .green, .blue, .amber { stroke-width: 1.5; }
+    .label { font-size: 12px; font-weight: 700; letter-spacing: .06em; }
+    .arrow { stroke-width: 2; fill: none; marker-end: url(#a); }
+    .hw { stroke-width: 2.5; fill: none; marker-end: url(#ag); }
+    .bg { fill: #ffffff; }
+    .t, .h { fill: #16181d; }
+    .m, .mono, .label { fill: #667085; }
+    .panel { fill: #f5f6f8; stroke: #d0d5dd; }
+    .panel2 { fill: #eef2f6; stroke: #d0d5dd; }
+    .green { fill: #dafbe1; stroke: #1a7f37; }
+    .blue { fill: #e7efff; stroke: #2f6fed; }
+    .amber { fill: #fff4d6; stroke: #9a6700; }
+    .arrow { stroke: #8b95a5; }
+    .hw { stroke: #1a7f37; }
+    .hwtext { fill: #1a7f37; }
+    @media (prefers-color-scheme: dark) {
+    .bg { fill: #0d1117; }
+    .t, .h { fill: #e6edf3; }
+    .m, .mono, .label { fill: #8b949e; }
+    .panel { fill: #161b22; stroke: #30363d; }
+    .panel2 { fill: #1c2430; stroke: #30363d; }
+    .green { fill: #12261a; stroke: #7ee787; }
+    .blue { fill: #132039; stroke: #79a6ff; }
+    .amber { fill: #2a2210; stroke: #e3b341; }
+    .arrow { stroke: #6e7681; }
+    .hw { stroke: #7ee787; }
+    .hwtext { fill: #7ee787; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b95a5"/></marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker>
+  </defs>
+  <rect class="bg" width="1200" height="860"/>
+
+  <!-- Clients -->
+  <text class="label" x="40" y="38">YOUR DEVICES</text>
+  <rect class="panel2" x="40" y="50" width="250" height="66" rx="10"/>
+  <text class="t" x="58" y="78">Browser</text><text class="mono" x="58" y="100">dashboard :8800</text>
+  <rect class="panel2" x="310" y="50" width="250" height="66" rx="10"/>
+  <text class="t" x="328" y="78">Terminal</text><text class="mono" x="328" y="100">ssh / sftp :8022</text>
+  <rect class="panel2" x="580" y="50" width="250" height="66" rx="10"/>
+  <text class="t" x="598" y="78">Jellyfin, Immich, HA apps</text><text class="mono" x="598" y="100">:8096  :2283  :8123</text>
+  <rect class="panel2" x="850" y="50" width="310" height="66" rx="10"/>
+  <text class="t" x="868" y="78">The internet</text><text class="mono" x="868" y="100">Cloudflare Tunnel, no port forward</text>
+
+  <path class="arrow" d="M165 116 V168"/>
+  <path class="arrow" d="M435 116 V168"/>
+  <path class="arrow" d="M705 116 V168"/>
+  <path class="arrow" d="M1005 168 V116"/>
+
+  <!-- Phone -->
+  <rect class="panel" x="20" y="150" width="1160" height="690" rx="22"/>
+  <text class="label" x="44" y="178">ANDROID PHONE · NO ROOT</text>
+
+  <!-- Homedroid app -->
+  <rect class="green" x="44" y="192" width="1112" height="176" rx="14"/>
+  <text class="h" x="64" y="220">Homedroid app</text>
+  <text class="m" x="212" y="220">one APK · Kotlin, no dependencies</text>
+  <rect class="panel2" x="64" y="236" width="240" height="112" rx="10"/>
+  <text class="t" x="80" y="262">Phone UI</text>
+  <text class="m" x="80" y="284">status, apps, storage picker,</text>
+  <text class="m" x="80" y="302">turn modules on and off</text>
+  <rect class="panel2" x="320" y="236" width="250" height="112" rx="10"/>
+  <text class="t" x="336" y="262">ServerService</text>
+  <text class="m" x="336" y="284">foreground service, wakelocks,</text>
+  <text class="m" x="336" y="302">start on boot, install and</text>
+  <text class="m" x="336" y="320">deploy jobs, image pulls</text>
+  <rect class="panel2" x="586" y="236" width="260" height="112" rx="10"/>
+  <text class="t" x="602" y="262">Dashboard :8800</text>
+  <text class="m" x="602" y="284">single-page UI + JSON API,</text>
+  <text class="m" x="602" y="302">GitHub deployments,</text>
+  <text class="m" x="602" y="320">logs, restarts</text>
+  <rect class="panel2" x="862" y="236" width="274" height="112" rx="10"/>
+  <text class="t" x="878" y="262">Supervisor</text>
+  <text class="m" x="878" y="284">one process group per service,</text>
+  <text class="m" x="878" y="302">restart with backoff, logs,</text>
+  <text class="m" x="878" y="320">waits for removed SD cards</text>
+
+  <path class="arrow" d="M999 368 V410"/>
+  <path class="arrow" d="M999 390 H270 V410"/>
+  <path class="arrow" d="M999 390 H760 V540"/>
+
+  <!-- Native daemons -->
+  <rect class="blue" x="44" y="412" width="500" height="112" rx="14"/>
+  <text class="h" x="64" y="440">Native daemons</text>
+  <text class="m" x="210" y="440">built for Android, run from the APK</text>
+  <text class="mono" x="64" y="468">sshd :8022   caddy :8080   cloudflared</text>
+  <text class="mono" x="64" y="492">ffmpeg (bionic, MediaCodec)</text>
+
+  <!-- proot -->
+  <rect class="amber" x="44" y="542" width="1112" height="200" rx="14"/>
+  <text class="h" x="64" y="570">proot</text>
+  <text class="m" x="120" y="570">patched for the app sandbox: fork, netlink, routes, SysV IPC</text>
+  <rect class="panel2" x="64" y="586" width="560" height="136" rx="10"/>
+  <text class="t" x="80" y="612">Alpine Linux</text>
+  <text class="m" x="80" y="636">Jellyfin · qBittorrent · Home Assistant · Valkey</text>
+  <text class="m" x="80" y="658">Git deployments (Node.js, Python, static)</text>
+  <text class="mono" x="80" y="684">apk add anything · `alpine` in SSH</text>
+  <text class="mono" x="80" y="706">torrent &lt;magnet&gt;</text>
+  <rect class="panel2" x="640" y="586" width="496" height="136" rx="10"/>
+  <text class="t" x="656" y="612">Container images (no Docker)</text>
+  <text class="m" x="656" y="636">pulled from Docker Hub / ghcr.io,</text>
+  <text class="m" x="656" y="658">layers verified and unpacked in the app</text>
+  <text class="mono" x="656" y="684">Immich server · Immich Postgres</text>
+
+  <!-- Android system -->
+  <rect class="panel2" x="44" y="758" width="1112" height="66" rx="12"/>
+  <text class="h" x="64" y="786">Android</text>
+  <text class="m" x="140" y="786">MediaCodec hardware encoder · binder · internal storage, SD card, USB drive</text>
+  <text class="mono" x="64" y="808">/system /apex /vendor are bound into Alpine so bionic programs run there too</text>
+
+  <!-- Hardware transcoding path: Jellyfin (Alpine) -> ffmpeg (native) -> MediaCodec (Android) -->
+  <path class="hw" d="M520 586 V528"/>
+  <text class="m hwtext" x="530" y="552">transcode</text>
+  <path class="hw" d="M44 488 H32 V790 H40"/>
+  <text class="m hwtext" x="64" y="516">→ phone's video encoder</text>
+</svg>
