@@ -36,7 +36,7 @@ A 3-minute tour of every module on an Android 10 emulator. [Watch the full video
 
 ## Download
 
-Homedroid is in **beta (0.8.1)**. Get the APK from the
+Homedroid is in **beta (0.8.3)**. Get the APK from the
 [latest release](https://github.com/sudiptacmd/homedroid/releases):
 
 | Your phone | APK |
@@ -62,6 +62,7 @@ ones and keep your data.
 | **Immich** | Google Photos-style backup (face/object recognition off: too heavy for phones) | 2283 |
 | **qBittorrent** | Downloads in order into the media library (shown in Jellyfin as *Downloads*) and keeps seeding; `torrent <magnet>` over SSH | 8081 |
 | **Home Assistant** | Home automation (network and cloud integrations) | 8123 |
+| **IPCam** | Remote photos, video, flash, microphone listening/recording and spoken announcements | 8800 |
 | **Dashboard** | Manage everything from a browser: live load, files, a terminal, SSH access, deployments from Git | 8800 |
 
 - **Everything is a module.** Add, remove, turn on or off at any time, from the phone or the
@@ -126,6 +127,34 @@ with the tunnel token.
   history of both shells.
 
 It works without internet access: everything it needs is in the app.
+
+### Settings
+
+Open **Settings** in the dashboard to change the login password or whether the server
+starts when the phone boots. Password changes require the current password and sign out
+other browser sessions. The phone app continues to display the current dashboard password.
+
+### IPCam
+
+Enable **IPCam** in Modules to show it in the web dashboard sidebar. On the phone, tap
+**Enable IPCam camera and microphone access** and grant both permissions. The dashboard
+can then take photos, record video, switch the torch on or off, listen to or record the
+microphone, and **Announce** a typed message using the phone’s text-to-speech voice.
+Announcements use the current audio output and media volume.
+
+- Choose any camera exposed by Android; capture uses one camera at a time. Flash controls
+  appear only on cameras that support them.
+- Capture uses a partial wake lock and does not turn on the display or play app sounds.
+  Device-enforced sounds may still apply. Android’s privacy indicators and an IPCam
+  notification remain active; its **Stop IPCam** action ends camera and microphone access.
+- [Android requires camera and microphone foreground services to start while the app is visible](https://developer.android.com/develop/background-work/services/fgs/service-types).
+  After stopping IPCam or rebooting, enable access on the phone again.
+- Photos are JPEG, video is silent MP4, and microphone recordings are separate mono WAV
+  files. Download completed captures from the page; files stay in the app’s private
+  `camera` folder and are removed if the app is uninstalled. Recording stops after
+  30 minutes, when storage is low, or at 1 GB for video.
+- **Stop listening** mutes the browser. **Stop microphone** ends microphone capture and
+  saves any audio recording. Use headphones when listening to avoid feedback.
 
 ### Storage
 

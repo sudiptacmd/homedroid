@@ -31,6 +31,12 @@
             android:layout_height="wrap_content"
             android:text="@string/apps" />
 
+        <Button
+            android:id="@+id/camera"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/ipcam_start" />
+
         <Switch
             android:id="@+id/ssh"
             android:layout_width="match_parent"

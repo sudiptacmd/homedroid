@@ -75,6 +75,15 @@ class MainActivity : Activity() {
             if (ServerService.running) ServerService.restart(this)
             Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
         }
+        findViewById<Button>(R.id.camera).setOnClickListener {
+            if (CameraService.instance != null) {
+                CameraService.stop(this)
+            } else {
+                val permissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+                if (permissions.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) armCamera()
+                else requestPermissions(permissions, 2)
+            }
+        }
         battery.setOnClickListener {
             startActivity(
                 Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))
@@ -90,6 +99,20 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun armCamera() {
+        cfg.cameraEnabled = true
+        try { CameraService.arm(this) }
+        catch (e: Exception) { Toast.makeText(this, "IPCam: ${e.message}", Toast.LENGTH_LONG).show() }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 2) {
+            if (grantResults.size == 2 && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) armCamera()
+            else Toast.makeText(this, "Allow camera and microphone permissions to use IPCam", Toast.LENGTH_LONG).show()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         ui.post(tick)
@@ -101,6 +124,9 @@ class MainActivity : Activity() {
     }
 
     private fun refresh() {
+        findViewById<Switch>(R.id.autostart).apply { if (isChecked != cfg.autostart) isChecked = cfg.autostart }
+        findViewById<Button>(R.id.camera).setTextIfChanged(getString(
+            if (CameraService.instance == null) R.string.ipcam_start else R.string.ipcam_stop))
         val sv = ServerService.supervisor
         val s = StringBuilder()
         s.append(if (sv != null) "● running\n" else "○ stopped\n")
@@ -114,8 +140,9 @@ class MainActivity : Activity() {
         val ip = dev.ips.firstOrNull() ?: "<phone-ip>"
         s.append("\nIP    ").append(dev.ips.joinToString().ifEmpty { "none" }).append('\n')
         if (sv != null) {
-            s.append("Panel http://$ip:${cfg.dashboardPort}  password ${cfg.dashboardPassword}\n")
+            s.append("Panel http://$ip:${cfg.dashboardPort}\n")
         }
+        s.append("Pass  ${cfg.dashboardPassword}\n")
         if (cfg.sshEnabled) s.append("SSH   ssh -p ${cfg.sshPort} $ip\n")
         if (cfg.webEnabled) s.append("Web   http://$ip:${cfg.webPort}\n")
         s.append("Batt  ${dev.batteryPercent}%${if (dev.charging) " ⚡" else ""}  ${dev.batteryTempC}°C\n")

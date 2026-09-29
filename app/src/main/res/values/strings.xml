@@ -13,4 +13,6 @@
     <string name="battery">Allow running in background</string>
     <string name="logs">Logs</string>
     <string name="phantom_tip">Android 12+ kills apps with many child processes. Run once from a PC:\n\nAndroid 14+: Developer options → Disable child process restrictions\n\nAndroid 12–13:\nadb shell device_config set_sync_disabled_for_tests persistent\nadb shell device_config put activity_manager max_phantom_processes 2147483647</string>
+    <string name="ipcam_start">Enable IPCam camera and microphone access</string>
+    <string name="ipcam_stop">Stop IPCam access</string>
 </resources>

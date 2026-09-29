@@ -7,6 +7,7 @@
 <title>Homedroid</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
+@font-face { font-family: 'JetBrains Mono'; src: url('/vendor/JetBrainsMono-Regular.woff2?v=2.304') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 /* Design tokens. Light by default; dark follows the system unless a theme is picked. */
 :root {
   --bg: #f4f5f7; --surface: #ffffff; --surface-2: #f8f9fb; --hover: #eef0f4; --line: #e3e6eb; --line-2: #d3d8e0;
@@ -48,7 +49,7 @@ a:hover { text-decoration: underline; }
 svg.i { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .hidden { display: none !important; }
 .muted { color: var(--muted); }
-.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+.mono { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 
@@ -134,7 +135,7 @@ label.check { display: flex; align-items: flex-start; gap: 10px; font-size: 13.5
 label.check:hover { background: var(--surface-2); }
 label.check input { margin-top: 2px; }
 .hint { font-size: 12.5px; color: var(--muted); }
-pre { margin: 0; background: var(--code); border-radius: var(--r-sm); padding: 12px; overflow: auto; font: 12px/1.55 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
+pre { margin: 0; background: var(--code); border-radius: var(--r-sm); padding: 12px; overflow: auto; font: 12px/1.55 "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
 .notice { display: flex; gap: 8px; align-items: flex-start; background: var(--warn-soft); color: var(--text); border-radius: var(--r-sm); padding: 8px 10px; font-size: 12.5px; word-break: break-word; }
 .notice svg.i { color: var(--warn); margin-top: 1px; width: 16px; height: 16px; }
 .meter { height: 6px; border-radius: 99px; background: var(--code); overflow: hidden; }
@@ -267,10 +268,24 @@ dialog[open] { animation: pop .14s var(--ease); }
 .login .brand img { width: 40px; height: 40px; }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+/* IPCam and settings use the dashboard's shared cards, fields and buttons. */
+.ipcam-stack { display: flex; flex-direction: column; gap: 12px; }
+.ipcam-actions { flex-wrap: wrap; }
+.ipcam-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ipcam-file { overflow-wrap: anywhere; }
+.ipcam-title { font-weight: 650; font-size: 15px; }
+@media (max-width: 600px) { .ipcam-grid { grid-template-columns: 1fr; } }
+@media (max-width: 860px) {
+  .tabbar { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); overflow-x: auto; }
+}
 </style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7h4l2-3h4l2 3h4a1 1 0 0 1 1 1v11H3V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="4"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h6m4 0h6M4 17h10m4 0h2"/><circle cx="12" cy="7" r="2"/><circle cx="16" cy="17" r="2"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11v1a6 6 0 0 0 12 0v-1M12 18v3M9 21h6"/></symbol>
+  <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM17 8a6 6 0 0 1 0 8M20 5a10 10 0 0 1 0 14"/></symbol>
   <symbol id="i-overview" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
   <symbol id="i-modules" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></symbol>
   <symbol id="i-deploy" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="7" r="2"/><path d="M6 7v10"/><path d="M18 9c0 5-7 4-11 8.5"/></symbol>
@@ -333,6 +348,8 @@ dialog[open] { animation: pop .14s var(--ease); }
       <a href="#deploys" data-tab="deploys"><svg class="i"><use href="#i-deploy"/></svg>Deployments</a>
       <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
       <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal &amp; SSH</a>
+      <a href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg>IPCam</a>
+      <a href="#settings" data-tab="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</a>
     </nav>
     <div class="side-foot">
       <div class="hint ellipsis" id="sideDevice"></div>
@@ -373,6 +390,49 @@ dialog[open] { animation: pop .14s var(--ease); }
       <div class="grid" id="modCore"></div>
       <h2>Apps</h2>
       <div class="grid" id="modApps"></div>
+    </section>
+
+    <section data-view="settings" class="hidden">
+      <div class="page-head"><div><h1>Settings</h1><div class="sub">Startup and dashboard access.</div></div></div>
+      <form class="card pad ipcam-stack" id="settingsForm">
+        <label class="check"><input id="settingsAutostart" type="checkbox" style="width:auto"> Start server when the phone boots</label>
+        <div class="hint">IPCam access must be enabled on the phone after each restart.</div>
+        <h2>Dashboard password</h2>
+        <label class="field">Current password<input id="currentPassword" type="password" autocomplete="current-password"></label>
+        <label class="field">New password<input id="newPassword" type="password" minlength="12" maxlength="128" autocomplete="new-password" placeholder="Leave blank to keep current password"></label>
+        <label class="field">Confirm new password<input id="confirmPassword" type="password" maxlength="128" autocomplete="new-password"></label>
+        <div class="hint">Use 12–128 characters. The current password remains visible in the phone app. Changing it signs out other browser sessions.</div>
+        <div class="row ipcam-actions"><button class="btn primary" id="saveSettings" type="submit">Save settings</button></div>
+        <div id="settingsMessage" role="status"></div>
+      </form>
+      <h2>Connections</h2>
+      <div class="card pad hint" id="settingsConnections"></div>
+    </section>
+
+    <section data-view="camera" class="hidden">
+      <div class="page-head"><div><h1>IPCam</h1><div class="sub">Cameras, microphone and announcements from your phone.</div></div></div>
+      <div id="cameraStatus" class="notice" role="status"></div>
+      <p class="hint">Enable IPCam access in the phone app, then you can turn the display off. Android privacy indicators stay active. Video and microphone audio are saved separately.</p>
+      <div class="grid" id="cameraControls"></div>
+      <div class="ipcam-grid"><div><h2>Microphone</h2>
+      <div class="card pad ipcam-stack">
+        <div id="microphoneStatus" role="status"></div>
+        <div class="row ipcam-actions">
+          <button class="btn" id="listenMic"><svg class="i"><use href="#i-audio"/></svg>Listen</button>
+          <button class="btn primary" id="recordMic"><svg class="i"><use href="#i-mic"/></svg>Record microphone</button>
+          <button class="btn danger" id="stopMic">Stop microphone</button>
+        </div>
+        <div class="hint">Use Stop microphone to end remote access; Stop listening only mutes this browser. Audio recordings stop after 30 minutes. Use headphones when listening to avoid feedback.</div>
+      </div>
+      </div><div><h2>Announce</h2>
+      <form class="card pad ipcam-stack" id="announceForm">
+        <label class="field">Message<textarea id="announcement" rows="2" maxlength="500" required placeholder="Enter a message to speak on the phone"></textarea></label>
+        <div class="row ipcam-actions"><button class="btn primary" id="announceButton" type="submit"><svg class="i"><use href="#i-speaker"/></svg>Announce</button></div>
+        <div class="hint">Uses the phone’s text-to-speech voice, media volume and current audio output.</div>
+      </form>
+      </div></div><h2>Saved captures</h2>
+      <div class="card pad ipcam-stack" id="cameraFiles"></div>
+      <p class="hint">Latest 100 captures. Saved in the app’s camera folder; download files to keep a copy. Video stops at 30 minutes or 1 GB.</p>
     </section>
 
     <section data-view="deploys" class="hidden">
@@ -462,6 +522,8 @@ dialog[open] { animation: pop .14s var(--ease); }
     <a href="#deploys" data-tab="deploys"><svg class="i"><use href="#i-deploy"/></svg>Deploy</a>
     <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
     <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal</a>
+      <a href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg>IPCam</a>
+      <a href="#settings" data-tab="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</a>
   </nav>
 </div>
 
@@ -579,11 +641,13 @@ applyTheme();
 // ---- Routing and polling ---------------------------------------------------------------
 // The tab (and the open folder) live in the URL hash, so reloads and the back button work.
 // Only the visible tab polls, never while the page is hidden, faster only while a job runs.
-const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000};
+const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000, camera: 3000, settings: 0};
 let tab = 'overview', authed = false, pollTimer = 0, seq = 0, busyJob = false;
 function route() {
   const [t, ...rest] = location.hash.slice(1).split('/').map(s => { try { return decodeURIComponent(s); } catch (e) { return s; } });
+  if (tab === 'camera' && t !== 'camera') stopListening();
   tab = t in POLL ? t : 'overview';
+  if (tab === 'settings') settingsLoaded = false;
   $$('[data-tab]').forEach(a => a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
   $$('[data-view]').forEach(s => s.classList.toggle('hidden', s.dataset.view !== tab));
   if (tab === 'files') { files.root = rest[0] || files.root; files.path = rest.slice(1).join('/'); }
@@ -597,7 +661,10 @@ async function refresh() {
   if (!authed) return;
   const my = ++seq;
   try {
-    if (tab === 'overview') await renderOverview();
+    if (!syncCameraNavigation(await api('settings'))) return;
+    if (tab === 'camera') await renderCamera();
+    else if (tab === 'settings') await renderSettings();
+    else if (tab === 'overview') await renderOverview();
     else if (tab === 'modules') await renderModules();
     else if (tab === 'deploys') await renderDeploys();
     else if (tab === 'files') await renderFiles();
@@ -610,6 +677,8 @@ async function refresh() {
 document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(pollTimer); else refresh(); });
 
 function showLogin() {
+  stopListening(); settingsLoaded = false;
+  ['#currentPassword', '#newPassword', '#confirmPassword'].forEach(id => $(id).value = '');
   authed = false; clearTimeout(pollTimer);
   $('#appView').classList.add('hidden'); $('#loginView').classList.remove('hidden');
   $('#password').focus();
@@ -712,7 +781,7 @@ async function renderOverview() {
 }
 
 // ---- Modules ---------------------------------------------------------------------------
-const COLORS = {ssh: '#475569', web: '#0f766e', tunnel: '#ea580c', jellyfin: '#7c3aed', qbittorrent: '#2563eb', homeassistant: '#0891b2', immich: '#db2777'};
+const COLORS = {camera: '#0f766e', ssh: '#475569', web: '#0f766e', tunnel: '#ea580c', jellyfin: '#7c3aed', qbittorrent: '#2563eb', homeassistant: '#0891b2', immich: '#db2777'};
 let modules = null;
 function modCard(x) {
   const busy = modules.job.running;
@@ -733,6 +802,7 @@ function modCard(x) {
     ${x.notice ? `<div class="notice">${icon('alert')}<span>${esc(x.notice)}</span></div>` : ''}
     <div class="mod-foot">
       ${!x.installed ? `<button class="btn primary sm" data-act="install" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('download')}Install</button>` : ''}
+      ${x.id === 'camera' && x.enabled ? `<a class="btn sm" href="#camera">${icon('camera')}Open IPCam</a>` : ''}
       ${openable ? `<a class="btn sm" href="${appUrl(x.port)}" target="_blank" rel="noopener">${icon('external')}Open</a>` : ''}
       ${x.kind === 'app' && x.installed ? `
         <button class="btn ghost sm" style="margin-left:auto" data-act="clearMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>Clear data</button>
@@ -1023,6 +1093,7 @@ const term = {kind: 'phone', xterm: null, fit: null, ws: null, loading: null, hi
 function loadXterm() {
   const add = (tag, attrs) => new Promise((ok, no) => { const el = Object.assign(document.createElement(tag), attrs, {onload: ok, onerror: no}); document.head.append(el); });
   return term.loading ??= Promise.all([
+    document.fonts.load('13.5px "JetBrains Mono"'),
     add('link', {rel: 'stylesheet', href: '/vendor/xterm.css?v=6.0.0'}),
     add('script', {src: '/vendor/xterm.js?v=6.0.0'}).then(() => add('script', {src: '/vendor/addon-fit.js?v=0.11.0'})),
   ]);
@@ -1039,7 +1110,7 @@ async function termStart() {
   if (!term.xterm) {
     box.innerHTML = '';
     term.xterm = new Terminal({cursorBlink: true, fontSize: 13.5, scrollback: 3000, allowProposedApi: false,
-      fontFamily: 'ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace',
+      fontFamily: '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace',
       theme: {background: '#0c0e12', foreground: '#e8eaef', cursor: '#5b8cff', selectionBackground: '#2e3542'}});
     term.fit = new FitAddon.FitAddon();
     term.xterm.loadAddon(term.fit);
@@ -1147,6 +1218,139 @@ document.addEventListener('click', e => {
   e.preventDefault();
   ACT[t.dataset.act]?.(t, e);
 });
+
+// ---- IPCam and settings ----------------------------------------------------------------
+function syncCameraNavigation(settings) {
+  const enabled = !!settings.cameraEnabled;
+  $$('[data-camera-nav]').forEach(a => a.classList.toggle('hidden', !enabled));
+  if (!enabled && tab === 'camera') { stopListening(); location.hash = '#overview'; return false; }
+  return true;
+}
+function cameraAction(path, opts, done) { return run(api(path, {method: 'POST', ...opts}), done); }
+let settingsLoaded = false;
+async function renderSettings() {
+  if (settingsLoaded) return;
+  try {
+    const data = await api('settings');
+    $('#settingsAutostart').checked = data.autostart;
+    $('#settingsConnections').textContent = `Dashboard: ${data.dashboardPort} · SSH: ${data.sshPort} · Web hosting: ${data.webPort}`;
+    settingsLoaded = true;
+  } catch (e) { $('#settingsMessage').textContent = e.message; }
+}
+$('#settingsForm').onsubmit = async e => {
+  e.preventDefault();
+  const password = $('#newPassword').value;
+  if (password !== $('#confirmPassword').value) { $('#settingsMessage').textContent = 'New passwords do not match'; return; }
+  if (password && (password.length < 12 || password.length > 128 || !$('#currentPassword').value)) {
+    $('#settingsMessage').textContent = 'Enter your current password and a new password of 12–128 characters'; return;
+  }
+  $('#saveSettings').disabled = true;
+  try {
+    await api('settings', {method: 'POST', body: {autostart: $('#settingsAutostart').checked, password, currentPassword: $('#currentPassword').value}});
+    $('#currentPassword').value = ''; $('#newPassword').value = ''; $('#confirmPassword').value = '';
+    $('#settingsMessage').textContent = password ? 'Settings saved. Other sessions have been signed out. The phone now shows the new password.' : 'Settings saved';
+  } catch (err) { $('#settingsMessage').textContent = err.message; }
+  finally { $('#saveSettings').disabled = false; }
+};
+
+let cameraState = {}, audioContext = null, audioTimer = null, audioSequence = 0, audioTime = 0;
+let listening = false, audioGeneration = 0;
+async function renderCamera() {
+  try {
+    const state = await api('camera'); cameraState = state;
+    $('#cameraStatus').textContent = !state.armed ? 'Open Homedroid on the phone and tap Enable IPCam camera and microphone access.'
+      : state.error || (state.recording ? 'Recording video…' : state.busy ? 'Capturing…' : 'IPCam ready');
+    const controls = state.cameras.map(c => {
+      const disabled = !state.armed || state.busy || state.recording;
+      return `<div class="card pad ipcam-stack"><div class="ipcam-title">${esc(c.name)}</div>
+        <label class="check"><input type="checkbox" data-flash="${esc(c.id)}" style="width:auto" ${!c.flash || disabled ? 'disabled' : ''}> Flash during capture${!c.flash ? ' (unavailable)' : ''}</label>
+        <div class="row ipcam-actions">
+          <button class="btn" data-camera="${esc(c.id)}" data-action="photo" ${disabled ? 'disabled' : ''}>Take photo</button>
+          <button class="btn primary" data-camera="${esc(c.id)}" data-action="record" ${disabled ? 'disabled' : ''}>Record video</button>
+          ${c.flash ? `<button class="btn" data-camera="${esc(c.id)}" data-action="torch" ${disabled ? 'disabled' : ''}>${state.torch === c.id ? 'Turn flash off' : 'Turn flash on'}</button>` : ''}
+          ${state.selected === c.id ? '<button class="btn danger" data-action="stop">Stop capture</button>' : ''}
+        </div></div>`;
+    }).join('') || '<div class="hint">No cameras exposed by Android.</div>';
+    // Preserve flash selection and keyboard focus while polling unchanged controls.
+    const container = $('#cameraControls');
+    if (container.dataset.markup !== controls) {
+      const checked = new Set([...container.querySelectorAll('[data-flash]:checked')].map(x => x.dataset.flash));
+      container.innerHTML = controls; container.dataset.markup = controls;
+      container.querySelectorAll('[data-flash]').forEach(x => x.checked = checked.has(x.dataset.flash));
+    }
+    const mic = state.microphone || {};
+    $('#microphoneStatus').textContent = mic.error || (mic.recording ? 'Recording microphone…' : mic.running ? 'Microphone active' : 'Microphone stopped');
+    $('#listenMic').textContent = listening ? 'Stop listening' : 'Listen';
+    $('#listenMic').disabled = !state.armed;
+    $('#recordMic').disabled = !state.armed || mic.running;
+    $('#stopMic').disabled = !state.armed || !mic.running;
+    $('#announceButton').disabled = !state.armed;
+    $('#cameraFiles').innerHTML = state.files.map(f => `<div class="row ipcam-actions ipcam-file"><a href="/api/camera/files/${encodeURIComponent(f.name)}" download>${esc(f.name)}</a><span class="hint">${(f.bytes / 1048576).toFixed(1)} MB</span></div>`).join('') || '<div class="hint">No captures yet.</div>';
+    if (!mic.running && listening) stopListening();
+  } catch (e) { $('#cameraStatus').textContent = e.message; }
+}
+$('#cameraControls').onclick = async e => {
+  const button = e.target.closest('button[data-action]'); if (!button) return;
+  const id = button.dataset.camera, action = button.dataset.action;
+  const flash = [...$('#cameraControls').querySelectorAll('[data-flash]')].find(x => x.dataset.flash === id)?.checked || false;
+  button.disabled = true;
+  await cameraAction('camera/' + action, {body: {id, flash, enabled: cameraState.torch !== id}}, action === 'photo' ? 'Taking photo…' : null);
+  button.disabled = false;
+  await renderCamera();
+};
+function stopListening() {
+  listening = false; audioGeneration++; clearTimeout(audioTimer);
+  if (audioContext) audioContext.close().catch(() => {});
+  audioContext = null;
+  const button = $('#listenMic'); if (button) button.textContent = 'Listen';
+}
+async function pollAudio(generation) {
+  if (!listening || generation !== audioGeneration) return;
+  try {
+    const data = await api('camera/audio?after=' + audioSequence);
+    if (!listening || generation !== audioGeneration) return;
+    if (!data.running) { stopListening(); return; }
+    for (const chunk of data.chunks) {
+      const raw = atob(chunk.pcm), bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
+      const view = new DataView(bytes.buffer);
+      const buffer = audioContext.createBuffer(1, Math.floor(bytes.length / 2), data.rate);
+      const samples = buffer.getChannelData(0);
+      for (let i = 0; i < samples.length; i++) samples[i] = view.getInt16(i * 2, true) / 32768;
+      const source = audioContext.createBufferSource(); source.buffer = buffer; source.connect(audioContext.destination);
+      audioTime = Math.max(audioTime, audioContext.currentTime + 0.05);
+      // Drop old backlog after a suspended tab or slow connection.
+      if (audioTime < audioContext.currentTime + 1) { source.start(audioTime); audioTime += buffer.duration; }
+      audioSequence = chunk.sequence;
+    }
+    audioTimer = setTimeout(() => pollAudio(generation), 150);
+  } catch (e) { stopListening(); toast(e.message); }
+}
+$('#listenMic').onclick = async () => {
+  if (listening) { stopListening(); return; }
+  const generation = ++audioGeneration;
+  $('#listenMic').disabled = true;
+  try {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    await audioContext.resume();
+    if (generation !== audioGeneration) return;
+    if (!cameraState.microphone?.running) await api('camera/microphone/start', {method: 'POST', body: {record: false}});
+    const initial = await api('camera/audio');
+    if (generation !== audioGeneration) return;
+    audioSequence = initial.sequence;
+    audioTime = 0; listening = true;
+    $('#listenMic').textContent = 'Stop listening';
+    pollAudio(generation); await renderCamera();
+  } catch (e) { stopListening(); toast(e.message); }
+  finally { $('#listenMic').disabled = !cameraState.armed; }
+};
+$('#recordMic').onclick = () => cameraAction('camera/microphone/start', {body: {record: true}}, 'Recording microphone');
+$('#stopMic').onclick = () => { stopListening(); cameraAction('camera/microphone/stop', {}, 'Microphone stopped'); };
+$('#announceForm').onsubmit = async e => {
+  e.preventDefault();
+  $('#announceButton').disabled = true;
+  await cameraAction('camera/announce', {body: {text: $('#announcement').value}}, 'Announcement requested');
+  await renderCamera();
+};
 
 api('status').then(showApp).catch(showLogin);
 </script>

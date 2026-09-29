@@ -143,6 +143,7 @@ class ServerService : Service() {
         worker.shutdown()
         installer.shutdownNow()
         scheduler.shutdownNow()
+        CameraService.stop(this)
         dashboard?.stop()
         wifiLock?.release()
         wakeLock?.release()

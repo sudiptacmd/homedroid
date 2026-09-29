@@ -6,6 +6,10 @@ import android.content.Context
 class Config(ctx: Context) {
     private val prefs = ctx.getSharedPreferences("config", Context.MODE_PRIVATE)
 
+    var cameraEnabled: Boolean
+        get() = prefs.getBoolean("camera", false)
+        set(v) = prefs.edit().putBoolean("camera", v).apply()
+
     var autostart: Boolean
         get() = prefs.getBoolean("autostart", true)
         set(v) = prefs.edit().putBoolean("autostart", v).apply()
@@ -36,10 +40,11 @@ class Config(ctx: Context) {
     fun setDisabled(id: String, off: Boolean) = prefs.edit().putBoolean("disabled.$id", off).apply()
 
     /** Password for the web dashboard, generated on first use. */
-    val dashboardPassword: String
+    var dashboardPassword: String
         get() = prefs.getString("dashboard_password", null) ?: randomPassword().also {
             prefs.edit().putString("dashboard_password", it).apply()
         }
+        set(value) = prefs.edit().putString("dashboard_password", value).apply()
 
     private fun randomPassword(): String {
         val alphabet = "abcdefghijkmnpqrstuvwxyz23456789"

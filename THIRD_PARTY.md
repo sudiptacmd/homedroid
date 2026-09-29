@@ -15,6 +15,7 @@ are the patch files in `native/patches/`.
 | github.com/creack/pty | see `native/sshd/go.sum` | MIT | https://github.com/creack/pty |
 | github.com/pkg/sftp | see `native/sshd/go.sum` | BSD-2-Clause | https://github.com/pkg/sftp |
 | xterm.js and its fit addon (web terminal, in `app/src/main/assets/vendor`) | 6.0.0 / 0.11.0 | MIT | https://github.com/xtermjs/xterm.js |
+| JetBrains Mono (bundled terminal font) | 2.304 | OFL-1.1 | https://github.com/JetBrains/JetBrainsMono |
 
 ## Downloaded at run time
 

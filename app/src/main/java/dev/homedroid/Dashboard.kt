@@ -68,7 +68,7 @@ class Dashboard(private val ctx: Context) {
                 java.util.zip.GZIPOutputStream(out).use { z -> ctx.assets.open("vendor/$name").use { it.copyTo(z) } }
             }.toByteArray()
         }
-        val type = if (name.endsWith(".css")) "text/css" else "text/javascript"
+        val type = when { name.endsWith(".woff2") -> "font/woff2"; name.endsWith(".css") -> "text/css"; else -> "text/javascript" }
         val headers = mapOf("Cache-Control" to "max-age=2592000, immutable", "Vary" to "Accept-Encoding")
         return if (r.headers["accept-encoding"].orEmpty().contains("gzip")) Response(200, gz, type, headers + ("Content-Encoding" to "gzip"))
         else Response(200, ctx.assets.open("vendor/$name").use { it.readBytes() }, type, headers)
@@ -86,11 +86,14 @@ class Dashboard(private val ctx: Context) {
                 r.cookie(COOKIE)?.let(sessions::remove)
                 Response.json(JSONObject().put("ok", true), headers = mapOf("Set-Cookie" to "$COOKIE=; Max-Age=0; Path=/"))
             }
+            seg.firstOrNull() == "camera" -> cameraRoute(r, seg.drop(1))
             r.method == "GET" && seg == listOf("status") -> Response.json(status())
             // Everything the overview shows, in one request instead of four.
             r.method == "GET" && seg == listOf("overview") -> Response.json(
                 JSONObject().put("status", status()).put("modules", modules()).put("deploys", deploysJson()).put("services", servicesJson())
             )
+            r.method == "GET" && seg == listOf("settings") -> Response.json(settings())
+            r.method == "POST" && seg == listOf("settings") -> saveSettings(r)
             r.method == "GET" && seg == listOf("modules") -> Response.json(modules())
             r.method == "POST" && seg.size == 3 && seg[0] == "modules" -> moduleAction(seg[1], seg[2], r)
             r.method == "GET" && seg.size == 3 && seg[0] == "services" && seg[2] == "logs" -> logs(seg[1])
@@ -115,10 +118,15 @@ class Dashboard(private val ctx: Context) {
     // --- auth ---------------------------------------------------------------------------
 
     private fun login(r: Request): Response {
-        if (!passwordMatches(r.json().optString("password"))) {
-            Thread.sleep(1000) // slow down guessing
-            return Response.error(401, "wrong password")
+        val password = r.json().optString("password")
+        synchronized(sessions) {
+            if (passwordMatches(password)) return newSession()
         }
+        Thread.sleep(1000) // slow down guessing without blocking password changes
+        return Response.error(401, "wrong password")
+    }
+
+    private fun newSession(): Response {
         val token = ByteArray(32).also(SecureRandom()::nextBytes).joinToString("") { "%02x".format(it) }
         synchronized(sessions) {
             sessions += token
@@ -222,6 +230,10 @@ class Dashboard(private val ctx: Context) {
             o.put("services", jsonArray(a.serviceNames))
             appState(o, a)
         })
+        core.put(JSONObject().put("id", "camera").put("name", "IPCam")
+            .put("description", "Remote photos, video, flash, microphone and speaker announcements. Enable access in the phone app.")
+            .put("port", 0).put("kind", "core").put("installed", true).put("enabled", cfg.cameraEnabled)
+            .put("state", if (CameraService.instance != null) "ready" else "needs phone setup"))
         return JSONObject().put("core", core).put("apps", catalog).put("job", job())
     }
 
@@ -245,6 +257,12 @@ class Dashboard(private val ctx: Context) {
     }
 
     private fun moduleAction(id: String, action: String, r: Request): Response {
+        if (id == "camera") {
+            if (action !in setOf("enable", "disable")) return Response.error(400, "IPCam can only be enabled or disabled")
+            cfg.cameraEnabled = action == "enable"
+            if (!cfg.cameraEnabled) CameraService.stop(ctx)
+            return Response.ok()
+        }
         CORE.firstOrNull { it.id == id }?.let { m ->
             when (action) {
                 "enable", "disable" -> setCoreEnabled(m.id, action == "enable", r)?.let { return it }
@@ -296,6 +314,66 @@ class Dashboard(private val ctx: Context) {
         return null
     }
 
+    private fun settings() = JSONObject().put("autostart", cfg.autostart).put("cameraEnabled", cfg.cameraEnabled)
+        .put("dashboardPort", cfg.dashboardPort).put("sshPort", cfg.sshPort).put("webPort", cfg.webPort)
+
+    private fun saveSettings(r: Request): Response = synchronized(sessions) {
+        val body = r.json()
+        val password = body.optString("password")
+        if (password.isNotEmpty()) {
+            if (!passwordMatches(body.optString("currentPassword"))) return Response.error(403, "Current password is incorrect")
+            if (password.length !in 12..128 || password.any { it.isISOControl() }) {
+                return Response.error(400, "Use 12–128 characters without control characters")
+            }
+        }
+        if (body.has("autostart") && body.opt("autostart") !is Boolean) return Response.error(400, "Invalid startup preference")
+        if (body.has("autostart")) cfg.autostart = body.getBoolean("autostart")
+        if (password.isNotEmpty()) {
+            synchronized(sessions) {
+                cfg.dashboardPassword = password
+                sessions.clear()
+                return newSession()
+            }
+        }
+        return Response.ok()
+    }
+
+    private fun cameraRoute(r: Request, seg: List<String>): Response {
+        if (!cfg.cameraEnabled) return Response.error(409, "Enable the IPCam module first")
+        val service = CameraService.instance
+        val dir = CameraService.directory(ctx)
+        if (r.method == "GET" && seg.isEmpty()) {
+            val state = service?.request("status")?.let {
+                if (it.status == 200) JSONObject(String(it.body)) else null
+            } ?: JSONObject().put("armed", false)
+            state.put("cameras", jsonArray(CameraService.cameras(ctx)))
+            state.put("files", jsonArray(dir.listFiles().orEmpty()
+                .filter { it.isFile && it.extension in setOf("jpg", "mp4", "wav") }
+                .sortedByDescending { it.name }.take(100).map {
+                    JSONObject().put("name", it.name).put("bytes", it.length())
+                }))
+            return Response.json(state)
+        }
+        if (r.method == "GET" && seg == listOf("audio")) {
+            return service?.let { Response.json(it.audio(r.query["after"]?.toLongOrNull() ?: 0)) }
+                ?: Response.error(409, "Enable IPCam access in the phone app")
+        }
+        if (r.method == "GET" && seg.size == 2 && seg[0] == "files") {
+            val name = seg[1]
+            if (!Regex("[0-9]+-[0-9a-f-]+\\.(jpg|mp4|wav)").matches(name)) return Response.error(404, "No such capture")
+            val file = java.io.File(dir, name)
+            if (!file.isFile) return Response.error(404, "No such capture")
+            val type = when (file.extension) { "jpg" -> "image/jpeg"; "wav" -> "audio/wav"; else -> "video/mp4" }
+            return Response(200, byteArrayOf(), type, mapOf("Content-Disposition" to "attachment; filename=\"$name\""),
+                stream = { out -> file.inputStream().use { it.copyTo(out) } }, length = file.length())
+        }
+        if (r.method == "POST" && seg.joinToString("/") in setOf("photo", "record", "stop", "torch", "microphone/start", "microphone/stop", "announce")) {
+            return service?.request(seg.joinToString("/"), r.json())
+                ?: Response.error(409, "Enable IPCam camera and microphone access in the phone app first")
+        }
+        return Response.error(404, "No such IPCam endpoint")
+    }
+
     private fun createDeploy(r: Request): Response {
         val d = try {
             deploys.create(r.json())
@@ -326,7 +404,7 @@ class Dashboard(private val ctx: Context) {
 
     companion object {
         private const val COOKIE = "homedroid_session"
-        private val VENDOR = setOf("xterm.js", "xterm.css", "addon-fit.js")
+        private val VENDOR = setOf("xterm.js", "xterm.css", "addon-fit.js", "JetBrainsMono-Regular.woff2")
         private const val MAX_SESSIONS = 20
 
         private val SECURITY_HEADERS = mapOf(
