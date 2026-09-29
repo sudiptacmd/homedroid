@@ -7,3 +7,7 @@ local.properties
 # Built by native/build.sh
 app/src/main/jniLibs/
 native/.work/
+
+# Release signing; see keystore.properties.example
+keystore.properties
+*.jks
