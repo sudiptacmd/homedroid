@@ -39,9 +39,7 @@ class FileBrowser(private val ctx: Context, private val paths: Paths) {
     fun roots(): List<FileRoot> = buildList {
         for ((key, group) in apps.installed().filter { it.storagePath != null }.groupBy { it.storageKey }) {
             val app = group.first()
-            val dir = cfg.storageDir(app)?.let(::File)
-                ?: if (app.services.isEmpty()) File(alpine.root, app.storagePath!!.trimStart('/'))
-                else File(apps.dataDir(app), "storage")
+            val dir = apps.libraryDir(app, cfg, alpine)!!
             add(FileRoot(key.lowercase(), "${app.storageLabel} (${group.joinToString { it.name }})", dir))
         }
         add(FileRoot("home", "Home (SSH, web hosting in www)", paths.home))

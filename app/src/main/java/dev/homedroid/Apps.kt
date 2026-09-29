@@ -35,6 +35,8 @@ class AppDef(
     val size: String,
     val install: String,
     val uninstall: String,
+    /** Paths in Alpine with the app's settings and database, wiped by "clear data". */
+    val data: List<String>,
     val run: List<String>,
     val env: Map<String, String>,
     val storagePath: String?,
@@ -82,6 +84,16 @@ class Apps(ctx: Context, private val paths: Paths) {
         return f.readText().trim()
     }
 
+    /** The folder with [app]'s library (media, photos), wherever the user put it; null if it has none. */
+    fun libraryDir(app: AppDef, cfg: Config, alpine: Alpine): File? {
+        val path = app.storagePath ?: return null
+        return cfg.storageDir(app)?.let(::File)
+            ?: if (app.services.isEmpty()) File(alpine.root, path.trimStart('/')) else File(dataDir(app), "storage")
+    }
+
+    /** Other installed apps using the same library as [app]. */
+    fun sharing(app: AppDef) = installed().filter { it.id != app.id && app.storageShared != null && it.storageKey == app.storageKey }
+
     fun isInstalled(app: AppDef) = File(dir, app.id).exists()
 
     fun installed() = catalog.filter(::isInstalled)
@@ -103,6 +115,7 @@ class Apps(ctx: Context, private val paths: Paths) {
                 size = o.optString("size"),
                 install = o.getString("install"),
                 uninstall = o.optString("uninstall", "true"),
+                data = o.optJSONArray("data")?.strings().orEmpty(),
                 run = o.getJSONArray("run").let { a -> (0 until a.length()).map(a::getString) },
                 env = o.optJSONObject("env")?.toMap().orEmpty(),
                 storagePath = o.optJSONObject("storage")?.getString("path"),

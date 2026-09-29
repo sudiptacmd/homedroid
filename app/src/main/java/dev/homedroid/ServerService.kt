@@ -24,9 +24,12 @@ class ServerService : Service() {
         private const val ACTION_RESTART = "dev.homedroid.RESTART"
         private const val ACTION_INSTALL = "dev.homedroid.INSTALL"
         private const val ACTION_UNINSTALL = "dev.homedroid.UNINSTALL"
+        private const val ACTION_CLEAR = "dev.homedroid.CLEAR"
         private const val ACTION_DEPLOY = "dev.homedroid.DEPLOY"
         private const val ACTION_UNDEPLOY = "dev.homedroid.UNDEPLOY"
         private const val EXTRA_APP = "app"
+        private const val EXTRA_DELETE_DATA = "deleteData"
+        private const val EXTRA_DELETE_LIBRARY = "deleteLibrary"
         private const val EXTRA_DEPLOY = "deploy"
         private const val AUTO_DEPLOY_MINUTES = 5L
         private const val CHANNEL = "server"
@@ -48,11 +51,20 @@ class ServerService : Service() {
 
         fun install(ctx: Context, app: AppDef) = startJob(ctx, ACTION_INSTALL, app)
 
-        fun uninstall(ctx: Context, app: AppDef) = startJob(ctx, ACTION_UNINSTALL, app)
+        /** Removes [app]; with [deleteData] also its settings and database, with [deleteLibrary] its library. */
+        fun uninstall(ctx: Context, app: AppDef, deleteData: Boolean = false, deleteLibrary: Boolean = false) =
+            startJob(ctx, ACTION_UNINSTALL, app, deleteData, deleteLibrary)
 
-        private fun startJob(ctx: Context, action: String, app: AppDef) {
+        /** Resets [app] to a fresh install: settings and database go; the library only with [deleteLibrary]. */
+        fun clearData(ctx: Context, app: AppDef, deleteLibrary: Boolean) =
+            startJob(ctx, ACTION_CLEAR, app, true, deleteLibrary)
+
+        private fun startJob(
+            ctx: Context, action: String, app: AppDef, deleteData: Boolean = false, deleteLibrary: Boolean = false,
+        ) {
             ctx.startForegroundService(
                 Intent(ctx, ServerService::class.java).setAction(action).putExtra(EXTRA_APP, app.id)
+                    .putExtra(EXTRA_DELETE_DATA, deleteData).putExtra(EXTRA_DELETE_LIBRARY, deleteLibrary)
             )
         }
 
@@ -107,10 +119,12 @@ class ServerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_RESTART -> worker.execute { shutdown(); launch() }
-            ACTION_INSTALL, ACTION_UNINSTALL -> {
+            ACTION_INSTALL, ACTION_UNINSTALL, ACTION_CLEAR -> {
                 val id = intent.getStringExtra(EXTRA_APP)
-                val install = intent.action == ACTION_INSTALL
-                installer.execute { runJob(id, install) }
+                val action = intent.action!!
+                val deleteData = intent.getBooleanExtra(EXTRA_DELETE_DATA, false)
+                val deleteLibrary = intent.getBooleanExtra(EXTRA_DELETE_LIBRARY, false)
+                installer.execute { runJob(id, action, deleteData, deleteLibrary) }
             }
             ACTION_DEPLOY, ACTION_UNDEPLOY -> {
                 val id = intent.getStringExtra(EXTRA_DEPLOY)
@@ -199,14 +213,30 @@ class ServerService : Service() {
         }
     }
 
-    private fun runJob(id: String?, install: Boolean) {
+    private fun runJob(id: String?, action: String, deleteData: Boolean, deleteLibrary: Boolean) {
         val paths = Paths(this)
         val apps = Apps(this, paths)
         val app = apps.catalog.firstOrNull { it.id == id } ?: return
         val alpine = Alpine(this, paths)
-        Jobs.begin((if (install) "Installing " else "Removing ") + app.name)
+        val install = action == ACTION_INSTALL
+        Jobs.begin(
+            when (action) {
+                ACTION_INSTALL -> "Installing "
+                ACTION_CLEAR -> "Clearing data of "
+                else -> "Removing "
+            } + app.name
+        )
         val error = try {
-            if (install) {
+            if (action == ACTION_CLEAR) {
+                if (!apps.isInstalled(app)) throw java.io.IOException("${app.name} isn't installed")
+                apps.markInstalled(app, false)
+                worker.submit { shutdown(); launch() }.get()
+                wipe(app, apps, alpine, deleteLibrary)
+                // Recreates the default settings the install script writes.
+                val rc = alpine.run(app.install, Jobs::line)
+                apps.markInstalled(app, true)
+                if (rc == 0) null else "install script exited with $rc"
+            } else if (install) {
                 val arch = Oci.archFor(paths.libDir)
                 if (app.arches.isNotEmpty() && arch !in app.arches) {
                     throw java.io.IOException("${app.name} isn't available for this phone's CPU ($arch)")
@@ -227,13 +257,37 @@ class ServerService : Service() {
                 val rc = alpine.run(app.uninstall, Jobs::line)
                 // Images are just programs; the app's data lives in appdata/ and is kept.
                 for (key in app.images.keys) alpine.removeGuestHost(apps.imageDir(app, key))
+                if (deleteData) wipe(app, apps, alpine, deleteLibrary)
                 if (rc == 0) null else "uninstall script exited with $rc"
             }
         } catch (e: Exception) {
             e.message ?: e.toString()
         }
         Jobs.finish(error)
-        if (install && error == null) worker.execute { shutdown(); launch() }
+        if ((install || action == ACTION_CLEAR) && apps.isInstalled(app)) worker.execute { shutdown(); launch() }
+    }
+
+    /**
+     * Deletes [app]'s settings and database (in Alpine and in appdata/) and, with
+     * [deleteLibrary], the contents of its library folder. The library folder itself stays, as
+     * it may be one the user picked.
+     */
+    private fun wipe(app: AppDef, apps: Apps, alpine: Alpine, deleteLibrary: Boolean) {
+        val library = apps.libraryDir(app, Config(this), alpine)?.canonicalFile
+        for (p in app.data) {
+            Jobs.line("Deleting $p")
+            alpine.removeGuest(p)
+        }
+        apps.dataDir(app).listFiles().orEmpty()
+            .filter { library == null || it.canonicalFile != library }
+            .forEach {
+                Jobs.line("Deleting ${it.name}")
+                alpine.removeGuestHost(it)
+            }
+        if (deleteLibrary && library != null && library.isDirectory) {
+            Jobs.line("Deleting everything in the library")
+            library.listFiles().orEmpty().forEach(alpine::removeGuestHost)
+        }
     }
 
     private fun shutdown() {

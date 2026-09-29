@@ -35,6 +35,8 @@ class AppsActivity : Activity() {
     }
 
     companion object {
+        private const val CLEAR_TEXT =
+            "Its settings, accounts and database are deleted and it starts like a fresh install."
         private val ERROR = Regex("error|exception|fatal|failed|insufficient|denied", RegexOption.IGNORE_CASE)
     }
 
@@ -45,6 +47,7 @@ class AppsActivity : Activity() {
         val action: Button,
         val open: Button,
         val toggle: Button,
+        val clear: Button,
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -109,17 +112,25 @@ class AppsActivity : Activity() {
                 if (ServerService.running) ServerService.restart(this@AppsActivity)
             }
         }
+        val clear = Button(this).apply {
+            text = "Clear data"
+            setOnClickListener { confirmClear(app) }
+        }
         buttons.addView(action)
         buttons.addView(open)
         buttons.addView(toggle)
+        // A second row, so the buttons fit narrow screens.
+        val more = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        more.addView(clear)
+        box.addView(buttons)
+        box.addView(more)
         if (app.storagePath != null) {
-            buttons.addView(Button(this).apply {
+            more.addView(Button(this).apply {
                 text = "Change location"
                 setOnClickListener { chooseStorage(app) }
             })
         }
-        box.addView(buttons)
-        rows += Row(app, status, storage, action, open, toggle)
+        rows += Row(app, status, storage, action, open, toggle, clear)
         return box
     }
 
@@ -147,6 +158,8 @@ class AppsActivity : Activity() {
             )
             row.open.setVisibleIfChanged(installed && d != null)
             row.toggle.setVisibleIfChanged(installed)
+            row.clear.setVisibleIfChanged(installed)
+            if (row.clear.isEnabled == busy) row.clear.isEnabled = !busy
             row.toggle.setTextIfChanged(if (cfg.isDisabled(row.app.id)) "Turn on" else "Turn off")
             if (row.action.isEnabled == busy) row.action.isEnabled = !busy
             row.action.setTextIfChanged(if (installed) "Remove" else "Install")
@@ -208,12 +221,40 @@ class AppsActivity : Activity() {
     }
 
     private fun confirmRemove(app: AppDef) {
+        val options = listOf("Also delete its settings and database") + listOfNotNull(libraryOption(app))
+        val checked = BooleanArray(options.size)
         AlertDialog.Builder(this)
             .setTitle("Remove ${app.name}?")
-            .setMessage("The program is removed. Its settings and data stay in Alpine.")
-            .setPositiveButton("Remove") { _, _ -> ServerService.uninstall(this, app) }
+            .setMultiChoiceItems(options.toTypedArray(), checked) { _, i, on -> checked[i] = on }
+            .setPositiveButton("Remove") { _, _ ->
+                val library = checked.getOrElse(1) { false }
+                ServerService.uninstall(this, app, deleteData = checked[0] || library, deleteLibrary = library)
+            }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    /** Resets an app to a fresh install, like Android's "Clear storage". */
+    private fun confirmClear(app: AppDef) {
+        val option = libraryOption(app)
+        val checked = BooleanArray(1)
+        AlertDialog.Builder(this)
+            .setTitle("Clear ${app.name}'s data?")
+            .apply {
+                // A dialog can't show both a message and a checkbox list.
+                if (option == null) setMessage(CLEAR_TEXT)
+                else setMultiChoiceItems(arrayOf(option), checked) { _, _, on -> checked[0] = on }
+            }
+            .setPositiveButton("Clear data") { _, _ -> ServerService.clearData(this, app, checked[0]) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    /** The checkbox label for deleting [app]'s library, naming apps that share it; null if it has none. */
+    private fun libraryOption(app: AppDef): String? {
+        val label = app.storageLabel?.lowercase() ?: return null
+        val sharing = apps.sharing(app).joinToString { it.name }
+        return "Also delete everything in the $label" + if (sharing.isEmpty()) "" else " (also used by $sharing)"
     }
 
     private fun Supervisor.State.severity() = when (this) {
