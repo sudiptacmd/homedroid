@@ -36,7 +36,7 @@ A 3-minute tour of every module on an Android 10 emulator. [Watch the full video
 
 ## Download
 
-Homedroid is in **beta (0.4.1)**. Get the APK from the
+Homedroid is in **beta (0.8.1)**. Get the APK from the
 [latest release](https://github.com/sudiptacmd/homedroid/releases):
 
 | Your phone | APK |
@@ -60,9 +60,9 @@ ones and keep your data.
 | **Cloudflare Tunnel** | Publish services on the internet: no port forwarding, works behind CGNAT | – |
 | **Jellyfin** | Media server with **hardware transcoding on the phone's video encoder** | 8096 |
 | **Immich** | Google Photos-style backup (face/object recognition off: too heavy for phones) | 2283 |
-| **qBittorrent** | Downloads in order into the media library and keeps seeding; `torrent <magnet>` over SSH | 8081 |
+| **qBittorrent** | Downloads in order into the media library (shown in Jellyfin as *Downloads*) and keeps seeding; `torrent <magnet>` over SSH | 8081 |
 | **Home Assistant** | Home automation (network and cloud integrations) | 8123 |
-| **Dashboard** | Manage everything from a browser; deploy Node.js, Python and static sites from Git | 8800 |
+| **Dashboard** | Manage everything from a browser: live load, files, a terminal, SSH access, deployments from Git | 8800 |
 
 - **Everything is a module.** Add, remove, turn on or off at any time, from the phone or the
   dashboard. Nothing you don't use runs.
@@ -83,7 +83,7 @@ ones and keep your data.
 
 1. Install the APK from [Download](#download) (or [build it](#building)).
 2. Open Homedroid, paste your SSH public key (`~/.ssh/id_ed25519.pub`), tap **Save & apply**,
-   then **Start server**.
+   then **Start server**. (Keys can also be added later in the dashboard.)
 3. Tap **Allow running in background**. On Samsung phones also add Homedroid to
    *Settings → Battery → Background usage limits → Never sleeping apps*.
 4. Android 12+: turn off the phantom process killer (the app shows how).
@@ -101,6 +101,27 @@ To publish a service on the internet, create a tunnel in the Cloudflare Zero Tru
 point a public hostname at `http://localhost:<port>`, and turn on the Cloudflare Tunnel module
 with the tunnel token.
 
+### The dashboard
+
+`http://<phone-ip>:8800`, on a computer or a phone:
+
+- **Overview:** CPU load, temperature, upload and download speed, battery, memory and storage,
+  and every service with its logs and a restart button.
+- **Modules:** install, remove and turn modules on or off. **Clear data** resets an app like a
+  fresh install; **Remove** can also delete its data. The media or photo library is only
+  deleted if you tick it separately.
+- **Deployments:** web apps from Git (see [below](#deploying-from-github)).
+- **Files:** browse the media and photo libraries, the SSH home (with the website in `www`),
+  and phone storage, SD cards and USB drives when access is granted. Upload files or whole
+  folders (drag and drop works), download files or folders (as zip), open videos, pictures and
+  PDFs in the browser, rename, move and delete.
+- **Terminal & SSH:** a terminal in the browser, in the phone's shell or straight into Alpine
+  Linux; the SSH keys that may log in (add and remove them); a log of SSH and terminal
+  sessions (who, from where, how long, what they ran, and rejected logins); and the command
+  history of both shells.
+
+It works without internet access: everything it needs is in the app.
+
 ### Storage
 
 App data stays inside the app by default. To use an SD card or USB drive, choose
@@ -111,7 +132,8 @@ App data stays inside the app by default. To use an SD card or USB drive, choose
   (`Android/data/dev.homedroid/files/<name>`). Android deletes it if Homedroid is uninstalled;
   the picker says so.
 
-Jellyfin and qBittorrent share one *Media* folder. Databases and settings always stay in
+Jellyfin and qBittorrent share one *Media* folder, and installing both adds a *Downloads*
+library to Jellyfin that picks up finished torrents within a minute. Databases and settings always stay in
 internal storage, because SD cards and USB drives are usually FAT/exFAT. If the card is removed,
 apps wait for it instead of writing elsewhere. With storage access, every volume also appears
 inside Alpine at `/storage/…`, so existing folders can be added to Jellyfin.
@@ -189,7 +211,7 @@ versions can be overridden (`CADDY_VERSION=… CLOUDFLARED_VERSION=… native/bu
 release builds with your own key, copy `keystore.properties.example` to `keystore.properties`;
 without it they use the debug key.
 
-Releases are built by CI: pushing a tag such as `v0.4.1-beta` builds every ABI, signs the APKs
+Releases are built by CI: pushing a tag such as `v0.8.1-beta` builds every ABI, signs the APKs
 with the project key (kept in repository secrets) and publishes them with `SHA256SUMS`.
 
 ### Adding an app
@@ -240,6 +262,10 @@ dedicated video hardware, which is the point: it keeps the CPU free and cool.
   need it).
 - **Storage on SD cards.** On Android 10 data on removable volumes lives in the app's own folder,
   which Android deletes when Homedroid is uninstalled. FAT32 cards can't hold files over 4 GB.
+- **CPU figures.** Android doesn't let apps read system-wide CPU load or most temperature
+  sensors, so the dashboard shows the load of Homedroid's own processes (which are all the
+  servers), the battery temperature and Android's thermal status, plus the CPU temperature on
+  phones that expose it.
 - **No TLS on the LAN.** The dashboard and apps speak plain HTTP on your network; use the
   Cloudflare tunnel or `ssh -L` from outside it.
 - **Updates.** Apps are installed from Alpine and container registries at install time;
@@ -248,7 +274,9 @@ dedicated video hardware, which is the point: it keeps the CPU free and cool.
 ## Security notes
 
 - SSH accepts public keys only. The dashboard uses a generated password; sessions are
-  HttpOnly/SameSite cookies, and scripts can send the password as a Bearer token.
+  HttpOnly/SameSite cookies, and scripts can send the password as a Bearer token. The
+  dashboard password also opens the web terminal, so treat it like an SSH key. SSH and terminal
+  sessions, including rejected logins, are logged in the dashboard.
 - Everything listens on the phone's network, so keep the phone on a network you trust, and
   expose services to the internet through the Cloudflare tunnel rather than port forwarding.
 - Other apps on the same phone can reach `localhost`. Homedroid binds databases to localhost and

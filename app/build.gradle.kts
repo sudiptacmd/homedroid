@@ -35,8 +35,8 @@ android {
         applicationId = "dev.homedroid"
         minSdk = 29
         targetSdk = 36
-        versionCode = 401
-        versionName = "0.4.1-beta"
+        versionCode = 801
+        versionName = "0.8.1-beta"
     }
 
     signingConfigs {
