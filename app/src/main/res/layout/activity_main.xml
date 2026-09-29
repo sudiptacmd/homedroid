@@ -25,6 +25,12 @@
             android:layout_marginTop="12dp"
             android:text="@string/start" />
 
+        <Button
+            android:id="@+id/apps"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/apps" />
+
         <Switch
             android:id="@+id/ssh"
             android:layout_width="match_parent"

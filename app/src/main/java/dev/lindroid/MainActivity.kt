@@ -2,12 +2,9 @@ package dev.lindroid
 
 import android.Manifest
 import android.app.Activity
-import android.app.ActivityManager
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -20,8 +17,6 @@ import android.widget.EditText
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
-import java.net.Inet4Address
-import java.net.NetworkInterface
 
 class MainActivity : Activity() {
     private lateinit var cfg: Config
@@ -71,6 +66,9 @@ class MainActivity : Activity() {
             if (ServerService.running) ServerService.stop(this) else ServerService.start(this)
             ui.postDelayed(::refresh, 300)
         }
+        findViewById<Button>(R.id.apps).setOnClickListener {
+            startActivity(Intent(this, AppsActivity::class.java))
+        }
         findViewById<Button>(R.id.save).setOnClickListener {
             cfg.tunnelToken = token.text.toString().trim()
             paths.authorizedKeys.writeText(keys.text.toString().trim() + "\n")
@@ -106,48 +104,34 @@ class MainActivity : Activity() {
         val sv = ServerService.supervisor
         val s = StringBuilder()
         s.append(if (sv != null) "● running\n" else "○ stopped\n")
+        val width = (sv?.daemons.orEmpty().maxOfOrNull { it.spec.name.length } ?: 0) + 2
         sv?.daemons?.forEach { d ->
-            s.append("  ").append(d.spec.name.padEnd(12)).append(d.state.name.lowercase())
+            s.append("  ").append(d.spec.name.padEnd(width)).append(d.state.name.lowercase())
             if (d.restarts > 0) s.append(" (").append(d.restarts).append(" restarts)")
             s.append('\n')
         }
-        val ips = localIps()
-        val ip = ips.firstOrNull() ?: "<phone-ip>"
-        s.append("\nIP    ").append(ips.joinToString().ifEmpty { "none" }).append('\n')
-        s.append("SSH   ssh -p ${cfg.sshPort} $ip\n")
-        s.append("Web   http://$ip:${cfg.webPort}\n")
-        s.append(deviceStats())
-        status.text = s
+        val dev = Device(this)
+        val ip = dev.ips.firstOrNull() ?: "<phone-ip>"
+        s.append("\nIP    ").append(dev.ips.joinToString().ifEmpty { "none" }).append('\n')
+        if (sv != null) {
+            s.append("Panel http://$ip:${cfg.dashboardPort}  password ${cfg.dashboardPassword}\n")
+        }
+        if (cfg.sshEnabled) s.append("SSH   ssh -p ${cfg.sshPort} $ip\n")
+        if (cfg.webEnabled) s.append("Web   http://$ip:${cfg.webPort}\n")
+        s.append("Batt  ${dev.batteryPercent}%${if (dev.charging) " ⚡" else ""}  ${dev.batteryTempC}°C\n")
+        s.append("RAM   ${dev.ramFreeMb} / ${dev.ramTotalMb} MB free\n")
+        s.append("Disk  ${dev.storageFreeMb / 1024} / ${dev.storageTotalMb / 1024} GB free\n")
+        if (dev.hot) s.append("⚠ Battery is hot. Keep the phone ventilated and limit charging to ~80% if possible.\n")
+        status.setTextIfChanged(s)
 
-        toggle.setText(if (sv != null) R.string.stop else R.string.start)
-        battery.visibility =
-            if (getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)) View.GONE
-            else View.VISIBLE
-        logs.text = sv?.daemons.orEmpty()
-            .flatMap { d -> d.log.tail(15).map { "[${d.spec.name}] $it" } }
-            .joinToString("\n")
-    }
-
-    private fun deviceStats(): String {
-        val b = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        val level = b?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
-        val temp = (b?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0) / 10f
-        val plugged = (b?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0
-        val mem = ActivityManager.MemoryInfo().also { getSystemService(ActivityManager::class.java).getMemoryInfo(it) }
-        val mb = 1024 * 1024
-        var out = "Batt  $level%${if (plugged) " ⚡" else ""}  $temp°C\n" +
-            "RAM   ${mem.availMem / mb} / ${mem.totalMem / mb} MB free\n"
-        if (temp >= 45f) out += "⚠ Battery is hot. Keep the phone ventilated and limit charging to ~80% if possible.\n"
-        return out
-    }
-
-    private fun localIps(): List<String> = try {
-        NetworkInterface.getNetworkInterfaces().toList()
-            .filter { it.isUp && !it.isLoopback }
-            .flatMap { it.inetAddresses.toList() }
-            .filterIsInstance<Inet4Address>()
-            .mapNotNull { it.hostAddress }
-    } catch (_: Exception) {
-        emptyList()
+        toggle.setTextIfChanged(getString(if (sv != null) R.string.stop else R.string.start))
+        battery.setVisibleIfChanged(
+            !getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
+        )
+        logs.setTextIfChanged(
+            sv?.daemons.orEmpty()
+                .flatMap { d -> d.log.tail(15).map { "[${d.spec.name}] $it" } }
+                .joinToString("\n")
+        )
     }
 }

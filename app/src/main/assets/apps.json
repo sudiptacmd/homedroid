@@ -1,0 +1,160 @@
+[
+  {
+    "id": "jellyfin",
+    "name": "Jellyfin",
+    "description": "Stream your movies, shows and music to any device. Uses the phone's hardware video encoder.",
+    "port": 8096,
+    "size": "≈ 420 MB",
+    "install": "apk add --no-cache jellyfin jellyfin-web\n# Hardware encoding: Jellyfin's V4L2 option is routed to Android's MediaCodec by the\n# ffmpeg shim. Only on first install, so a user's own choice is kept.\nmkdir -p /var/lib/jellyfin/config\n[ -e /var/lib/jellyfin/config/encoding.xml ] || cat > /var/lib/jellyfin/config/encoding.xml <<'XML'\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<EncodingOptions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n  <HardwareAccelerationType>v4l2m2m</HardwareAccelerationType>\n  <EnableHardwareEncoding>true</EnableHardwareEncoding>\n</EncodingOptions>\nXML",
+    "uninstall": "apk del jellyfin jellyfin-web",
+    "run": [
+      "/usr/bin/jellyfin",
+      "--datadir",
+      "/var/lib/jellyfin",
+      "--cachedir",
+      "/var/cache/jellyfin",
+      "--webdir",
+      "/usr/share/webapps/jellyfin-web",
+      "--ffmpeg",
+      "/usr/local/lib/lindroid/ffmpeg"
+    ],
+    "env": {
+      "DOTNET_gcServer": "0",
+      "DOTNET_GCHeapHardLimitPercent": "0x32"
+    },
+    "storage": {
+      "path": "/media",
+      "label": "Media library",
+      "shared": "Media"
+    }
+  },
+  {
+    "id": "qbittorrent",
+    "name": "qBittorrent",
+    "description": "Torrent client. Downloads go to the media library's Downloads folder, in order (stream while downloading), and keep seeding. Add from SSH: torrent 'magnet:?…'",
+    "port": 8081,
+    "size": "≈ 60 MB",
+    "install": "apk add --no-cache qbittorrent-nox curl jq\nmkdir -p /media/Downloads /var/lib/qbittorrent/qBittorrent/config\n# Only on first install, so the user's own settings are kept.\n[ -e /var/lib/qbittorrent/qBittorrent/config/qBittorrent.conf ] || cat > /var/lib/qbittorrent/qBittorrent/config/qBittorrent.conf <<'CONF'\n[LegalNotice]\nAccepted=true\n\n[BitTorrent]\nSession\\DefaultSavePath=/media/Downloads\nSession\\TempPathEnabled=false\nSession\\GlobalMaxRatio=-1\nSession\\GlobalMaxSeedingMinutes=-1\nSession\\QueueingSystemEnabled=false\n\n[Preferences]\nWebUI\\Port=8081\nWebUI\\LocalHostAuth=false\nCONF\ncat > /usr/local/bin/torrent <<'SH'\n#!/bin/sh\n# torrent <magnet or .torrent URL>...   add, downloading pieces in order\n# torrent list                          show progress\napi=http://127.0.0.1:8081/api/v2\nif ! curl -fsS -o /dev/null \"$api/app/version\" 2>/dev/null; then\n  echo 'qBittorrent is not running: start the server in the Lindroid app.' >&2; exit 1\nfi\ncase $1 in\n''|-h|--help) sed -n '2,3s/^# //p' \"$0\"; exit 2 ;;\nlist) curl -fsS \"$api/torrents/info\" | jq -r '.[] | \"\\(.progress * 100 | floor)%\\t\\(.state)\\t\\(.name)\"'; exit ;;\nesac\nfor link do\n  curl -fsS -F \"urls=$link\" -F sequentialDownload=true -F firstLastPiecePrio=true \"$api/torrents/add\" >/dev/null &&\n    echo \"Added: $link\"\ndone\nSH\nchmod +x /usr/local/bin/torrent",
+    "uninstall": "apk del qbittorrent-nox; rm -f /usr/local/bin/torrent",
+    "run": [
+      "/usr/bin/qbittorrent-nox",
+      "--profile=/var/lib/qbittorrent",
+      "--confirm-legal-notice"
+    ],
+    "env": {},
+    "storage": {
+      "path": "/media",
+      "label": "Media library",
+      "shared": "Media"
+    },
+    "notice": {
+      "pattern": "temporary password is provided for this session: (\\S+)",
+      "text": "Web UI login: admin / $1 (temporary; set your own under Tools → Options → Web UI)"
+    }
+  },
+  {
+    "id": "homeassistant",
+    "name": "Home Assistant",
+    "description": "Home automation hub. Network and cloud integrations work; USB radios and Bluetooth need root.",
+    "port": 8123,
+    "size": "≈ 900 MB",
+    "install": "apk add --no-cache python3 uv ffmpeg libjpeg-turbo libstdc++ tzdata ca-certificates\n# proot fakes hard links, which uv's cache linking can't cope with; copy instead.\nexport UV_LINK_MODE=copy\nrm -rf /opt/homeassistant /root/.cache/uv\nuv venv --python /usr/bin/python3 /opt/homeassistant\nuv pip install --python /opt/homeassistant/bin/python --index-strategy unsafe-best-match --extra-index-url https://wheels.home-assistant.io/musllinux-index/ homeassistant\nmkdir -p /var/lib/homeassistant",
+    "uninstall": "rm -rf /opt/homeassistant",
+    "run": [
+      "/opt/homeassistant/bin/hass",
+      "--config",
+      "/var/lib/homeassistant"
+    ],
+    "env": {
+      "UV_EXTRA_INDEX_URL": "https://wheels.home-assistant.io/musllinux-index/",
+      "UV_INDEX_STRATEGY": "unsafe-best-match",
+      "UV_LINK_MODE": "copy"
+    }
+  },
+  {
+    "id": "immich",
+    "name": "Immich",
+    "description": "Photo and video backup with the Immich phone apps. Face and object recognition are off: too heavy for phones.",
+    "port": 2283,
+    "size": "≈ 1.6 GB",
+    "arches": [
+      "arm64",
+      "amd64"
+    ],
+    "images": {
+      "server": "ghcr.io/immich-app/immich-server:v3.2.4",
+      "postgres": "ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0"
+    },
+    "install": "apk add --no-cache valkey",
+    "uninstall": "true",
+    "run": [],
+    "services": [
+      {
+        "name": "postgres",
+        "image": "postgres",
+        "sysvipc": true,
+        "env": {
+          "POSTGRES_USER": "postgres",
+          "POSTGRES_PASSWORD": "{{secret}}",
+          "POSTGRES_DB": "immich",
+          "POSTGRES_INITDB_ARGS": "--data-checksums",
+          "DB_STORAGE_TYPE": "SSD"
+        },
+        "args": [
+          "-c",
+          "listen_addresses=127.0.0.1",
+          "-c",
+          "dynamic_shared_memory_type=mmap",
+          "-c",
+          "shared_preload_libraries=vchord.so"
+        ],
+        "binds": [
+          [
+            "@data/postgres",
+            "/var/lib/postgresql/data"
+          ]
+        ]
+      },
+      {
+        "name": "valkey",
+        "run": [
+          "valkey-server",
+          "--bind",
+          "127.0.0.1",
+          "--port",
+          "6379",
+          "--dir",
+          "/var/lib/valkey",
+          "--save",
+          "60 1"
+        ]
+      },
+      {
+        "name": "server",
+        "image": "server",
+        "env": {
+          "DB_HOSTNAME": "127.0.0.1",
+          "DB_USERNAME": "postgres",
+          "DB_PASSWORD": "{{secret}}",
+          "DB_DATABASE_NAME": "immich",
+          "REDIS_HOSTNAME": "127.0.0.1",
+          "IMMICH_MACHINE_LEARNING_ENABLED": "false",
+          "IMMICH_PORT": "2283"
+        },
+        "binds": [
+          [
+            "@storage",
+            "/data"
+          ]
+        ],
+        "run": [
+          "/usr/src/app/server/bin/start.sh"
+        ]
+      }
+    ],
+    "storage": {
+      "path": "/data",
+      "label": "Photo library"
+    }
+  }
+]

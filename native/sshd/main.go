@@ -213,7 +213,10 @@ func handleSession(nc ssh.NewChannel) {
 			ssh.Unmarshal(req.Payload, &x) // empty for "shell"
 			cmd := exec.Command(*shell)
 			if x.Command != "" {
-				cmd = exec.Command(*shell, "-c", x.Command)
+				// Shells only read $ENV when interactive; load it for commands too, so
+				// helpers such as `ssh phone torrent …` work. On its own line so aliases
+				// defined there apply to the command.
+				cmd = exec.Command(*shell, "-c", "[ -r \"$ENV\" ] && . \"$ENV\"\n"+x.Command)
 			}
 			cmd.Env, cmd.Dir = env, *home
 			// Acknowledge before any output or exit-status reaches the client.

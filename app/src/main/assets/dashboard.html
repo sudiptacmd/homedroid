@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lindroid</title>
+<style>
+:root {
+  --bg: #f5f6f8; --panel: #fff; --text: #16181d; --muted: #667085; --line: #e3e6eb;
+  --accent: #2f6fed; --accent-text: #fff; --ok: #1f9d55; --warn: #c27c0e; --bad: #d13b3b;
+  --code: #f0f2f5; --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115; --panel: #171a21; --text: #e7e9ee; --muted: #8b93a3; --line: #262b35;
+    --accent: #5b8ff9; --accent-text: #0b0d11; --ok: #3fbf7f; --warn: #e0a33a; --bad: #f06a6a; --code: #1e222b;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, sans-serif; }
+header { display: flex; align-items: center; gap: 16px; padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+header h1 { font-size: 17px; margin: 0; }
+nav { display: flex; gap: 4px; overflow-x: auto; }
+nav button { background: none; border: 0; color: var(--muted); padding: 6px 10px; border-radius: 8px; font: inherit; cursor: pointer; white-space: nowrap; }
+nav button.on { color: var(--text); background: var(--code); }
+header .spacer { flex: 1; }
+main { max-width: 1000px; margin: 0 auto; padding: 16px; }
+h2 { font-size: 15px; color: var(--muted); font-weight: 600; margin: 24px 0 8px; }
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.stat .v { font-size: 22px; font-weight: 600; }
+.stat .v.text { font-size: 16px; line-height: 1.3; }
+.stat .k { color: var(--muted); font-size: 13px; }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.title { font-weight: 600; font-size: 16px; }
+.muted { color: var(--muted); font-size: 13px; }
+.pill { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--code); color: var(--muted); }
+.pill.running { color: var(--ok); }
+.pill.backoff, .pill.failed { color: var(--bad); }
+.pill.starting { color: var(--warn); }
+button.b { font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+button.b:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+button.danger { color: var(--bad); }
+button:disabled { opacity: .5; cursor: default; }
+input, select, textarea { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+form .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+pre { background: var(--code); border-radius: 8px; padding: 10px; margin: 0; overflow: auto; max-height: 360px; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+.notice { background: var(--code); border-left: 3px solid var(--warn); padding: 6px 10px; border-radius: 6px; font-size: 13px; }
+a { color: var(--accent); }
+#login { max-width: 340px; margin: 12vh auto; }
+.hidden { display: none !important; }
+dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); width: min(900px, 94vw); padding: 16px; }
+dialog::backdrop { background: rgba(0,0,0,.4); }
+.toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="login" class="card hidden">
+  <div class="title">Lindroid</div>
+  <div class="muted">Enter the dashboard password shown in the Lindroid app.</div>
+  <form id="loginForm" class="row">
+    <input id="password" type="password" autocomplete="current-password" placeholder="Password" required>
+    <button class="b primary" type="submit">Log in</button>
+  </form>
+  <div id="loginError" class="muted"></div>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <h1>Lindroid</h1>
+    <nav>
+      <button data-tab="overview" class="on">Overview</button>
+      <button data-tab="modules">Modules</button>
+      <button data-tab="deploys">Deployments</button>
+    </nav>
+    <div class="spacer"></div>
+    <button class="b" id="logout">Log out</button>
+  </header>
+  <main>
+    <section id="tab-overview">
+      <div class="stats" id="stats"></div>
+      <h2>Running services</h2>
+      <div class="grid" id="services"></div>
+    </section>
+
+    <section id="tab-modules" class="hidden">
+      <h2>Built-in</h2>
+      <div class="grid" id="core"></div>
+      <h2>Apps</h2>
+      <div class="grid" id="apps"></div>
+      <div id="jobBox" class="hidden">
+        <h2 id="jobTitle"></h2>
+        <pre id="jobLog"></pre>
+      </div>
+    </section>
+
+    <section id="tab-deploys" class="hidden">
+      <h2>Deploy from GitHub</h2>
+      <form id="deployForm" class="card">
+        <div class="grid">
+          <label>Name<input name="name" required placeholder="my-site"></label>
+          <label>Repository URL<input name="repo" required placeholder="https://github.com/you/repo"></label>
+          <label>Branch<input name="branch" placeholder="main"></label>
+          <label>Port<input name="port" type="number" min="1024" max="65535" required placeholder="3000"></label>
+          <label>Runtime
+            <select name="runtime">
+              <option value="auto">Detect</option><option value="node">Node.js</option>
+              <option value="python">Python</option><option value="static">Static site</option>
+            </select>
+          </label>
+          <label>Build command<input name="build" placeholder="npm run build (default)"></label>
+          <label>Start command<input name="start" placeholder="npm start (default)"></label>
+        </div>
+        <label>Environment variables (one KEY=value per line)<textarea name="env" rows="3"></textarea></label>
+        <label class="row" style="flex-direction:row"><input name="autoDeploy" type="checkbox" style="width:auto"> Redeploy automatically when the branch changes (checked every 5 minutes)</label>
+        <div class="muted">Private repository? Use https://&lt;token&gt;@github.com/you/repo with a read-only token.</div>
+        <div class="row"><button class="b primary" type="submit">Deploy</button></div>
+      </form>
+      <h2>Deployments</h2>
+      <div class="grid" id="deploys"></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="logDialog">
+  <div class="row"><div class="title" id="logTitle"></div><div class="spacer" style="flex:1"></div><button class="b" id="logClose">Close</button></div>
+  <pre id="logBody" style="max-height:70vh;margin-top:10px"></pre>
+</dialog>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let tab = 'overview', timer = null, logTimer = null, host = location.hostname;
+
+async function api(path, opts = {}) {
+  const res = await fetch('/api/' + path, {
+    method: opts.method || 'GET',
+    headers: opts.body ? {'Content-Type': 'application/json'} : {},
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if (res.status === 401 && path !== 'login') { showLogin(); throw new Error('log in first'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.append(t); setTimeout(() => t.remove(), 3500);
+}
+async function act(path, opts, done) {
+  try { await api(path, Object.assign({method: 'POST'}, opts)); if (done) toast(done); refresh(); }
+  catch (e) { toast(e.message); }
+}
+
+function showLogin() { $('#app').classList.add('hidden'); $('#login').classList.remove('hidden'); clearInterval(timer); }
+function showApp() { $('#login').classList.add('hidden'); $('#app').classList.remove('hidden'); refresh(); clearInterval(timer); timer = setInterval(refresh, 3000); }
+
+$('#loginForm').onsubmit = async e => {
+  e.preventDefault();
+  try { await api('login', {method: 'POST', body: {password: $('#password').value}}); showApp(); }
+  catch (err) { $('#loginError').textContent = err.message; }
+};
+$('#logout').onclick = async () => { await api('logout', {method: 'POST'}).catch(() => {}); showLogin(); };
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  tab = b.dataset.tab;
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('hidden', s.id !== 'tab-' + tab));
+  refresh();
+});
+
+function pill(state, restarts) {
+  return `<span class="pill ${esc(state)}">${esc(state)}${restarts ? ` · ${restarts} restarts` : ''}</span>`;
+}
+function link(port) { return port ? `<a href="http://${esc(host)}:${port}" target="_blank" rel="noopener">:${port}</a>` : ''; }
+function gb(mb) { return (mb / 1024).toFixed(1) + ' GB'; }
+
+async function refresh() {
+  try {
+    if (tab === 'overview') await renderOverview();
+    if (tab === 'modules') await renderModules();
+    if (tab === 'deploys') await renderDeploys();
+  } catch (e) { /* shown via toast on actions; polling stays quiet */ }
+}
+
+async function renderOverview() {
+  const [s, m, d, svcs] = await Promise.all([api('status'), api('modules'), api('deploys'), api('services')]);
+  const up = s.uptime > 86400 ? Math.floor(s.uptime / 86400) + ' d' : Math.floor(s.uptime / 3600) + ' h';
+  $('#stats').innerHTML = [
+    ['Battery', `${s.battery}%${s.charging ? ' ⚡' : ''}`, `${s.batteryTemp.toFixed(1)} °C${s.hot ? ' · hot!' : ''}`],
+    ['Memory free', gb(s.ramFreeMb), 'of ' + gb(s.ramTotalMb)],
+    ['Storage free', gb(s.storageFreeMb), 'of ' + gb(s.storageTotalMb)],
+    ['Phone', esc(s.model), `Android ${esc(s.android)} · up ${up}`, 'text'],
+  ].map(([k, v, sub, cls = '']) => `<div class="card stat"><div class="k">${k}</div><div class="v ${cls}">${v}</div><div class="muted">${sub}</div></div>`).join('');
+  // Every supervised process, named and linked through the module it belongs to.
+  const owner = {};
+  m.core.forEach(x => owner[{ssh: 'sshd', web: 'caddy', tunnel: 'cloudflared'}[x.id]] = {name: x.name, port: x.port});
+  m.apps.forEach(x => (x.services || [x.id]).forEach((svc, i, all) =>
+    owner[svc] = {name: all.length > 1 ? `${x.name} · ${svc.slice(x.id.length + 1)}` : x.name, port: i === all.length - 1 ? x.port : 0}));
+  d.forEach(x => owner['deploy-' + x.id] = {name: x.name, port: x.port});
+  const rows = svcs.map(v => ({svc: v.name, state: v.state, restarts: v.restarts, ...(owner[v.name] || {name: v.name, port: 0})}));
+  $('#services').innerHTML = rows.map(r => `
+    <div class="card">
+      <div class="row"><span class="title">${esc(r.name)}</span>${pill(r.state, r.restarts)}<span class="muted">${r.port && r.port !== 8022 ? link(r.port) : r.port ? ':' + r.port : ''}</span></div>
+      <div class="row">
+        <button class="b" onclick="showLogs('${esc(r.svc)}','${esc(r.name)}')">Logs</button>
+        <button class="b" onclick="act('services/${esc(r.svc)}/restart',{},'Restarting ${esc(r.name)}')">Restart</button>
+      </div>
+    </div>`).join('') || '<div class="muted">Nothing running.</div>';
+}
+
+async function renderModules() {
+  const m = await api('modules');
+  const busy = m.job.running;
+  $('#core').innerHTML = m.core.map(x => `
+    <div class="card">
+      <div class="row"><span class="title">${esc(x.name)}</span>${x.enabled ? pill(x.state, x.restarts) : '<span class="pill">off</span>'}</div>
+      <div class="muted">${esc(x.description)}</div>
+      <div class="row">
+        ${x.enabled
+          ? `<button class="b" onclick="act('modules/${x.id}/disable',{},'Turning off ${esc(x.name)}')">Turn off</button>`
+          : `<button class="b primary" onclick="enableCore('${x.id}','${esc(x.name)}')">Turn on</button>`}
+        ${x.enabled && x.port && x.port !== 8022 ? link(x.port) : ''}
+      </div>
+    </div>`).join('');
+  $('#apps').innerHTML = m.apps.map(x => `
+    <div class="card">
+      <div class="row"><span class="title">${esc(x.name)}</span>${x.installed ? (x.enabled ? pill(x.state, x.restarts) : '<span class="pill">off</span>') : '<span class="pill">not installed</span>'}</div>
+      <div class="muted">${esc(x.description)}</div>
+      <div class="muted">Port ${x.port} · ${esc(x.size)}${x.storageLabel ? ` · ${esc(x.storageLabel)}: ${esc(x.storageDir || 'inside the app')}` : ''}</div>
+      ${x.notice ? `<div class="notice">${esc(x.notice)}</div>` : ''}
+      <div class="row">
+        ${x.installed
+          ? `${x.enabled && x.state === 'running' ? link(x.port) : ''}
+             <button class="b" onclick="act('modules/${x.id}/${x.enabled ? 'disable' : 'enable'}',{},'${x.enabled ? 'Turning off' : 'Turning on'} ${esc(x.name)}')">${x.enabled ? 'Turn off' : 'Turn on'}</button>
+             <button class="b danger" ${busy ? 'disabled' : ''} onclick="if(confirm('Remove ${esc(x.name)}? Its data is kept.'))act('modules/${x.id}/remove',{},'Removing ${esc(x.name)}')">Remove</button>`
+          : `<button class="b primary" ${busy ? 'disabled' : ''} onclick="act('modules/${x.id}/install',{},'Installing ${esc(x.name)}')">Install</button>`}
+      </div>
+    </div>`).join('');
+  showJob(m.job);
+}
+
+function showJob(job) {
+  $('#jobBox').classList.toggle('hidden', !job.title);
+  if (!job.title) return;
+  $('#jobTitle').textContent = job.running ? job.title + '…' : job.error ? `${job.title}: failed (${job.error})` : job.title + ': done';
+  const pre = $('#jobLog'), atEnd = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 20;
+  pre.textContent = job.log.join('\n');
+  if (atEnd) pre.scrollTop = pre.scrollHeight;
+}
+
+function enableCore(id, name) {
+  const body = {};
+  if (id === 'tunnel') {
+    const t = prompt('Cloudflare tunnel token (leave empty to keep the saved one)');
+    if (t === null) return;
+    if (t.trim()) body.token = t.trim();
+  }
+  act(`modules/${id}/enable`, {body}, 'Turning on ' + name);
+}
+
+async function renderDeploys() {
+  const [list, m] = await Promise.all([api('deploys'), api('modules')]);
+  $('#deploys').innerHTML = list.map(x => `
+    <div class="card">
+      <div class="row"><span class="title">${esc(x.name)}</span>${pill(x.error ? 'failed' : x.commit ? x.state : 'building', x.restarts)}</div>
+      <div class="muted">${esc(x.repo)} · ${esc(x.branch)}${x.commit ? ' · ' + esc(x.commit.slice(0, 7)) : ''}${x.detected ? ' · ' + esc(x.detected) : ''}${x.autoDeploy ? ' · auto-deploy' : ''}</div>
+      <div class="row">
+        ${link(x.port)}
+        <button class="b" onclick="act('deploys/${x.id}/redeploy',{},'Redeploying ${esc(x.name)}')">Redeploy</button>
+        <button class="b" onclick="showLogs('deploy-${x.id}','${esc(x.name)}')">Logs</button>
+        <button class="b danger" onclick="if(confirm('Delete ${esc(x.name)} and its files?'))act('deploys/${x.id}',{method:'DELETE'},'Deleting ${esc(x.name)}')">Delete</button>
+      </div>
+    </div>`).join('') || '<div class="muted">No deployments yet.</div>';
+  showJob(m.job);
+  $('#tab-deploys').append($('#jobBox'));
+}
+
+$('#deployForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = new FormData(e.target), env = {};
+  for (const line of (f.get('env') || '').split('\n')) {
+    const i = line.indexOf('='); if (i > 0) env[line.slice(0, i).trim()] = line.slice(i + 1).trim();
+  }
+  const body = {
+    name: f.get('name'), repo: f.get('repo'), branch: f.get('branch'), port: Number(f.get('port')),
+    runtime: f.get('runtime'), build: f.get('build'), start: f.get('start'), env, autoDeploy: f.get('autoDeploy') === 'on',
+  };
+  try { await api('deploys', {method: 'POST', body}); toast('Deploying ' + body.name); e.target.reset(); refresh(); }
+  catch (err) { toast(err.message); }
+};
+
+async function showLogs(svc, name) {
+  $('#logTitle').textContent = name + ' logs';
+  const load = async () => {
+    try { const r = await api(`services/${svc}/logs`); const pre = $('#logBody'); pre.textContent = r.lines.join('\n'); pre.scrollTop = pre.scrollHeight; }
+    catch (e) { $('#logBody').textContent = e.message; }
+  };
+  await load();
+  clearInterval(logTimer); logTimer = setInterval(load, 3000);
+  $('#logDialog').showModal();
+}
+$('#logClose').onclick = () => { clearInterval(logTimer); $('#logDialog').close(); };
+document.querySelectorAll('nav button')[1].addEventListener('click', () => $('#tab-modules').append($('#jobBox')));
+
+api('status').then(showApp).catch(() => showLogin());
+</script>
+</body>
+</html>

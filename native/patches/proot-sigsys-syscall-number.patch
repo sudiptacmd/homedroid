@@ -1,0 +1,34 @@
+--- a/src/tracee/seccomp.c
++++ b/src/tracee/seccomp.c
+@@ -1,5 +1,6 @@
+ #include <errno.h>     /* E*, */
+ #include <signal.h>    /* SIGSYS, */
++#include <sys/ptrace.h> /* PTRACE_GETSIGINFO, */
+ #include <unistd.h>    /* getpgid, */
+ #include <utime.h>     /* utimbuf, */
+ #include <sys/vfs.h>   /* statfs64 */
+@@ -106,6 +107,24 @@
+ 	/* X86 uses orig_rax when selecting syscall,
+ 	 * however at this point we are after syscall has been rejected
+ 	 * and orig_rax was reset to -1.  */
++#if defined(ARCH_X86_64) || defined(ARCH_X86)
++	/* Without seccomp acceleration, PRoot has already handled the
++	 * rejected syscall's exit stop by now and may have written a result
++	 * into the accumulator, which is also where the syscall number is
++	 * read from below.  The kernel records the rejected number in the
++	 * SIGSYS siginfo, so trust that instead.  */
++	{
++		siginfo_t siginfo;
++		if (ptrace(PTRACE_GETSIGINFO, tracee->pid, NULL, &siginfo) == 0
++		    && siginfo.si_signo == SIGSYS) {
++#if defined(ARCH_X86_64)
++			tracee->_regs[CURRENT].rax = siginfo.si_syscall;
++#else
++			tracee->_regs[CURRENT].eax = siginfo.si_syscall;
++#endif
++		}
++	}
++#endif
+ #if defined(ARCH_X86_64)
+ 	tracee->_regs[CURRENT].orig_rax = tracee->_regs[CURRENT].rax;
+ #elif defined(ARCH_X86)

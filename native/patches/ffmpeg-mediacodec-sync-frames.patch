@@ -1,0 +1,98 @@
+--- a/libavcodec/mediacodecenc.c
++++ b/libavcodec/mediacodecenc.c
+@@ -890,6 +890,11 @@
+     }
+ 
+     if (frame) {
++        /* Honour forced key frames (-force_key_frames, used for HLS segment
++         * boundaries); MediaCodec otherwise only follows i-frame-interval,
++         * which some encoders ignore.  */
++        if (frame->pict_type == AV_PICTURE_TYPE_I)
++            ff_AMediaCodec_requestSyncFrame(codec);
+         input_buf = ff_AMediaCodec_getInputBuffer(codec, index, &input_size);
+         copy_frame_to_buffer(avctx, frame, input_buf, input_size);
+ 
+@@ -1047,6 +1052,9 @@
+ bailout:
+     s->eof_sent = 0;
+     ff_AMediaCodec_flush(s->codec);
++    /* The probe consumed the stream's first key frame, and encoders don't
++     * necessarily start a new one after flush().  */
++    ff_AMediaCodec_requestSyncFrame(s->codec);
+     av_bsf_flush(s->bsf);
+     av_packet_free(&pkt);
+     return ret;
+--- a/libavcodec/mediacodec_wrapper.c
++++ b/libavcodec/mediacodec_wrapper.c
+@@ -1863,6 +1863,7 @@
+     media_status_t (*signalEndOfInputStream)(AMediaCodec *);
+     media_status_t (*setAsyncNotifyCallback)(AMediaCodec *,
+             struct AMediaCodecOnAsyncNotifyCallback callback, void *userdata);
++    media_status_t (*setParameters)(AMediaCodec *, const AMediaFormat *);
+ } FFAMediaCodecNdk;
+ 
+ static const FFAMediaFormat media_format_ndk;
+@@ -2101,6 +2102,7 @@
+     GET_SYMBOL(setInputSurface)
+     GET_SYMBOL(signalEndOfInputStream)
+     GET_SYMBOL(setAsyncNotifyCallback)
++    GET_SYMBOL(setParameters)
+ 
+ #undef GET_SYMBOL
+ 
+@@ -2356,6 +2358,23 @@
+     return 0;
+ }
+ 
++static int mediacodec_ndk_requestSyncFrame(FFAMediaCodec *ctx)
++{
++    FFAMediaCodecNdk *codec = (FFAMediaCodecNdk *)ctx;
++    AMediaFormat *params;
++    media_status_t status;
++
++    if (!codec->setParameters)
++        return AVERROR(ENOSYS);
++    params = AMediaFormat_new();
++    if (!params)
++        return AVERROR(ENOMEM);
++    AMediaFormat_setInt32(params, "request-sync", 0);
++    status = codec->setParameters(codec->impl, params);
++    AMediaFormat_delete(params);
++    return media_status_to_error(status);
++}
++
+ static int mediacodec_ndk_signalEndOfInputStream(FFAMediaCodec *ctx)
+ {
+     FFAMediaCodecNdk *codec = (FFAMediaCodecNdk *)ctx;
+@@ -2525,6 +2544,7 @@
+     .getConfigureFlagEncode = mediacodec_ndk_getConfigureFlagEncode,
+     .cleanOutputBuffers = mediacodec_ndk_cleanOutputBuffers,
+     .signalEndOfInputStream = mediacodec_ndk_signalEndOfInputStream,
++    .requestSyncFrame = mediacodec_ndk_requestSyncFrame,
+     .setAsyncNotifyCallback = mediacodec_ndk_setAsyncNotifyCallback,
+ };
+ 
+--- a/libavcodec/mediacodec_wrapper.h
++++ b/libavcodec/mediacodec_wrapper.h
+@@ -236,6 +236,9 @@
+     // For encoder with FFANativeWindow as input.
+     int (*signalEndOfInputStream)(FFAMediaCodec *);
+ 
++    // Asks an encoder for a sync (key) frame as soon as possible. Optional.
++    int (*requestSyncFrame)(FFAMediaCodec *codec);
++
+     // Introduced in Android API 28
+     int (*setAsyncNotifyCallback)(FFAMediaCodec *codec,
+                                   const FFAMediaCodecOnAsyncNotifyCallback *callback,
+@@ -364,6 +367,11 @@
+     return codec->signalEndOfInputStream(codec);
+ }
+ 
++static inline int ff_AMediaCodec_requestSyncFrame(FFAMediaCodec *codec)
++{
++    return codec->requestSyncFrame ? codec->requestSyncFrame(codec) : AVERROR(ENOSYS);
++}
++
+ static inline int ff_AMediaCodec_setAsyncNotifyCallback(FFAMediaCodec *codec,
+         const FFAMediaCodecOnAsyncNotifyCallback *callback,
+         void *userdata)

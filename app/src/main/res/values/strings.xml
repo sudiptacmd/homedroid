@@ -3,6 +3,7 @@
     <string name="app_name">Lindroid</string>
     <string name="start">Start server</string>
     <string name="stop">Stop server</string>
+    <string name="apps">Apps (Jellyfin, Home Assistant…)</string>
     <string name="ssh">SSH server (port 8022)</string>
     <string name="web">Web server – Caddy (port 8080)</string>
     <string name="autostart">Start on boot</string>

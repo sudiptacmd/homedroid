@@ -1,0 +1,62 @@
+--- a/libavcodec/mediacodecenc.c
++++ b/libavcodec/mediacodecenc.c
+@@ -30,6 +30,7 @@
+ #include "libavutil/mem.h"
+ #include "libavutil/opt.h"
+ #include "libavutil/thread.h"
++#include "libavutil/time.h"
+ 
+ #include "avcodec.h"
+ #include "bsf.h"
+@@ -901,16 +902,11 @@
+     } while (ret == AVERROR(EAGAIN));
+     av_frame_unref(s->frame);
+ 
+-    if (ret < 0)
+-        return ret;
+-
+-    ret = mediacodec_send(avctx, NULL);
+-    if (ret < 0) {
+-        av_log(avctx, AV_LOG_ERROR, "Flush failed: %s\n", av_err2str(ret));
+-        return ret;
+-    }
+-
+-    return 0;
++    /* No end-of-stream here: some encoders (for instance
++     * c2.android.avc.encoder) keep reporting EOS even after flush() and
++     * restart, so no real frame would ever be encoded.  The caller polls for
++     * the first packet instead, then flushes.  */
++    return ret < 0 ? ret : 0;
+ }
+ 
+ static int mediacodec_receive_dummy_pkt(AVCodecContext *avctx, AVPacket *pkt)
+@@ -918,9 +914,14 @@
+     MediaCodecEncContext *s = avctx->priv_data;
+     int ret;
+ 
+-    do {
++    /* Without end-of-stream the encoder is never forced to emit output, so
++     * poll for the first packet, with a bound.  */
++    for (int tries = 0; tries < 2000; tries++) {
+         ret = mediacodec_receive(avctx, pkt);
+-    } while (ret == AVERROR(EAGAIN));
++        if (ret != AVERROR(EAGAIN))
++            break;
++        av_usleep(1000);
++    }
+ 
+     if (ret < 0)
+         return ret;
+@@ -978,10 +979,8 @@
+     }
+ 
+ bailout:
+-    if (s->eof_sent) {
+-        s->eof_sent = 0;
+-        ff_AMediaCodec_flush(s->codec);
+-    }
++    s->eof_sent = 0;
++    ff_AMediaCodec_flush(s->codec);
+     av_bsf_flush(s->bsf);
+     av_packet_free(&pkt);
+     return ret;

@@ -1,0 +1,30 @@
+--- a/src/extension/sysvipc/sysvipc_shm.c
++++ b/src/extension/sysvipc/sysvipc_shm.c
+@@ -15,7 +15,8 @@
+ #include <assert.h> /* assert */
+ #include <sys/errno.h> /* E* */
+ #include <sys/stat.h> /* S_IR */
+-#include <sys/mman.h> /* MAP_SHARED */
++#include <sys/mman.h>
++#include <sys/syscall.h> /* MAP_SHARED */
+ #include <syscall.h> /* syscall() */
+ #include <string.h> /* memset */
+ #include <time.h> /* time */
+@@ -773,6 +774,17 @@
+ 
+ static int sysvipc_shm_do_allocate(size_t size, int shmid) {
+ #ifdef __ANDROID__
++	/* Apps targeting Android 10+ may not open /dev/ashmem; memfd works for
++	 * them (and needs a 3.17+ kernel, hence the ashmem fallback).  */
++	char memfd_name[32];
++	snprintf(memfd_name, sizeof(memfd_name), "sysvshm_0x%X", shmid);
++	int memfd = syscall(__NR_memfd_create, memfd_name, 0);
++	if (memfd >= 0) {
++		if (ftruncate(memfd, size) == 0)
++			return memfd;
++		close(memfd);
++	}
++
+ 	int fd = open("/dev/ashmem", O_RDWR, 0);
+ 	if (fd < 0) return -ENOSPC;
+ 

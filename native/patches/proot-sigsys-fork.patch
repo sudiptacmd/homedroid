@@ -1,0 +1,22 @@
+--- a/src/tracee/seccomp.c
++++ b/src/tracee/seccomp.c
+@@ -513,6 +513,19 @@
+ 		restart_syscall_after_seccomp(tracee);
+ 		break;
+ 
++	/* Android's app policy traps fork(2) and vfork(2) on ABIs that have
++	 * them (x86_64, arm), but musl still calls them.  Replay them as
++	 * clone(SIGCHLD, 0), which it allows; see the matching case in
++	 * syscall/enter.c for why only these two arguments are set and why
++	 * vfork loses CLONE_VM.  */
++	case PR_fork:
++	case PR_vfork:
++		poke_reg(tracee, SYSARG_1, SIGCHLD);
++		poke_reg(tracee, SYSARG_2, 0);
++		set_sysnum(tracee, PR_clone);
++		restart_syscall_after_seccomp(tracee);
++		break;
++
+ 	case PR_rename:
+ 		set_sysnum(tracee, PR_renameat);
+ 		poke_reg(tracee, SYSARG_4, peek_reg(tracee, CURRENT, SYSARG_2));

@@ -1,0 +1,126 @@
+--- a/libavcodec/mediacodecenc.c
++++ b/libavcodec/mediacodecenc.c
+@@ -77,6 +77,11 @@
+     int extradata_size;
+     int eof_sent;
+ 
++    /* Latest H.264/HEVC parameter sets, repeated before every key frame so
++     * each segment of a segmented stream (HLS) decodes on its own.  */
++    uint8_t *config;
++    int config_size;
++
+     AVFrame *frame;
+     AVBSFContext *bsf;
+ 
+@@ -139,6 +144,56 @@
+     av_free(str);
+ }
+ 
++static void mediacodec_set_config(AVCodecContext *avctx, const uint8_t *data, int size)
++{
++    MediaCodecEncContext *s = avctx->priv_data;
++
++    if (avctx->codec_id != AV_CODEC_ID_H264 && avctx->codec_id != AV_CODEC_ID_HEVC)
++        return;
++    if (av_reallocp(&s->config, size) < 0) {
++        s->config_size = 0;
++        return;
++    }
++    memcpy(s->config, data, size);
++    s->config_size = size;
++}
++
++/* Codec2 encoders report the parameter sets in the output format (csd-0 and,
++ * for H.264, csd-1) rather than as a codec-config buffer; without this they
++ * never reach the bitstream.  */
++static void mediacodec_config_from_format(AVCodecContext *avctx, FFAMediaFormat *format)
++{
++    MediaCodecEncContext *s = avctx->priv_data;
++    uint8_t *all = NULL;
++    int all_size = 0;
++
++    for (int i = 0; i < 2; i++) {
++        const char *key = i ? "csd-1" : "csd-0";
++        void *data = NULL;
++        size_t size = 0;
++
++        if (!ff_AMediaFormat_getBuffer(format, key, &data, &size) || !data || !size)
++            continue;
++        if (av_reallocp(&all, all_size + size) >= 0) {
++            memcpy(all + all_size, data, size);
++            all_size += size;
++        } else {
++            all_size = 0;
++        }
++        if (!s->use_ndk_codec)
++            av_free(data); /* the JNI wrapper returns a copy, the NDK one doesn't */
++    }
++    if (all_size) {
++        mediacodec_set_config(avctx, all, all_size);
++        /* Also prefix the next packet, like a codec-config buffer would.  */
++        if (av_reallocp(&s->extradata, all_size) >= 0) {
++            memcpy(s->extradata, all, all_size);
++            s->extradata_size = all_size;
++        }
++    }
++    av_free(all);
++}
++
+ static void mediacodec_output_format(AVCodecContext *avctx)
+ {
+     MediaCodecEncContext *s = avctx->priv_data;
+@@ -147,6 +202,7 @@
+     if (!s->name)
+         s->name = ff_AMediaCodec_getName(s->codec);
+     mediacodec_dump_format(avctx, out_format);
++    mediacodec_config_from_format(avctx, out_format);
+     ff_AMediaFormat_delete(out_format);
+ }
+ 
+@@ -722,19 +778,29 @@
+ 
+         s->extradata_size = out_info.size;
+         memcpy(s->extradata, out_buf + out_info.offset, out_info.size);
++        mediacodec_set_config(avctx, s->extradata, s->extradata_size);
+         ff_AMediaCodec_releaseOutputBuffer(codec, index, false);
+         // try immediately
+         return mediacodec_receive(avctx, pkt);
+     }
+ 
+-    ret = ff_get_encode_buffer(avctx, pkt, out_info.size + s->extradata_size, 0);
+-    if (ret < 0)
+-      goto bailout;
+-
+-    if (s->extradata_size) {
+-        extradata_size = s->extradata_size;
+-        s->extradata_size = 0;
+-        memcpy(pkt->data, s->extradata, extradata_size);
++    {
++        int key = !!(out_info.flags & ff_AMediaCodec_getBufferFlagKeyFrame(codec));
++        const uint8_t *prefix = NULL;
++
++        if (s->extradata_size) {
++            prefix = s->extradata;
++            extradata_size = s->extradata_size;
++            s->extradata_size = 0;
++        } else if (key && s->config_size) {
++            prefix = s->config;
++            extradata_size = s->config_size;
++        }
++        ret = ff_get_encode_buffer(avctx, pkt, out_info.size + extradata_size, 0);
++        if (ret < 0)
++            goto bailout;
++        if (extradata_size)
++            memcpy(pkt->data, prefix, extradata_size);
+     }
+     memcpy(pkt->data + extradata_size, out_buf + out_info.offset, out_info.size);
+     pkt->pts = av_rescale_q(out_info.presentationTimeUs, AV_TIME_BASE_Q, avctx->time_base);
+@@ -1002,6 +1068,8 @@
+ 
+     av_bsf_free(&s->bsf);
+     av_frame_free(&s->frame);
++    av_freep(&s->extradata);
++    av_freep(&s->config);
+ 
+     mediacodec_uninit_async_state(avctx);
+ 

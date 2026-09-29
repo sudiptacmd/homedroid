@@ -1,0 +1,30 @@
+--- a/src/syscall/enter.c
++++ b/src/syscall/enter.c
+@@ -2474,8 +2474,27 @@
+ 		break;
+ 	}
+ 
++	/* Android's app seccomp policy rejects fork(2) and vfork(2) with ENOSYS on ABIs
++	 * that have them (x86_64, arm), but musl still calls them.  Rewrite both into
++	 * clone(SIGCHLD, 0), which the policy allows.
++	 *
++	 * Only the flags and stack arguments are set: with these flags clone(2)
++	 * ignores the others, and the new child inherits whatever registers we
++	 * leave here (PRoot restores only the parent's).  musl's vfork keeps its
++	 * return address in the third argument register across the syscall, and
++	 * neither its fork nor vfork read the first two afterwards (checked on
++	 * x86_64 and armhf).  vfork deliberately loses CLONE_VM: PRoot's execve
++	 * translation writes into the child's memory, which a shared address
++	 * space would leak into the suspended parent.
++	 *
++	 * Only effective without seccomp acceleration (PROOT_NO_SECCOMP): the app
++	 * filter's ERRNO verdict outranks PRoot's TRACE, so PRoot never sees the
++	 * call otherwise.  */
+ 	case PR_fork:
+ 	case PR_vfork:
++		poke_reg(tracee, SYSARG_1, SIGCHLD);
++		poke_reg(tracee, SYSARG_2, 0);
++		set_sysnum(tracee, PR_clone);
+ 		force_fork_sysexit(tracee);
+ 		status = 0;
+ 		break;

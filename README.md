@@ -1,70 +1,185 @@
 # Lindroid
 
-Turn an old Android phone (Android 10+) into a small, always-on Linux server. No root required.
+**Turn an old Android phone into a home server.** No root, no Termux, one app.
 
-- **SSH / SFTP** on port 8022 (public-key auth only, `ssh -L` port forwarding)
-- **Caddy** web server on port 8080, serving `~/www`
-- **Cloudflare Tunnel** to publish it on the internet: no port forwarding, works behind CGNAT
+Lindroid runs SSH, a web server, a Cloudflare tunnel and self-hosted apps (Jellyfin, Immich,
+qBittorrent, Home Assistant) on any Android 10+ phone, and manages them from the phone or
+from a web dashboard, where you can also deploy web apps straight from GitHub.
+
+<p align="center">
+  <img src="docs/screenshots/phone-main.png" width="260" alt="The Lindroid app: services, addresses and battery status">
+  <img src="docs/screenshots/phone-apps.png" width="260" alt="The Apps screen with Jellyfin, qBittorrent, Home Assistant and Immich">
+</p>
+<p align="center">
+  <img src="docs/screenshots/dashboard-overview-dark.png" width="820" alt="The web dashboard overview: phone health and running services">
+</p>
+
+## Features
+
+| Module | What you get | Port |
+|--------|--------------|------|
+| **SSH & SFTP** | Shell and file transfer, public-key login, `ssh -L` port forwarding | 8022 |
+| **Web hosting** | Caddy serving `~/www`, plus sites deployed from GitHub | 8080 |
+| **Cloudflare Tunnel** | Publish services on the internet: no port forwarding, works behind CGNAT | – |
+| **Jellyfin** | Media server with **hardware transcoding on the phone's video encoder** | 8096 |
+| **Immich** | Google Photos-style backup (face/object recognition off: too heavy for phones) | 2283 |
+| **qBittorrent** | Downloads in order into the media library and keeps seeding; `torrent <magnet>` over SSH | 8081 |
+| **Home Assistant** | Home automation (network and cloud integrations) | 8123 |
+| **Dashboard** | Manage everything from a browser; deploy Node.js, Python and static sites from Git | 8800 |
+
+- **Everything is a module.** Add, remove, turn on or off at any time, from the phone or the
+  dashboard. Nothing you don't use runs.
+- **Your storage, your choice.** Keep app data inside the app (no permissions), or put media
+  and photos on internal storage, a microSD card or a USB drive, per app.
+- **Built to stay up.** Foreground service, wakelocks, start on boot, automatic restarts
+  with backoff, per-service logs. Crash loops show their reason in the UI.
+- **Light.** A single APK under 40 MB per ABI; apps are downloaded only when you install them.
+
+## Requirements
+
+- Android 10 or newer; arm64 recommended (Immich images are 64-bit only, the rest also runs on
+  32-bit ARM). Tested on emulated Android 10 and 16; pilot device: Galaxy S9+ (Exynos 9810).
+- Free storage for the apps you pick: Jellyfin ≈ 420 MB (and wants 2 GB free), Immich ≈ 1.6 GB,
+  Home Assistant ≈ 900 MB.
+
+## Getting started
+
+1. Build and install the APK (see [Building](#building)).
+2. Open Lindroid, paste your SSH public key (`~/.ssh/id_ed25519.pub`), tap **Save & apply**,
+   then **Start server**.
+3. Tap **Allow running in background**. On Samsung phones also add Lindroid to
+   *Settings → Battery → Background usage limits → Never sleeping apps*.
+4. Android 12+: turn off the phantom process killer (the app shows how).
+5. Open the dashboard at `http://<phone-ip>:8800` with the password shown in the app.
+6. Keep the phone cool and, if you can, limit charging to about 80%.
+
+```bash
+ssh -p 8022 <phone-ip>                       # shell; `alpine` opens a root shell in Alpine Linux
+sftp -P 8022 <phone-ip>                      # files; put your website in www/
+ssh -p 8022 <phone-ip> torrent 'magnet:?…'   # download, in order, into Media/Downloads
+ssh -p 8022 <phone-ip> torrent list          # progress
+```
+
+To publish a service on the internet, create a tunnel in the Cloudflare Zero Trust dashboard,
+point a public hostname at `http://localhost:<port>`, and turn on the Cloudflare Tunnel module
+with the tunnel token.
+
+### Storage
+
+App data stays inside the app by default. To use an SD card or USB drive, choose
+**Change location** on the app (phone) and pick a volume:
+
+- Android 11+: data goes to a visible `Lindroid/<name>` folder, with *All files access*.
+- Android 10: apps can only write to their own folder on removable volumes
+  (`Android/data/dev.lindroid/files/<name>`). Android deletes it if Lindroid is uninstalled;
+  the picker says so.
+
+Jellyfin and qBittorrent share one *Media* folder. Databases and settings always stay in
+internal storage, because SD cards and USB drives are usually FAT/exFAT. If the card is removed,
+apps wait for it instead of writing elsewhere. With storage access, every volume also appears
+inside Alpine at `/storage/…`, so existing folders can be added to Jellyfin.
+
+### Deploying from GitHub
+
+<img src="docs/screenshots/dashboard-deploys-dark.png" width="820" alt="The Deployments tab">
+
+Give a repository URL, branch and port. Node.js, Python and static sites are detected; build and
+start commands and environment variables can be set. Apps get `$PORT`; static sites are served
+by Caddy. **Redeploy** pulls and rebuilds, and a failed build keeps the old version running.
+**Auto-deploy** checks the branch every 5 minutes, so no public webhook is needed. For private
+repositories use `https://<token>@github.com/you/repo` with a read-only token; it is never shown
+back in the dashboard.
 
 ## How it works
 
 ```
-MainActivity ── settings, status, logs
-     │
-ServerService (foreground service + wakelock + Wi-Fi lock, starts on boot)
-     │
-Supervisor ── one thread per daemon, restart with exponential backoff, log rotation
-     │
- lib{sshd,caddy,cloudflared}.so   ← Go executables shipped as "native libs"
+MainActivity / AppsActivity             Dashboard (:8800) ── single-page UI + JSON API
+            │                                   │
+ServerService ── foreground service, wakelocks, boot start, install and deploy jobs
+            │
+Supervisor ── one thread per process, own process group, restart with backoff, logs
+            │
+  sshd · caddy · cloudflared           proot ─┬─ Alpine Linux ── Jellyfin, qBittorrent, HA, deploys
+  (Go, built for Android)                     └─ container images ── Immich server, Postgres
 ```
 
-Apps targeting SDK 29+ may only execute files from `nativeLibraryDir`, so the daemons are
-cross-compiled with the NDK and packaged as `jniLibs/<abi>/lib<name>.so`. They're built with
-`GOOS=android` and cgo so DNS goes through bionic. Pure-Go builds look for
-`/etc/resolv.conf`, which doesn't exist on Android.
+**Running Linux software without root.** Apps targeting Android 10+ may only execute files
+from their native-library directory, and still map others with `mmap(PROT_EXEC)`. Lindroid
+ships its daemons as `lib*.so` in the APK and runs everything else under
+[proot](https://github.com/termux/proot), whose loader maps binaries from app storage. Alpine
+Linux (3 MB, checksum-verified) is downloaded on first use and unpacked by a small extractor
+([`Tar.kt`](app/src/main/java/dev/lindroid/Tar.kt)). Android 10's own `tar` can't cope with
+the ownership changes apps aren't allowed to make.
 
-On-device layout (`/data/data/dev.lindroid/files`):
+**Container images without Docker.** [`Oci.kt`](app/src/main/java/dev/lindroid/Oci.kt) pulls
+images from Docker Hub or ghcr.io. It picks the phone's architecture, verifies every layer's
+digest, and applies whiteouts. Hard links become copies, since Android forbids them in app
+storage, and absolute symlinks resolve inside the image. Immich runs from its official images
+this way.
 
-| Path | Contents |
-|------|----------|
-| `home/` | `$HOME` for SSH sessions and daemons |
-| `home/www/` | Website root served by Caddy |
-| `home/.ssh/authorized_keys` | Keys allowed to SSH in (editable from the app) |
-| `etc/Caddyfile` | Caddy config. Edit over SFTP, then *Save & apply* |
-| `bin/` | Symlinks `caddy`, `cloudflared`, `sshd` (on `$PATH` in SSH) |
-| `logs/` | Per-daemon logs (rotated at 512 KB) |
+**Hardware transcoding.** The phone's video encoder is only reachable through Android's
+MediaCodec (bionic `libmediandk` and binder), not VAAPI. Lindroid builds an Android-native
+FFmpeg with MediaCodec. It presets Jellyfin's V4L2 option and points it at a shim that runs
+that FFmpeg (`h264_v4l2m2m` → `h264_mediacodec`) and Jellyfin's own FFmpeg for everything
+else. Android's `/system`, `/apex` and `/vendor` are bind-mounted into Alpine so the bionic
+binary can run there.
+
+### Patches
+
+`native/patches/` holds the changes that make upstream code work in Android's app sandbox:
+
+| Patch | Why |
+|-------|-----|
+| `proot-fork-to-clone` | Android rejects `fork`/`vfork` on x86_64 and armv7, and musl uses them; rewrite them as `clone(SIGCHLD)`. |
+| `proot-sigsys-fork` | The same rewrite for syscalls the sandbox traps with SIGSYS, so proot's fast seccomp mode works everywhere (≈50× faster for syscall-heavy work). |
+| `proot-sigsys-syscall-number` | On x86, proot's SIGSYS emulation read the syscall number from a register it had already overwritten, breaking `rename(2)` and with it `uv`. |
+| `proot-sysvipc-memfd` | Apps targeting Android 10+ can't open `/dev/ashmem`; back emulated System V shared memory (PostgreSQL) with `memfd`. |
+| `ffmpeg-mediacodec-extradata-without-eos` | MP4/HLS headers were probed with a dummy frame plus end-of-stream; some encoders stay at EOS afterwards. |
+| `ffmpeg-mediacodec-parameter-sets` | Codec2 encoders report SPS/PPS in the output format; capture them and repeat them before every key frame. |
+| `ffmpeg-mediacodec-sync-frames` | Honour forced key frames (HLS segment boundaries) with `request-sync`, and start with a key frame after the probe. |
+
+The supervisor starts every process in its own session and signals whole process groups:
+proot ignores SIGTERM, and killing only proot would orphan the program it runs.
 
 ## Building
 
-Requires JDK 17+, Go, and the Android SDK + NDK.
+Needs JDK 17+, Go 1.23+ and the Android SDK with NDK r27+ (`ANDROID_NDK_HOME`).
 
 ```bash
-native/build.sh            # cross-compile daemons (arm64-v8a, armeabi-v7a, x86_64)
-./gradlew assembleRelease  # APKs in app/build/outputs/apk/release/
+native/build-all.sh                 # sshd, Caddy, cloudflared, proot, FFmpeg for arm64, armv7, x86_64
+./gradlew assembleRelease           # APKs in app/build/outputs/apk/release/
 adb install app/build/outputs/apk/release/app-arm64-v8a-release.apk
 ```
 
-Pin other daemon versions with `CADDY_VERSION=v2.x.y CLOUDFLARED_VERSION=YYYY.M.P native/build.sh`.
+The individual scripts take ABIs as arguments (`native/build-ffmpeg.sh arm64-v8a`), and
+versions can be overridden (`CADDY_VERSION=… CLOUDFLARED_VERSION=… native/build.sh`). Release
+builds are signed with the debug key; use your own keystore to distribute them.
 
-## Phone setup
+### Adding an app
 
-1. Open the app, paste your public key (`~/.ssh/id_ed25519.pub`), then tap **Save & apply** and **Start server**.
-2. Tap **Allow running in background** (disables battery optimization).
-3. Android 12+: disable the phantom process killer (instructions are shown in the app).
-4. Public website: create a tunnel in the Cloudflare Zero Trust dashboard, point its public
-   hostname at `http://localhost:8080`, and paste the tunnel token into the app.
-5. Keep the phone cool, and if possible limit charging to around 80%. Batteries kept at 100% for months can swell.
+Apps are data: add an entry to [`apps.json`](app/src/main/assets/apps.json). A simple app runs
+an install script and a command in Alpine (see Jellyfin). A multi-service app pulls
+container images and runs several processes, with `{{secret}}` passwords and `@data`/`@storage`
+binds (see Immich). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-```bash
-ssh -p 8022 <phone-ip>
-sftp -P 8022 <phone-ip>   # upload your site into www/
-```
+## Security notes
+
+- SSH accepts public keys only. The dashboard uses a generated password; sessions are
+  HttpOnly/SameSite cookies, and scripts can send the password as a Bearer token.
+- Everything listens on the phone's network, so keep the phone on a network you trust, and
+  expose services to the internet through the Cloudflare tunnel rather than port forwarding.
+- Other apps on the same phone can reach `localhost`. Lindroid binds databases to localhost and
+  protects them with generated passwords. qBittorrent skips authentication for localhost so the
+  `torrent` command works.
 
 ## Roadmap
 
-- [ ] Alpine rootfs (`apk add` anything). Needs a proot loader that maps binaries into
-      anonymous memory (W^X blocks exec from app data on SDK 29+), or chroot on rooted phones.
-- [ ] Optional root mode: chroot, ports < 1024, charge limiting
-- [ ] Tailscale
-- [ ] Slimmer Caddy build (only the modules we need)
-- [ ] App templates (Vaultwarden, file sync, DNS ad-blocker)
+- Root mode: chroot at native speed, ports below 1024, charge limiting
+- More apps: Vaultwarden, Syncthing, Pi-hole/AdGuard; Tailscale
+- Hostname routing for deployments through Caddy
+- Verify hardware transcoding on more SoCs (Exynos, Snapdragon, MediaTek)
+
+## License
+
+Lindroid is free software under the [GNU General Public License v3.0](LICENSE). It bundles and
+builds third-party components under their own licenses; see [THIRD_PARTY.md](THIRD_PARTY.md).
