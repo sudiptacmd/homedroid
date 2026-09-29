@@ -5,7 +5,7 @@
  	request.ifa.ifa_family  = AF_UNSPEC;
  
 -	if (sendto(fd, &request, sizeof(request), MSG_DONTWAIT,
-+	/* Lindroid: on Android the write probe always fails, and falling
++	/* Homedroid: on Android the write probe always fails, and falling
 +	 * back to the fake socket then hides every interface address from
 +	 * getifaddrs(3) as well (torrent clients, service discovery, LAN
 +	 * detection), although reads work on the real socket.  Keep the real

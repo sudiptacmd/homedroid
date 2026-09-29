@@ -1,4 +1,4 @@
-// Command sshd is a minimal SSH server for Lindroid: public-key auth only, interactive
+// Command sshd is a minimal SSH server for Homedroid: public-key auth only, interactive
 // shells with a PTY, exec, SFTP and local port forwarding (ssh -L).
 package main
 
@@ -39,7 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("host key: %v", err)
 	}
-	cfg := &ssh.ServerConfig{PublicKeyCallback: checkKey, ServerVersion: "SSH-2.0-lindroid"}
+	cfg := &ssh.ServerConfig{PublicKeyCallback: checkKey, ServerVersion: "SSH-2.0-homedroid"}
 	cfg.AddHostKey(signer)
 
 	ln, err := net.Listen("tcp", *listen)
@@ -70,7 +70,7 @@ func loadHostKey(path string) (ssh.Signer, error) {
 	if err != nil {
 		return nil, err
 	}
-	block, err := ssh.MarshalPrivateKey(priv, "lindroid")
+	block, err := ssh.MarshalPrivateKey(priv, "homedroid")
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +306,7 @@ func exit(ch ssh.Channel, cmd *exec.Cmd) {
 }
 
 func fail(ch ssh.Channel, err error) {
-	fmt.Fprintf(ch.Stderr(), "lindroid: %v\n", err)
+	fmt.Fprintf(ch.Stderr(), "homedroid: %v\n", err)
 	sendExit(ch, 127)
 }
 

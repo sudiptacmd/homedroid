@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import android.content.BroadcastReceiver
 import android.content.Context

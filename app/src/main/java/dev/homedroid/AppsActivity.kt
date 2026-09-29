@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -162,7 +162,7 @@ class AppsActivity : Activity() {
         val labels = listOf("Inside the app (default, no permission needed)") +
             volumes.map {
                 "${it.label} · ${formatSize(it.free)} free" +
-                    if (it.appDirOnly) " (deleted if Lindroid is uninstalled)" else ""
+                    if (it.appDirOnly) " (deleted if Homedroid is uninstalled)" else ""
             }
         AlertDialog.Builder(this)
             .setTitle("Where should ${app.name} keep its ${app.storageLabel?.lowercase()}?")

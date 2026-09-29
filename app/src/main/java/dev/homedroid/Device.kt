@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import android.app.ActivityManager
 import android.content.Context

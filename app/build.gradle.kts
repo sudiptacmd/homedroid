@@ -3,15 +3,15 @@ plugins {
 }
 
 android {
-    namespace = "dev.lindroid"
+    namespace = "dev.homedroid"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "dev.lindroid"
+        applicationId = "dev.homedroid"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 401
+        versionName = "0.4.1-beta"
     }
 
     buildTypes {

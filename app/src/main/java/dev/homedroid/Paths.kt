@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import android.content.Context
 import android.system.ErrnoException
@@ -87,7 +87,7 @@ class Paths(ctx: Context) {
         """.trimIndent() + "\n"
 
         private const val DEFAULT_INDEX =
-            "<!doctype html><title>Lindroid</title><h1>It works!</h1>" +
+            "<!doctype html><title>Homedroid</title><h1>It works!</h1>" +
                 "<p>Served by Caddy from an Android phone. Edit ~/www over SFTP.</p>\n"
     }
 }

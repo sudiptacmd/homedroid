@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import android.content.Context
 import org.json.JSONArray
@@ -106,13 +106,13 @@ class Deploys(private val ctx: Context, private val paths: Paths) {
     fun remove(id: String) = save(all().filterNot { it.id == id })
 
     fun state(d: Deploy, alpine: Alpine): DeployState {
-        fun read(name: String) = File(alpine.root, "srv/.lindroid/${d.id}.$name").takeIf { it.exists() }?.readText()?.trim()
+        fun read(name: String) = File(alpine.root, "srv/.homedroid/${d.id}.$name").takeIf { it.exists() }?.readText()?.trim()
         return DeployState(read("commit"), read("runtime"), read("root"), read("error"))
     }
 
     /** Shell script (run inside Alpine) that fetches and builds [d]. */
     fun buildScript(d: Deploy): String = """
-        |meta=/srv/.lindroid
+        |meta=/srv/.homedroid
         |dir=/srv/${d.id}
         |mkdir -p "${'$'}meta"
         |rm -f "${'$'}meta/${d.id}.error"
@@ -201,7 +201,7 @@ class Deploys(private val ctx: Context, private val paths: Paths) {
 
     fun removeFiles(d: Deploy, alpine: Alpine) {
         alpine.removeGuest("srv/${d.id}")
-        File(alpine.root, "srv/.lindroid").listFiles { f -> f.name.startsWith("${d.id}.") }?.forEach { it.delete() }
+        File(alpine.root, "srv/.homedroid").listFiles { f -> f.name.startsWith("${d.id}.") }?.forEach { it.delete() }
     }
 
     private fun save(list: List<Deploy>) {
@@ -228,7 +228,7 @@ class Deploys(private val ctx: Context, private val paths: Paths) {
 
         private val ENV_NAME = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
-        /** Ports used by Lindroid and the catalog apps. */
+        /** Ports used by Homedroid and the catalog apps. */
         private val RESERVED_PORTS = setOf(2019, 2283, 5432, 6379, 8022, 8080, 8081, 8096, 8123, 8800)
     }
 }

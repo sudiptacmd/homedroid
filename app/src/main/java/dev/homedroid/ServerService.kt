@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -21,11 +21,11 @@ import java.util.concurrent.TimeUnit
  */
 class ServerService : Service() {
     companion object {
-        private const val ACTION_RESTART = "dev.lindroid.RESTART"
-        private const val ACTION_INSTALL = "dev.lindroid.INSTALL"
-        private const val ACTION_UNINSTALL = "dev.lindroid.UNINSTALL"
-        private const val ACTION_DEPLOY = "dev.lindroid.DEPLOY"
-        private const val ACTION_UNDEPLOY = "dev.lindroid.UNDEPLOY"
+        private const val ACTION_RESTART = "dev.homedroid.RESTART"
+        private const val ACTION_INSTALL = "dev.homedroid.INSTALL"
+        private const val ACTION_UNINSTALL = "dev.homedroid.UNINSTALL"
+        private const val ACTION_DEPLOY = "dev.homedroid.DEPLOY"
+        private const val ACTION_UNDEPLOY = "dev.homedroid.UNDEPLOY"
         private const val EXTRA_APP = "app"
         private const val EXTRA_DEPLOY = "deploy"
         private const val AUTO_DEPLOY_MINUTES = 5L
@@ -87,11 +87,11 @@ class ServerService : Service() {
         super.onCreate()
         startInForeground()
         wakeLock = getSystemService(PowerManager::class.java)
-            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "lindroid:server")
+            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "homedroid:server")
             .apply { setReferenceCounted(false); acquire() }
         @Suppress("DEPRECATION")
         wifiLock = getSystemService(WifiManager::class.java)
-            .createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "lindroid:server")
+            .createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "homedroid:server")
             .apply { setReferenceCounted(false); acquire() }
         worker.execute(::launch)
         dashboard = Dashboard(this).also {
@@ -249,7 +249,7 @@ class ServerService : Service() {
         )
         val notification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat)
-            .setContentTitle("Lindroid server running")
+            .setContentTitle("Homedroid server running")
             .setContentIntent(open)
             .setOngoing(true)
             .build()

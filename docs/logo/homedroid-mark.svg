@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Lindroid">
-  <title>Lindroid</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Homedroid">
+  <title>Homedroid</title>
   <!-- Phone -->
   <rect x="58" y="14" width="140" height="228" rx="30" fill="#1b222c"/>
   <rect x="58" y="14" width="140" height="228" rx="30" fill="none" stroke="#7ee787" stroke-width="6"/>

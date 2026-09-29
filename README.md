@@ -1,20 +1,20 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/lindroid-logo-dark.svg">
-    <img src="docs/logo/lindroid-logo-light.svg" alt="Lindroid: your old phone, now a home server" width="520">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/homedroid-logo-dark.svg">
+    <img src="docs/logo/homedroid-logo-light.svg" alt="Homedroid: your old phone, now a home server" width="520">
   </picture>
 </p>
 
-# Lindroid
+# Homedroid
 
 **Turn an old Android phone into a home server.** No root, no Termux, one app.
 
-Lindroid runs SSH, a web server, a Cloudflare tunnel and self-hosted apps (Jellyfin, Immich,
+Homedroid runs SSH, a web server, a Cloudflare tunnel and self-hosted apps (Jellyfin, Immich,
 qBittorrent, Home Assistant) on any Android 10+ phone, and manages them from the phone or
 from a web dashboard, where you can also deploy web apps straight from GitHub.
 
 <p align="center">
-  <img src="docs/screenshots/phone-main.png" width="260" alt="The Lindroid app: services, addresses and battery status">
+  <img src="docs/screenshots/phone-main.png" width="260" alt="The Homedroid app: services, addresses and battery status">
   <img src="docs/screenshots/phone-apps.png" width="260" alt="The Apps screen with Jellyfin, qBittorrent, Home Assistant and Immich">
 </p>
 <p align="center">
@@ -52,9 +52,9 @@ from a web dashboard, where you can also deploy web apps straight from GitHub.
 ## Getting started
 
 1. Build and install the APK (see [Building](#building)).
-2. Open Lindroid, paste your SSH public key (`~/.ssh/id_ed25519.pub`), tap **Save & apply**,
+2. Open Homedroid, paste your SSH public key (`~/.ssh/id_ed25519.pub`), tap **Save & apply**,
    then **Start server**.
-3. Tap **Allow running in background**. On Samsung phones also add Lindroid to
+3. Tap **Allow running in background**. On Samsung phones also add Homedroid to
    *Settings → Battery → Background usage limits → Never sleeping apps*.
 4. Android 12+: turn off the phantom process killer (the app shows how).
 5. Open the dashboard at `http://<phone-ip>:8800` with the password shown in the app.
@@ -76,9 +76,9 @@ with the tunnel token.
 App data stays inside the app by default. To use an SD card or USB drive, choose
 **Change location** on the app (phone) and pick a volume:
 
-- Android 11+: data goes to a visible `Lindroid/<name>` folder, with *All files access*.
+- Android 11+: data goes to a visible `Homedroid/<name>` folder, with *All files access*.
 - Android 10: apps can only write to their own folder on removable volumes
-  (`Android/data/dev.lindroid/files/<name>`). Android deletes it if Lindroid is uninstalled;
+  (`Android/data/dev.homedroid/files/<name>`). Android deletes it if Homedroid is uninstalled;
   the picker says so.
 
 Jellyfin and qBittorrent share one *Media* folder. Databases and settings always stay in
@@ -111,21 +111,21 @@ Supervisor ── one thread per process, own process group, restart with backof
 ```
 
 **Running Linux software without root.** Apps targeting Android 10+ may only execute files
-from their native-library directory, and still map others with `mmap(PROT_EXEC)`. Lindroid
+from their native-library directory, and still map others with `mmap(PROT_EXEC)`. Homedroid
 ships its daemons as `lib*.so` in the APK and runs everything else under
 [proot](https://github.com/termux/proot), whose loader maps binaries from app storage. Alpine
 Linux (3 MB, checksum-verified) is downloaded on first use and unpacked by a small extractor
-([`Tar.kt`](app/src/main/java/dev/lindroid/Tar.kt)). Android 10's own `tar` can't cope with
+([`Tar.kt`](app/src/main/java/dev/homedroid/Tar.kt)). Android 10's own `tar` can't cope with
 the ownership changes apps aren't allowed to make.
 
-**Container images without Docker.** [`Oci.kt`](app/src/main/java/dev/lindroid/Oci.kt) pulls
+**Container images without Docker.** [`Oci.kt`](app/src/main/java/dev/homedroid/Oci.kt) pulls
 images from Docker Hub or ghcr.io. It picks the phone's architecture, verifies every layer's
 digest, and applies whiteouts. Hard links become copies, since Android forbids them in app
 storage, and absolute symlinks resolve inside the image. Immich runs from its official images
 this way.
 
 **Hardware transcoding.** The phone's video encoder is only reachable through Android's
-MediaCodec (bionic `libmediandk` and binder), not VAAPI. Lindroid builds an Android-native
+MediaCodec (bionic `libmediandk` and binder), not VAAPI. Homedroid builds an Android-native
 FFmpeg with MediaCodec. It presets Jellyfin's V4L2 option and points it at a shim that runs
 that FFmpeg (`h264_v4l2m2m` → `h264_mediacodec`) and Jellyfin's own FFmpeg for everything
 else. Android's `/system`, `/apex` and `/vendor` are bind-mounted into Alpine so the bionic
@@ -178,7 +178,7 @@ binds (see Immich). See [CONTRIBUTING.md](CONTRIBUTING.md).
   HttpOnly/SameSite cookies, and scripts can send the password as a Bearer token.
 - Everything listens on the phone's network, so keep the phone on a network you trust, and
   expose services to the internet through the Cloudflare tunnel rather than port forwarding.
-- Other apps on the same phone can reach `localhost`. Lindroid binds databases to localhost and
+- Other apps on the same phone can reach `localhost`. Homedroid binds databases to localhost and
   protects them with generated passwords. qBittorrent skips authentication for localhost so the
   `torrent` command works.
 
@@ -191,5 +191,5 @@ binds (see Immich). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-Lindroid is free software under the [GNU General Public License v3.0](LICENSE). It bundles and
+Homedroid is free software under the [GNU General Public License v3.0](LICENSE). It bundles and
 builds third-party components under their own licenses; see [THIRD_PARTY.md](THIRD_PARTY.md).

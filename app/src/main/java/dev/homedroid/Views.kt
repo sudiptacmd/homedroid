@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import android.view.View
 import android.widget.TextView

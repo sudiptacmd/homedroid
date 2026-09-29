@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import android.content.Context
 import org.json.JSONObject
@@ -269,7 +269,7 @@ class Dashboard(private val ctx: Context) {
     private class Core(val id: String, val name: String, val description: String, val port: Int, val service: String)
 
     companion object {
-        private const val COOKIE = "lindroid_session"
+        private const val COOKIE = "homedroid_session"
         private const val MAX_SESSIONS = 20
 
         private val SECURITY_HEADERS = mapOf(

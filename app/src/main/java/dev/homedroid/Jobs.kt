@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 /** State of the current (or last) app install/uninstall, shown by [AppsActivity]. */
 object Jobs {

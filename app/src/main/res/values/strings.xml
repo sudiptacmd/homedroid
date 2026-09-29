@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Lindroid</string>
+    <string name="app_name">Homedroid</string>
     <string name="start">Start server</string>
     <string name="stop">Stop server</string>
     <string name="apps">Apps (Jellyfin, Home Assistant…)</string>

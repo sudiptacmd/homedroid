@@ -1,4 +1,4 @@
-module lindroid/sshd
+module homedroid/sshd
 
 go 1.26.0
 

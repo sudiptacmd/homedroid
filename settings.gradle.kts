@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "lindroid"
+rootProject.name = "homedroid"
 include(":app")

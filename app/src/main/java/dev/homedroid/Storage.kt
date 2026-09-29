@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import android.Manifest
 import android.app.Activity
@@ -70,7 +70,7 @@ object Storage {
     /** The folder [app] would use on [volume]. */
     fun folderOn(volume: Volume, app: AppDef) =
         if (volume.appDirOnly) File(volume.appDir, app.storageFolder)
-        else File(volume.root, "Lindroid/${app.storageFolder}")
+        else File(volume.root, "Homedroid/${app.storageFolder}")
 
     /** Whether using [volume] needs [requestAccess] first. */
     fun needsAccess(volume: Volume) = !volume.appDirOnly

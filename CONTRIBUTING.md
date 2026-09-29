@@ -17,7 +17,7 @@ so hardware-transcoding speed has to be checked on a real phone.
 
 | Path | What |
 |------|------|
-| `app/src/main/java/dev/lindroid/` | The app: service, supervisor, dashboard, Alpine/proot, image puller |
+| `app/src/main/java/dev/homedroid/` | The app: service, supervisor, dashboard, Alpine/proot, image puller |
 | `app/src/main/assets/apps.json` | The app catalog |
 | `app/src/main/assets/dashboard.html` | The web dashboard (single file, no build step) |
 | `native/` | Build scripts for bundled binaries, the SSH server, and upstream patches |
@@ -50,7 +50,7 @@ Things that don't work in an Android app sandbox, and how the catalog works arou
   (e.g. `UV_LINK_MODE=copy`, `git config core.createObject rename`).
 - **No System V IPC.** Services that need it (PostgreSQL) set `"sysvipc": true`.
 - **No `/dev/ashmem`, no raw USB or Bluetooth devices, no ports below 1024.**
-- **Some `/proc` files are hidden.** Lindroid provides stand-ins for `stat`, `loadavg`, `uptime`,
+- **Some `/proc` files are hidden.** Homedroid provides stand-ins for `stat`, `loadavg`, `uptime`,
   `version` and `vmstat`.
 
 ## Pull requests

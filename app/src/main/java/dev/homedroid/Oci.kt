@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import org.json.JSONObject
 import java.io.File
@@ -154,7 +154,7 @@ class Oci(private val arch: String) {
     }
 
     companion object {
-        const val CONFIG_FILE = ".lindroid-image.json"
+        const val CONFIG_FILE = ".homedroid-image.json"
 
         private val MANIFEST_TYPES = listOf(
             "application/vnd.oci.image.index.v1+json",

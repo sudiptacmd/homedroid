@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -17,7 +17,7 @@ import java.security.MessageDigest
  */
 class Alpine(private val ctx: Context, private val paths: Paths) {
     val root = File(paths.root, "alpine")
-    private val meta = File(root, ".lindroid")
+    private val meta = File(root, ".homedroid")
 
     val installed get() = File(root, "etc/alpine-release").exists()
 
@@ -41,7 +41,7 @@ class Alpine(private val ctx: Context, private val paths: Paths) {
         for (bind in BINDS) addAll(listOf("-b", bind))
         // Android hides these from apps; programs that read them get plausible stand-ins.
         for (name in FAKE_PROC.keys) addAll(listOf("-b", "${File(meta, "proc/$name").path}:/proc/$name"))
-        addAll(listOf("-b", "${paths.home.path}:/mnt/lindroid"))
+        addAll(listOf("-b", "${paths.home.path}:/mnt/homedroid"))
         // Android's own userland, so bionic programs (the MediaCodec FFmpeg) run in Alpine
         // too. The lib dir keeps its real path: the linker picks its namespace from it. Not in
         // images: they may mount their own data at /data, where the lib dir would appear.
@@ -176,7 +176,7 @@ class Alpine(private val ctx: Context, private val paths: Paths) {
         shim.writeText(
             """
             |#!/bin/sh
-            |# Written by Lindroid on every start; edits are overwritten.
+            |# Written by Homedroid on every start; edits are overwritten.
             |case " ${'$'}* " in
             |*_v4l2m2m*) ;;
             |*) exec /usr/lib/jellyfin-ffmpeg/ffmpeg "${'$'}@" ;;
@@ -261,7 +261,7 @@ class Alpine(private val ctx: Context, private val paths: Paths) {
         private const val LINKER_CONFIG = "/linkerconfig/ld.config.txt"
 
         /** Path of the FFmpeg shim inside Alpine; see [writeFfmpegShim]. */
-        const val FFMPEG_SHIM = "/usr/local/lib/lindroid/ffmpeg"
+        const val FFMPEG_SHIM = "/usr/local/lib/homedroid/ffmpeg"
 
         val BASE_ENV = mapOf(
             "HOME" to "/root",
@@ -278,7 +278,7 @@ class Alpine(private val ctx: Context, private val paths: Paths) {
                 "cpu0 1957 0 2877 93280 262 342 254 87 0 0\n" +
                 "intr 0\nctxt 0\nbtime 0\nprocesses 0\nprocs_running 1\nprocs_blocked 0\nsoftirq 0\n",
             "uptime" to "124.08 932.80\n",
-            "version" to "Linux version 6.1.0-lindroid (lindroid@android) #1 SMP PREEMPT\n",
+            "version" to "Linux version 6.1.0-homedroid (homedroid@android) #1 SMP PREEMPT\n",
             "vmstat" to "nr_free_pages 0\npgpgin 0\npgpgout 0\npswpin 0\npswpout 0\n",
         )
 

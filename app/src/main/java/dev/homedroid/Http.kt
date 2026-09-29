@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import org.json.JSONArray
 import org.json.JSONObject

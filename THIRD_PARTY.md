@@ -1,7 +1,7 @@
 # Third-party components
 
-The Lindroid APK contains binaries built from these projects by the scripts in `native/`.
-Their source code is available from the upstream projects below; Lindroid's modifications
+The Homedroid APK contains binaries built from these projects by the scripts in `native/`.
+Their source code is available from the upstream projects below; Homedroid's modifications
 are the patch files in `native/patches/`.
 
 | Component | Version | License | Source |
@@ -17,7 +17,7 @@ are the patch files in `native/patches/`.
 
 ## Downloaded at run time
 
-These are not part of Lindroid. They are downloaded from their official sources when the
+These are not part of Homedroid. They are downloaded from their official sources when the
 user installs the corresponding app, and remain under their own licenses:
 
 - Alpine Linux and its packages (Jellyfin, qBittorrent, Valkey, Python, …): https://alpinelinux.org

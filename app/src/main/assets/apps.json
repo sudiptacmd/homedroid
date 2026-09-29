@@ -16,7 +16,7 @@
       "--webdir",
       "/usr/share/webapps/jellyfin-web",
       "--ffmpeg",
-      "/usr/local/lib/lindroid/ffmpeg"
+      "/usr/local/lib/homedroid/ffmpeg"
     ],
     "env": {
       "DOTNET_gcServer": "0",
@@ -34,7 +34,7 @@
     "description": "Torrent client. Downloads go to the media library's Downloads folder, in order (stream while downloading), and keep seeding. Add from SSH: torrent 'magnet:?…'",
     "port": 8081,
     "size": "≈ 60 MB",
-    "install": "apk add --no-cache qbittorrent-nox curl jq\nmkdir -p /media/Downloads /var/lib/qbittorrent/qBittorrent/config\n# Only on first install, so the user's own settings are kept.\n[ -e /var/lib/qbittorrent/qBittorrent/config/qBittorrent.conf ] || cat > /var/lib/qbittorrent/qBittorrent/config/qBittorrent.conf <<'CONF'\n[LegalNotice]\nAccepted=true\n\n[BitTorrent]\nSession\\DefaultSavePath=/media/Downloads\nSession\\TempPathEnabled=false\nSession\\GlobalMaxRatio=-1\nSession\\GlobalMaxSeedingMinutes=-1\nSession\\QueueingSystemEnabled=false\n\n[Preferences]\nWebUI\\Port=8081\nWebUI\\LocalHostAuth=false\nCONF\ncat > /usr/local/bin/torrent <<'SH'\n#!/bin/sh\n# torrent <magnet or .torrent URL>...   add, downloading pieces in order\n# torrent list                          show progress\napi=http://127.0.0.1:8081/api/v2\nif ! curl -fsS -o /dev/null \"$api/app/version\" 2>/dev/null; then\n  echo 'qBittorrent is not running: start the server in the Lindroid app.' >&2; exit 1\nfi\ncase $1 in\n''|-h|--help) sed -n '2,3s/^# //p' \"$0\"; exit 2 ;;\nlist) curl -fsS \"$api/torrents/info\" | jq -r '.[] | \"\\(.progress * 100 | floor)%\\t\\(.state)\\t\\(.name)\"'; exit ;;\nesac\nfor link do\n  curl -fsS -F \"urls=$link\" -F sequentialDownload=true -F firstLastPiecePrio=true \"$api/torrents/add\" >/dev/null &&\n    echo \"Added: $link\"\ndone\nSH\nchmod +x /usr/local/bin/torrent",
+    "install": "apk add --no-cache qbittorrent-nox curl jq\nmkdir -p /media/Downloads /var/lib/qbittorrent/qBittorrent/config\n# Only on first install, so the user's own settings are kept.\n[ -e /var/lib/qbittorrent/qBittorrent/config/qBittorrent.conf ] || cat > /var/lib/qbittorrent/qBittorrent/config/qBittorrent.conf <<'CONF'\n[LegalNotice]\nAccepted=true\n\n[BitTorrent]\nSession\\DefaultSavePath=/media/Downloads\nSession\\TempPathEnabled=false\nSession\\GlobalMaxRatio=-1\nSession\\GlobalMaxSeedingMinutes=-1\nSession\\QueueingSystemEnabled=false\n\n[Preferences]\nWebUI\\Port=8081\nWebUI\\LocalHostAuth=false\nCONF\ncat > /usr/local/bin/torrent <<'SH'\n#!/bin/sh\n# torrent <magnet or .torrent URL>...   add, downloading pieces in order\n# torrent list                          show progress\napi=http://127.0.0.1:8081/api/v2\nif ! curl -fsS -o /dev/null \"$api/app/version\" 2>/dev/null; then\n  echo 'qBittorrent is not running: start the server in the Homedroid app.' >&2; exit 1\nfi\ncase $1 in\n''|-h|--help) sed -n '2,3s/^# //p' \"$0\"; exit 2 ;;\nlist) curl -fsS \"$api/torrents/info\" | jq -r '.[] | \"\\(.progress * 100 | floor)%\\t\\(.state)\\t\\(.name)\"'; exit ;;\nesac\nfor link do\n  curl -fsS -F \"urls=$link\" -F sequentialDownload=true -F firstLastPiecePrio=true \"$api/torrents/add\" >/dev/null &&\n    echo \"Added: $link\"\ndone\nSH\nchmod +x /usr/local/bin/torrent",
     "uninstall": "apk del qbittorrent-nox; rm -f /usr/local/bin/torrent",
     "run": [
       "/usr/bin/qbittorrent-nox",

@@ -1,4 +1,4 @@
-package dev.lindroid
+package dev.homedroid
 
 import android.os.SystemClock
 import android.system.ErrnoException

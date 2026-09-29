@@ -43,5 +43,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: lindroid-apks
+          name: homedroid-apks
           path: app/build/outputs/apk/release/*.apk
