@@ -7,6 +7,13 @@
 
 # Homedroid
 
+<p>
+  <a href="https://github.com/sudiptacmd/homedroid/releases"><img alt="Release" src="https://img.shields.io/github/v/release/sudiptacmd/homedroid?include_prereleases&label=release&color=2ea043"></a>
+  <a href="https://github.com/sudiptacmd/homedroid/actions/workflows/build.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/sudiptacmd/homedroid/build.yml?branch=main"></a>
+  <a href="LICENSE"><img alt="License: GPL-3.0" src="https://img.shields.io/github/license/sudiptacmd/homedroid"></a>
+  <img alt="Android 10+" src="https://img.shields.io/badge/Android-10%2B-3ddc84">
+</p>
+
 **Turn an old Android phone into a home server.** No root, no Termux, one app.
 
 Homedroid runs SSH, a web server, a Cloudflare tunnel and self-hosted apps (Jellyfin, Immich,
@@ -20,6 +27,29 @@ from a web dashboard, where you can also deploy web apps straight from GitHub.
 <p align="center">
   <img src="docs/screenshots/dashboard-overview-dark.png" width="820" alt="The web dashboard overview: phone health and running services">
 </p>
+
+## Walkthrough
+
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.4.1-beta/homedroid-walkthrough.mp4"><img src="docs/walkthrough-preview.gif" alt="Homedroid walkthrough: phone app, SSH, web dashboard, Jellyfin, Immich, qBittorrent" width="720"></a>
+
+A 3-minute tour of every module on an Android 10 emulator. [Watch the full video (MP4, 8 MB)](https://github.com/sudiptacmd/homedroid/releases/download/v0.4.1-beta/homedroid-walkthrough.mp4).
+
+## Download
+
+Homedroid is in **beta (0.4.1)**. Get the APK from the
+[latest release](https://github.com/sudiptacmd/homedroid/releases):
+
+| Your phone | APK |
+|------------|-----|
+| Almost every phone from the last ~8 years (64-bit) | `homedroid-<version>-arm64-v8a.apk` |
+| Older 32-bit phones | `homedroid-<version>-armeabi-v7a.apk` |
+| Emulators, Chromebooks | `homedroid-<version>-x86_64.apk` |
+| Not sure | `homedroid-<version>-universal.apk` (larger, runs everywhere) |
+
+Open it on the phone and allow installing from your browser or file manager, or run
+`adb install homedroid-<version>-arm64-v8a.apk`. `SHA256SUMS` in each release lets you check
+the download. Every release is signed with the same key, so newer versions install over older
+ones and keep your data.
 
 ## Features
 
@@ -51,7 +81,7 @@ from a web dashboard, where you can also deploy web apps straight from GitHub.
 
 ## Getting started
 
-1. Build and install the APK (see [Building](#building)).
+1. Install the APK from [Download](#download) (or [build it](#building)).
 2. Open Homedroid, paste your SSH public key (`~/.ssh/id_ed25519.pub`), tap **Save & apply**,
    then **Start server**.
 3. Tap **Allow running in background**. On Samsung phones also add Homedroid to
@@ -99,16 +129,9 @@ back in the dashboard.
 
 ## How it works
 
-```
-MainActivity / AppsActivity             Dashboard (:8800) ── single-page UI + JSON API
-            │                                   │
-ServerService ── foreground service, wakelocks, boot start, install and deploy jobs
-            │
-Supervisor ── one thread per process, own process group, restart with backoff, logs
-            │
-  sshd · caddy · cloudflared           proot ─┬─ Alpine Linux ── Jellyfin, qBittorrent, HA, deploys
-  (Go, built for Android)                     └─ container images ── Immich server, Postgres
-```
+<p align="center">
+  <img src="docs/architecture.svg" width="900" alt="Architecture: your devices reach the phone; inside the Homedroid app a foreground service runs the dashboard and a supervisor, which starts native daemons and apps under proot (Alpine Linux and container images); Jellyfin transcodes through an Android-native FFmpeg to the phone's MediaCodec encoder">
+</p>
 
 **Running Linux software without root.** Apps targeting Android 10+ may only execute files
 from their native-library directory, and still map others with `mmap(PROT_EXEC)`. Homedroid
@@ -162,8 +185,12 @@ adb install app/build/outputs/apk/release/app-arm64-v8a-release.apk
 ```
 
 The individual scripts take ABIs as arguments (`native/build-ffmpeg.sh arm64-v8a`), and
-versions can be overridden (`CADDY_VERSION=… CLOUDFLARED_VERSION=… native/build.sh`). Release
-builds are signed with the debug key; use your own keystore to distribute them.
+versions can be overridden (`CADDY_VERSION=… CLOUDFLARED_VERSION=… native/build.sh`). To sign
+release builds with your own key, copy `keystore.properties.example` to `keystore.properties`;
+without it they use the debug key.
+
+Releases are built by CI: pushing a tag such as `v0.4.1-beta` builds every ABI, signs the APKs
+with the project key (kept in repository secrets) and publishes them with `SHA256SUMS`.
 
 ### Adding an app
 
@@ -171,6 +198,52 @@ Apps are data: add an entry to [`apps.json`](app/src/main/assets/apps.json). A s
 an install script and a command in Alpine (see Jellyfin). A multi-service app pulls
 container images and runs several processes, with `{{secret}}` passwords and `@data`/`@storage`
 binds (see Immich). See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Measurements
+
+Measured with [`tools/bench.py`](tools/bench.py), which drives a phone over adb and SSH;
+run it on your phone and open an issue with the output to add a column.
+
+| | Emulator (Android 10, x86_64, 3 GB RAM) | Galaxy S9+ (Exynos 9810, 6 GB) |
+|---|---|---|
+| **Idle RAM**, SSH + web only | 136 MB (3 processes) | pending |
+| **Idle RAM**, + Jellyfin, qBittorrent, Immich | 1.19 GB (34 processes; Immich ≈ 800 MB) | pending |
+| **Idle CPU**, SSH + web only | 0.1 % of one core | pending |
+| **Idle CPU**, + Jellyfin, qBittorrent, Immich | 2.6 % of one core | pending |
+| **Battery** | not measurable: emulated battery | pending |
+| **Network**, phone → computer | 457 MB/s HTTP, 194 MB/s SSH (virtual NIC) | pending |
+| **Transcoding**, 1080p → 720p H.264 | 114 fps (3.8× real time) through MediaCodec¹ | pending |
+| **Thermals**, 5 min of continuous transcoding | not measurable: fixed 25 °C | pending |
+| **Uptime** | <!-- soak --> | pending |
+
+¹ The emulator's MediaCodec encoder is software running on the host, and the same encode in
+software x264 ran at 202 fps on its 12-thread desktop CPU. On a phone MediaCodec uses the
+dedicated video hardware, which is the point: it keeps the CPU free and cool.
+
+## Known limitations
+
+- **Beta.** Tested end to end on emulated Android 10 and 16; the first real-device pilot
+  (Galaxy S9+) is in progress.
+- **No root, so:** no ports below 1024 (use 8080 or the Cloudflare tunnel), and proot adds
+  overhead to syscall-heavy work such as package installs, Home Assistant's startup and
+  databases. Programs are unaffected once they are computing.
+- **Android can still stop it.** Vendor battery managers (Samsung, Xiaomi, …) and, on Android
+  12+, the phantom process killer need the one-time settings described in
+  [Getting started](#getting-started).
+- **No device access from apps.** Home Assistant can't use USB radios (Zigbee, Z-Wave) or
+  Bluetooth; nothing can use raw USB, serial or GPIO.
+- **Hardware transcoding is encode-only.** Decoding, scaling, subtitle burn-in and HDR tone
+  mapping run in software; only H.264 and HEVC encoding use MediaCodec, and quality and
+  speed depend on the phone's encoder.
+- **Immich** runs on 64-bit phones only, with machine learning (faces, search) turned off, and
+  without the old pgvecto.rs extension, whose IPC the app sandbox blocks (new installs don't
+  need it).
+- **Storage on SD cards.** On Android 10 data on removable volumes lives in the app's own folder,
+  which Android deletes when Homedroid is uninstalled. FAT32 cards can't hold files over 4 GB.
+- **No TLS on the LAN.** The dashboard and apps speak plain HTTP on your network; use the
+  Cloudflare tunnel or `ssh -L` from outside it.
+- **Updates.** Apps are installed from Alpine and container registries at install time;
+  update them with `apk upgrade` over SSH or by reinstalling from the Apps screen.
 
 ## Security notes
 

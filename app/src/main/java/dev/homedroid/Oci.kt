@@ -115,7 +115,8 @@ class Oci(private val arch: String) {
     private fun open(image: ImageRef, path: String, accept: String): InputStream {
         var url = URL("https://${image.registry}/v2/${image.repo}/$path")
         var withAuth = true
-        repeat(6) {
+        var retries = 0
+        repeat(12) {
             val c = (url.openConnection() as HttpURLConnection).apply {
                 instanceFollowRedirects = false
                 connectTimeout = 20_000
@@ -136,10 +137,17 @@ class Oci(private val arch: String) {
                     image.token = token(c.getHeaderField("WWW-Authenticate") ?: throw IOException("no auth challenge"), image)
                     c.disconnect()
                 }
+                429, 500, 502, 503, 504 -> {
+                    // Rate limited or briefly unavailable: wait as asked, then retry.
+                    if (++retries > 5) throw IOException("${image.repo} $path: HTTP $code, try again later")
+                    val wait = c.getHeaderField("Retry-After")?.toLongOrNull()?.coerceIn(1, 300) ?: (15L * retries)
+                    c.disconnect()
+                    Thread.sleep(wait * 1000)
+                }
                 else -> throw IOException("${image.repo} $path: HTTP $code")
             }
         }
-        throw IOException("too many redirects for ${image.repo}")
+        throw IOException("too many redirects or retries for ${image.repo}")
     }
 
     private fun token(challenge: String, image: ImageRef): String {

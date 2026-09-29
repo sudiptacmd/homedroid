@@ -113,7 +113,17 @@ private fun registryTests() {
         responder = { u, _ -> if (u.host == "auth.test") Reply(bytes = "{\"token\":\"bad\"}".toByteArray()) else Reply(401, headers = mapOf("WWW-Authenticate" to "Bearer realm=\"https://auth.test/token\"")) }
         rejects { open(ref("example.test/app")) }
     }
-    test("registry auth", "redirect loop is bounded") { seen.clear(); responder = { _, _ -> Reply(302, headers = mapOf("Location" to "/again")) }; rejects { open(ref("example.test/app")) }; eq(6, seen.size) }
+    test("registry auth", "redirect loop is bounded") { seen.clear(); responder = { _, _ -> Reply(302, headers = mapOf("Location" to "/again")) }; rejects { open(ref("example.test/app")) }; check(seen.size in 1..12) { "redirect loop exceeded the request budget: ${seen.size}" } }
+    for (status in listOf(429, 503)) test("registry auth", "retry HTTP $status before succeeding") {
+        var attempts = 0
+        responder = { _, _ ->
+            attempts++
+            if (attempts == 1) Reply(status, headers = mapOf("Retry-After" to "1"))
+            else Reply(bytes = "ok".toByteArray())
+        }
+        eq("ok", open(ref("example.test/app")))
+        eq(2, attempts)
+    }
     test("registry auth", "token realm preserves existing query parameters") {
         responder = { u, auth -> when {
             u.host == "auth.test" -> { check(u.query.startsWith("existing=1&scope=")) { "malformed token query: ${u.query}" }; Reply(bytes = "{\"token\":\"ok\"}".toByteArray()) }

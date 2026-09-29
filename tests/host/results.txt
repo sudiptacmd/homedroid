@@ -17,6 +17,8 @@ PASS [registry auth] redirect strips registry bearer token
 PASS [registry auth] reject 401 without challenge
 PASS [registry auth] reject repeated 401
 PASS [registry auth] redirect loop is bounded
+PASS [registry auth] retry HTTP 429 before succeeding
+PASS [registry auth] retry HTTP 503 before succeeding
 FAIL [registry auth] token realm preserves existing query parameters: java.lang.IllegalStateException: malformed token query: existing=1?scope=repository:app:pull
 PASS [digests] valid tar layer installs
 PASS [digests] valid gzip layer installs
@@ -69,4 +71,4 @@ PASS [supervisor] spawn failures back off 1, 2, 4 seconds and stop interrupts sl
 PASS [supervisor] stable elapsed interval resets backoff to 1 second
 FAIL [supervisor] restart during backoff wakes daemon promptly: java.lang.IllegalStateException: condition not reached within 600ms
 PASS [supervisor] backoff reaches 60 second cap
-TOTAL: 59 passed, 12 failed, 71 tests
+TOTAL: 61 passed, 12 failed, 73 tests

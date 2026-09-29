@@ -13,6 +13,8 @@ HOST_TEST_TOOLS=/tmp/lindroid-test-tools tests/host/run.sh
 The suite takes about 2.5 minutes: the supervisor cap check waits through real delays
 of 1, 2, 4, 8, 16, 32, and 60 seconds. It exits nonzero for any failed assertion and
 writes individual results to `tests/host/results.txt`. Known failures remain failures.
+The current baseline is 73 tests: 61 pass and 12 expose existing application defects.
+The APK build workflow does not run this diagnostic suite.
 
 ## Scope
 
@@ -26,7 +28,7 @@ writes individual results to `tests/host/results.txt`. Known failures remain fai
   current-layer additions, and non-OCI behavior.
 - **Registry authentication:** in-process `HttpURLConnection` doubles exercise actual
   request logic: challenge, token/access_token, cache, redirects, 401, loop limit,
-  and realms with query parameters. No live registry or TLS requests occur in tests.
+  realms with query parameters, and retries after HTTP 429/503. No live registry or TLS requests occur in tests.
 - **Configuration:** real catalog and image JSON parsing; settings defaults and
   round trips through an in-memory SharedPreferences double.
 - **Supervisor:** actual spawn-failure loop, restart counters, exponential delay/cap,

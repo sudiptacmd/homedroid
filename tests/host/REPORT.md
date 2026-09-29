@@ -22,7 +22,12 @@ HOST_TEST_TOOLS=/tmp/lindroid-test-tools tests/host/run.sh
 
 ## Results
 
-**71 tests: 59 passed, 12 failed.** Source revision: `96efbaf`.
+**73 tests: 61 passed, 12 failed.** Application source revision: `b390df9`.
+
+Rechecked the test branch against current `main`. The original run on `96efbaf`
+had 59 passes and the same 12 failures across 71 tests. This run also covers
+HTTP 429/503 retries added on `main`; the redirect-loop assertion now allows the
+current bounded request budget of 12. No production fixes are included.
 
 | Requested area | Passed | Failed |
 | --- | ---: | ---: |
@@ -30,7 +35,7 @@ HOST_TEST_TOOLS=/tmp/lindroid-test-tools tests/host/run.sh
 | Digest verification | 4 | 2 |
 | Tar path traversal protection | 8 | 0 |
 | Whiteout handling | 3 | 2 |
-| Registry authentication | 7 | 1 |
+| Registry authentication | 9 | 1 |
 | Configuration parsing | 7 | 0 |
 | Supervisor restart/backoff | 3 | 1 |
 | Deployment configuration | 12 | 0 |
@@ -69,7 +74,7 @@ The runner exits with status 1 because the regression assertions reproduce defec
    `...?existing=1?scope=repository:app:pull`. It needs a query separator and proper
    query parameter construction. Ordinary token challenges, cached tokens,
    `access_token`, and redirect token stripping pass.
-   Source: [Oci.kt](../../app/src/main/java/dev/homedroid/Oci.kt), line 150.
+   Source: [Oci.kt](../../app/src/main/java/dev/homedroid/Oci.kt), `token`.
 
 6. **Manual restart does not wake a daemon during backoff.**
    Calling `restart()` during the 4-second backoff does not cause a new attempt
