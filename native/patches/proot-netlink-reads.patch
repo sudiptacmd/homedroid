@@ -1,0 +1,16 @@
+--- a/src/syscall/enter.c
++++ b/src/syscall/enter.c
+@@ -611,7 +611,12 @@
+ 	request.nlh.nlmsg_seq   = 1;
+ 	request.ifa.ifa_family  = AF_UNSPEC;
+ 
+-	if (sendto(fd, &request, sizeof(request), MSG_DONTWAIT,
++	/* Lindroid: on Android the write probe always fails, and falling
++	 * back to the fake socket then hides every interface address from
++	 * getifaddrs(3) as well (torrent clients, service discovery, LAN
++	 * detection), although reads work on the real socket.  Keep the real
++	 * socket: reads succeed and writes fail with EACCES, as on the host.  */
++	if (0 && sendto(fd, &request, sizeof(request), MSG_DONTWAIT,
+ 		   (struct sockaddr *) &snl, sizeof(snl)) < 0
+ 	    && (errno == EACCES || errno == EPERM)) {
+ 		saved_errno = errno;

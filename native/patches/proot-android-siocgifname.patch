@@ -1,0 +1,77 @@
+--- a/src/syscall/enter.c
++++ b/src/syscall/enter.c
+@@ -1887,6 +1887,61 @@
+ }
+ 
+ /**
++ * If @cmd is SIOCGIFNAME, answer it in the tracer: Android denies it
++ * (EACCES) to apps for every interface, so if_indextoname(3) fails and
++ * software can't tie routes or addresses to interfaces (libtorrent then
++ * treats every interface as offline).  The tracer tries the libc calls
++ * that different Android versions still allow.  Returns false for an
++ * unknown index, leaving the real ioctl to run.
++ */
++static bool maybe_fake_siocgifname(Tracee *tracee, word_t arg)
++{
++	char name[IFNAMSIZ] = { 0 };
++	int ifindex;
++
++	if (arg == 0)
++		return false;
++	if (read_data(tracee, &ifindex, arg + IFNAMSIZ, sizeof(ifindex)) < 0)
++		return false;
++	if (ifindex <= 0)
++		return false;
++
++	if (if_indextoname((unsigned int) ifindex, name) == NULL) {
++		struct if_nameindex *list = if_nameindex();
++		struct if_nameindex *it;
++
++		name[0] = '\0';
++		for (it = list; it != NULL && it->if_index != 0; it++) {
++			if ((int) it->if_index == ifindex) {
++				strncpy(name, it->if_name, IFNAMSIZ - 1);
++				break;
++			}
++		}
++		if (list != NULL)
++			if_freenameindex(list);
++	}
++	if (name[0] == '\0') {
++		struct ifaddrs *addrs, *a;
++
++		if (getifaddrs(&addrs) == 0) {
++			for (a = addrs; a != NULL; a = a->ifa_next) {
++				if (a->ifa_name != NULL && (int) if_nametoindex(a->ifa_name) == ifindex) {
++					strncpy(name, a->ifa_name, IFNAMSIZ - 1);
++					break;
++				}
++			}
++			freeifaddrs(addrs);
++		}
++	}
++	if (name[0] == '\0' && ifindex == 1)
++		strcpy(name, "lo");
++	if (name[0] == '\0')
++		return false;
++
++	return write_data(tracee, arg, name, IFNAMSIZ) >= 0;
++}
++
++/**
+  * Detect /proc/<pid|self>/{uid_map,gid_map,setgroups}, which sandbox
+  * helpers like bubblewrap write to during user-namespace setup.  The
+  * tracee cannot really create namespaces under PRoot, so silently
+@@ -2942,6 +2997,12 @@
+ 			poke_reg(tracee, SYSARG_RESULT, 0);
+ 			set_sysnum(tracee, PR_void);
+ 			break;
++		}
++
++		if (cmd == SIOCGIFNAME && maybe_fake_siocgifname(tracee, arg)) {
++			poke_reg(tracee, SYSARG_RESULT, 0);
++			set_sysnum(tracee, PR_void);
++			break;
+ 		}
+ 
+ #ifdef __ANDROID__

@@ -1,0 +1,141 @@
+--- a/src/syscall/enter.c
++++ b/src/syscall/enter.c
+@@ -1667,6 +1667,102 @@
+  * the message whose sequence number we noted is touched, and only when
+  * it is the permission error the tracee was bound to get.
+  */
++/**
++ * Ask for the exit stage of a recvfrom(2) / recvmsg(2) on a real
++ * NETLINK_ROUTE socket, so handle_netlink_route_exit() can inspect it.
++ */
++static void note_route_reply(Tracee *tracee, int fd)
++{
++	if (!is_netlink_route_fd(tracee, fd))
++		return;
++
++	tracee->sysexit_pending = true;
++	tracee->restart_how = PTRACE_SYSCALL;
++}
++
++/**
++ * Android keeps each network's default route in a policy-routing table
++ * of its own (one per interface), and the main table has none.  Linux
++ * software that looks for a default route there concludes the machine
++ * is offline: libtorrent, for instance, then refuses to announce to any
++ * tracker ("skipping tracker announce (unreachable)") and never
++ * bootstraps its DHT.  Report such default routes as part of the main
++ * table in rtnetlink dumps; nothing else in the reply is changed.
++ */
++void handle_netlink_route_exit(Tracee *tracee, word_t syscall_number)
++{
++	word_t buf_addr = 0;
++	word_t buf_len = 0;
++	int fd = (int) peek_reg(tracee, ORIGINAL, SYSARG_1);
++	int result = (int) peek_reg(tracee, CURRENT, SYSARG_RESULT);
++	bool changed = false;
++	uint8_t *buf;
++	size_t len, off;
++
++	if (result <= 0 || !is_netlink_route_fd(tracee, fd))
++		return;
++
++	if (syscall_number == PR_recvfrom) {
++		buf_addr = peek_reg(tracee, ORIGINAL, SYSARG_2);
++		buf_len  = peek_reg(tracee, ORIGINAL, SYSARG_3);
++	}
++	else if (!msghdr_first_iovec(tracee, peek_reg(tracee, ORIGINAL, SYSARG_2),
++				     &buf_addr, &buf_len))
++		return;
++
++	len = (size_t) result;
++	if (len > buf_len)
++		len = buf_len;
++	if (len > (1 << 18))
++		len = 1 << 18;
++	if (buf_addr == 0 || len < NLMSG_HDRLEN)
++		return;
++
++	buf = malloc(len);
++	if (buf == NULL)
++		return;
++	if (read_data(tracee, buf, buf_addr, len) < 0) {
++		free(buf);
++		return;
++	}
++
++	for (off = 0; off + NLMSG_HDRLEN <= len; ) {
++		struct nlmsghdr *hdr = (struct nlmsghdr *) (buf + off);
++
++		if (hdr->nlmsg_len < NLMSG_HDRLEN || off + hdr->nlmsg_len > len)
++			break;
++		if (hdr->nlmsg_type == NLMSG_DONE)
++			break;
++
++		if (   hdr->nlmsg_type == RTM_NEWROUTE
++		    && hdr->nlmsg_len >= NLMSG_LENGTH(sizeof(struct rtmsg))) {
++			struct rtmsg *rtm = NLMSG_DATA(hdr);
++
++			if (   rtm->rtm_dst_len == 0
++			    && rtm->rtm_type == RTN_UNICAST
++			    && rtm->rtm_table != RT_TABLE_MAIN
++			    && rtm->rtm_table != RT_TABLE_LOCAL) {
++				struct rtattr *rta = RTM_RTA(rtm);
++				int rta_len = RTM_PAYLOAD(hdr);
++
++				rtm->rtm_table = RT_TABLE_MAIN;
++				for (; RTA_OK(rta, rta_len); rta = RTA_NEXT(rta, rta_len)) {
++					if (rta->rta_type == RTA_TABLE && RTA_PAYLOAD(rta) >= sizeof(uint32_t)) {
++						uint32_t table = RT_TABLE_MAIN;
++						memcpy(RTA_DATA(rta), &table, sizeof(table));
++					}
++				}
++				changed = true;
++			}
++		}
++		off += NLMSG_ALIGN(hdr->nlmsg_len);
++	}
++
++	if (changed)
++		(void) write_data(tracee, buf_addr, buf, len);
++	free(buf);
++}
++
+ void handle_netlink_reply_exit(Tracee *tracee, word_t syscall_number)
+ {
+ 	uint8_t reply[512] __attribute__((aligned(8)));
+@@ -2216,6 +2312,7 @@
+ 			break;
+ 		}
+ 		note_netns_netlink_reply(tracee, fd);
++		note_route_reply(tracee, fd);
+ 		status = 0;
+ 		break;
+ 	}
+@@ -2301,6 +2398,7 @@
+ 			break;
+ 		}
+ 		note_netns_netlink_reply(tracee, fd);
++		note_route_reply(tracee, fd);
+ 		status = 0;
+ 		break;
+ 	}
+--- a/src/syscall/exit.c
++++ b/src/syscall/exit.c
+@@ -793,6 +793,7 @@
+ 		/* Turn the kernel's refusal to reconfigure a network
+ 		 * namespace the tracee doesn't really have into an ack.  */
+ 		handle_netlink_reply_exit(tracee, syscall_number);
++		handle_netlink_route_exit(tracee, syscall_number);
+ 		goto end;
+ 
+ 	default:
+--- a/src/syscall/syscall.h
++++ b/src/syscall/syscall.h
+@@ -59,6 +59,7 @@
+ extern bool is_voided_syscall(const Tracee *tracee, RegVersion version);
+ 
+ extern void handle_netlink_reply_exit(Tracee *tracee, word_t syscall_number);
++extern void handle_netlink_route_exit(Tracee *tracee, word_t syscall_number);
+ 
+ extern void apply_emulated_mount(Tracee *tracee);
+ extern void apply_emulated_pivot_root(Tracee *tracee);
