@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/lindroid-logo-dark.svg">
+    <img src="docs/logo/lindroid-logo-light.svg" alt="Lindroid: your old phone, now a home server" width="520">
+  </picture>
+</p>
+
 # Lindroid
 
 **Turn an old Android phone into a home server.** No root, no Termux, one app.

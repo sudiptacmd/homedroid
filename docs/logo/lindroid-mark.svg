@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Lindroid">
+  <title>Lindroid</title>
+  <!-- Phone -->
+  <rect x="58" y="14" width="140" height="228" rx="30" fill="#1b222c"/>
+  <rect x="58" y="14" width="140" height="228" rx="30" fill="none" stroke="#7ee787" stroke-width="6"/>
+  <rect x="70" y="36" width="116" height="184" rx="14" fill="#0d1117"/>
+  <rect x="112" y="23" width="32" height="5" rx="2.5" fill="#3a4454"/>
+  <!-- Serving: signal arcs over the roof -->
+  <path d="M110 66 a26 26 0 0 1 36 0" fill="none" stroke="#7ee787" stroke-width="6" stroke-linecap="round" opacity=".55"/>
+  <path d="M118 76 a14 14 0 0 1 20 0" fill="none" stroke="#7ee787" stroke-width="6" stroke-linecap="round"/>
+  <!-- Home: roof -->
+  <path d="M86 126 L128 92 L170 126" fill="none" stroke="#7ee787" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Home: walls made of two server units -->
+  <g fill="#7ee787">
+    <rect x="94" y="130" width="68" height="30" rx="6"/>
+    <rect x="94" y="166" width="68" height="30" rx="6"/>
+  </g>
+  <g fill="#0d1117">
+    <circle cx="106" cy="145" r="4"/>
+    <circle cx="118" cy="145" r="4"/>
+    <rect x="128" y="142" width="24" height="6" rx="3"/>
+    <circle cx="106" cy="181" r="4"/>
+    <circle cx="118" cy="181" r="4"/>
+    <rect x="128" y="178" width="24" height="6" rx="3"/>
+  </g>
+</svg>

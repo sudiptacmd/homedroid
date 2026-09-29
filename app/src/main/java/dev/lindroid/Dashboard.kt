@@ -32,6 +32,10 @@ class Dashboard(private val ctx: Context) {
             val html = ctx.assets.open("dashboard.html").use { it.readBytes() }
             return Response(200, html, "text/html; charset=utf-8", SECURITY_HEADERS)
         }
+        if (r.method == "GET" && r.path == "/favicon.svg") {
+            val svg = ctx.assets.open("favicon.svg").use { it.readBytes() }
+            return Response(200, svg, "image/svg+xml", mapOf("Cache-Control" to "max-age=86400"))
+        }
         if (r.path == "/api/login" && r.method == "POST") return login(r)
         if (!r.path.startsWith("/api/")) return Response.error(404, "not found")
         if (!authorized(r)) return Response.error(401, "log in first")
