@@ -147,10 +147,11 @@ pre { margin: 0; background: var(--code); border-radius: var(--r-sm); padding: 1
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Overview */
-.stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+/* At most three per row, so the six cards make two even rows. */
+.stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(max(150px, calc((100% - 24px) / 3)), 1fr)); }
 .stat { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .stat .k { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12.5px; font-weight: 550; }
-.stat .v { font-size: 24px; font-weight: 650; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat .v { font-size: clamp(19px, 5vw, 24px); font-weight: 650; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .stat .v small { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
 .stat .s { font-size: 12.5px; color: var(--muted); }
 .reach { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -177,8 +178,8 @@ pre { margin: 0; background: var(--code); border-radius: var(--r-sm); padding: 1
 .hist { max-height: 360px; overflow: auto; }
 .hist .item { min-height: 0; padding: 6px 16px; gap: 10px; }
 .hist .item .mono { white-space: pre-wrap; word-break: break-all; }
-.two { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); align-items: start; }
-@media (max-width: 480px) { .two { grid-template-columns: 1fr; } }
+.two { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); align-items: start; }
+.two > * { min-width: 0; }
 
 /* Modules and deployments */
 .mod { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
@@ -189,7 +190,8 @@ pre { margin: 0; background: var(--code); border-radius: var(--r-sm); padding: 1
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; max-width: 100%; }
 .chip svg.i { width: 13px; height: 13px; }
-.mod-foot { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 4px; min-height: 34px; }
+.mod-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 4px; min-height: 34px; }
+.mod-foot .btn.ghost:not(.icon) { padding: 0 8px; }
 .job { margin-bottom: 20px; overflow: hidden; }
 .job-head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 16px; }
 .job pre { border-radius: 0; max-height: 260px; border-top: 1px solid var(--line); }
@@ -230,6 +232,9 @@ pre { margin: 0; background: var(--code); border-radius: var(--r-sm); padding: 1
 .tray .up .meter { grid-column: 1 / -1; height: 4px; }
 @media (max-width: 640px) {
   .ftable .c-date, .ftable .c-size, .ftable .acts .wide { display: none; }
+  /* Fixed layout gets confused by hidden columns; auto plus max-width: 0 still ellipsizes names. */
+  .ftable { table-layout: auto; }
+  .ftable td:first-child { width: 100%; max-width: 0; }
   .ftable .c-acts { width: 46px; }
   .ftable td { padding: 6px 8px 6px 12px; }
   .toolbar .lbl { display: none; }
@@ -655,10 +660,11 @@ function stat(ic, k, v, sub, pct, cls, graph) {
 const hist = {cpu: [], rx: [], tx: []};
 function push(key, v) { const a = hist[key]; a.push(v); if (a.length > 36) a.shift(); }
 function spark(series, max, cls = ['']) {
-  const n = 35, top = Math.max(max, ...series.flat(), 1e-9);
-  const pts = s => s.map((v, i) => `${(i + n + 1 - s.length) * 100 / n},${30 - 28 * v / top}`).join(' L');
+  const top = Math.max(max, ...series.flat(), 1e-9);
+  const pts = s => s.map((v, i) => `${(i * 100 / (s.length - 1)).toFixed(2)},${(30 - 28 * v / top).toFixed(2)}`).join(' L');
   return `<svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none">${series.map((s, i) => s.length > 1
-    ? (i === 0 ? `<path class="area" d="M${pts(s)} L100,30 L${(n + 1 - s.length) * 100 / n},30Z"/>` : '') + `<path class="${cls[i] || ''}" d="M${pts(s)}"/>` : '').join('')}</svg>`;
+    ? (i === 0 ? `<path class="area" d="M${pts(s)} L100,30 L0,30Z"/>` : '') + `<path class="${cls[i] || ''}" d="M${pts(s)}"/>` : '').join('')
+    || '<path d="M0,29 L100,29" style="opacity:.3"/>'}</svg>`;
 }
 const rate = b => b < 1024 ? b + ' B/s' : b < 1048576 ? (b / 1024).toFixed(b < 10240 ? 1 : 0) + ' KB/s' : (b / 1048576).toFixed(1) + ' MB/s';
 async function renderOverview() {
@@ -672,7 +678,7 @@ async function renderOverview() {
   push('cpu', mt.cpu); push('rx', mt.rxBps); push('tx', mt.txBps);
   const hot = s.hot || ['hot', 'throttling', 'critical'].includes(mt.thermal), temp = mt.cpuTemp ?? s.batteryTemp;
   setHTML($('#ovStats'), [
-    stat('cpu', 'CPU load', `${mt.cpu.toFixed(mt.cpu < 10 ? 1 : 0)}<small>%</small>`, `Homedroid's processes, of ${mt.cores} cores`, 0, '', spark([hist.cpu], 10)),
+    stat('cpu', 'CPU load', `${mt.cpu.toFixed(mt.cpu < 10 ? 1 : 0)}<small>%</small>`, `Homedroid's servers · ${mt.cores} cores`, 0, '', spark([hist.cpu], 10)),
     stat('temp', 'Temperature', `${temp.toFixed(1)}<small> °C</small>`,
       `${mt.cpuTemp != null ? `CPU · battery ${s.batteryTemp.toFixed(1)} °C` : 'Battery'} · ${hot ? `<b style="color:var(--bad)">${esc(mt.thermal === 'normal' ? 'too hot' : mt.thermal)}</b>` : esc(mt.thermal)}`,
       Math.min(100, Math.max(0, (temp - 20) * 2.5)), hot ? 'bad' : temp >= 40 ? 'warn' : 'ok'),
@@ -728,9 +734,8 @@ function modCard(x) {
     <div class="mod-foot">
       ${!x.installed ? `<button class="btn primary sm" data-act="install" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('download')}Install</button>` : ''}
       ${openable ? `<a class="btn sm" href="${appUrl(x.port)}" target="_blank" rel="noopener">${icon('external')}Open</a>` : ''}
-      <div class="grow"></div>
       ${x.kind === 'app' && x.installed ? `
-        <button class="btn ghost sm" data-act="clearMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('eraser')}Clear data</button>
+        <button class="btn ghost sm" style="margin-left:auto" data-act="clearMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>Clear data</button>
         <button class="btn ghost sm danger" data-act="removeMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('trash')}Remove</button>` : ''}
     </div></div>`;
 }

@@ -105,6 +105,11 @@ with the tunnel token.
 
 `http://<phone-ip>:8800`, on a computer or a phone:
 
+<p align="center">
+  <img src="docs/screenshots/dashboard-files-dark.png" width="410" alt="The Files tab: browse, upload and download">
+  <img src="docs/screenshots/dashboard-terminal-dark.png" width="410" alt="The Terminal &amp; SSH tab: web terminal, SSH keys, session log and history">
+</p>
+
 - **Overview:** CPU load, temperature, upload and download speed, battery, memory and storage,
   and every service with its logs and a restart button.
 - **Modules:** install, remove and turn modules on or off. **Clear data** resets an app like a
