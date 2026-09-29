@@ -1,0 +1,72 @@
+PASS [OCI references] alpine
+PASS [OCI references] alpine:3.20
+PASS [OCI references] org/app:v1
+PASS [OCI references] docker.io/alpine
+PASS [OCI references] ghcr.io/org/app:v1
+PASS [OCI references] localhost:5000/team/app
+PASS [OCI references] ghcr.io/org/app@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+FAIL [OCI references] tag plus digest strips tag from repository: java.lang.IllegalStateException: expected <org/app>, got <org/app:v1>
+FAIL [OCI references] reject malformed '': java.lang.IllegalStateException: invalid input was accepted
+FAIL [OCI references] reject malformed 'alpine:': java.lang.IllegalStateException: invalid input was accepted
+FAIL [OCI references] reject malformed 'ghcr.io/': java.lang.IllegalStateException: invalid input was accepted
+FAIL [OCI references] reject malformed 'alpine@sha256:nope': java.lang.IllegalStateException: invalid input was accepted
+PASS [registry auth] anonymous 200
+PASS [registry auth] 401 exchange with token and cached token
+PASS [registry auth] 401 exchange with access_token and cached token
+PASS [registry auth] redirect strips registry bearer token
+PASS [registry auth] reject 401 without challenge
+PASS [registry auth] reject repeated 401
+PASS [registry auth] redirect loop is bounded
+FAIL [registry auth] token realm preserves existing query parameters: java.lang.IllegalStateException: malformed token query: existing=1?scope=repository:app:pull
+PASS [digests] valid tar layer installs
+PASS [digests] valid gzip layer installs
+PASS [digests] corrupt layer rejected and old destination preserved
+PASS [digests] digest covers bytes after tar end marker
+FAIL [digests] reject corrupt config blob: java.lang.IllegalStateException: invalid input was accepted
+FAIL [digests] reject corrupt digest-pinned manifest: java.lang.IllegalStateException: invalid input was accepted
+PASS [tar traversal] reject ../escaped
+PASS [tar traversal] reject a/../../escaped
+PASS [tar traversal] absolute archive names remain inside root
+PASS [tar traversal] symlink target ../../outside is rooted
+PASS [tar traversal] symlink target /outside is rooted
+PASS [tar traversal] hard link traversal cannot copy outside file
+PASS [tar traversal] symlink cycle fails with bounded hops
+PASS [tar traversal] truncated file data rejected
+PASS [whiteouts] ordinary whiteout removes lower-layer file
+FAIL [whiteouts] opaque directory removes lower-layer children using same extractor: java.lang.IllegalStateException: lower-layer d/old survived opacity
+PASS [whiteouts] opaque marker preserves current-layer additions
+FAIL [whiteouts] whiteout cannot remove same-layer replacement: java.lang.IllegalStateException: same-layer replacement was deleted
+PASS [whiteouts] non-OCI mode preserves whiteout as regular file
+PASS [configuration] settings defaults and updates persist across instances
+PASS [configuration] generated dashboard password is stable and correctly formatted
+PASS [configuration] real app catalog parses and has unique IDs and valid image service keys
+PASS [configuration] malformed app catalog is rejected
+PASS [configuration] image config defaults and env values containing equals
+PASS [configuration] malformed image config rejected
+PASS [configuration] shared storage setting and clearing
+PASS [deployment] defaults, persistence, and removal
+PASS [deployment] reject name=!!!
+PASS [deployment] reject repo=file:///tmp/repo
+PASS [deployment] reject port=1023
+PASS [deployment] reject port=65536
+PASS [deployment] reject port=8800
+PASS [deployment] reject runtime=ruby
+PASS [deployment] reject env={"BAD-NAME":"x"}
+PASS [deployment] duplicate ID and port rejected
+PASS [deployment] public JSON redacts repository credentials and environment
+PASS [deployment] build environment reserves repository, branch, and build values
+PASS [deployment] unbuilt app has no supervisor spec; static build has requested port
+PASS [HTTP auth/session] public HTML and protected API
+PASS [HTTP auth/session] correct bearer password accepted
+FAIL [HTTP auth/session] bare password without Bearer scheme rejected: java.lang.IllegalStateException: expected <401>, got <200>
+PASS [HTTP auth/session] incorrect login rejected
+PASS [HTTP auth/session] login cookie, authenticated access, logout invalidation
+PASS [HTTP auth/session] session limit evicts oldest and tokens are unique
+PASS [HTTP auth/session] sessions do not survive dashboard recreation
+PASS [HTTP auth/session] cookie parsing preserves equals and exact names
+PASS [HTTP auth/session] real socket login and session authentication
+PASS [supervisor] spawn failures back off 1, 2, 4 seconds and stop interrupts sleep
+PASS [supervisor] stable elapsed interval resets backoff to 1 second
+FAIL [supervisor] restart during backoff wakes daemon promptly: java.lang.IllegalStateException: condition not reached within 600ms
+PASS [supervisor] backoff reaches 60 second cap
+TOTAL: 59 passed, 12 failed, 71 tests
