@@ -24,6 +24,10 @@ class Paths(ctx: Context) {
     val caddyfile = File(etc, "Caddyfile")
     val hostKey = File(etc, "ssh_host_ed25519_key")
     val authorizedKeys = File(home, ".ssh/authorized_keys")
+    /** One JSON line per SSH or web terminal session, written by sshd. */
+    val sessionLog = File(logs, "ssh-sessions.jsonl")
+    /** Commands typed in the phone's shell ("<unix time> <command>"), see [writeShellRc]. */
+    val shellHistory = File(home, ".shell_history")
     private val shellRc = File(etc, "mkshrc")
 
     fun exe(name: String) = File(libDir, "lib$name.so").path
@@ -46,16 +50,26 @@ class Paths(ctx: Context) {
 
     /**
      * Startup file for interactive SSH shells (mksh reads $ENV). Defines `alpine`, which opens
-     * a shell inside Alpine, then sources the user's own ~/.mkshrc.
+     * a shell inside Alpine, keeps a history of typed commands, then sources the user's own
+     * ~/.mkshrc.
      */
     fun writeShellRc(alpineShell: String?, alpineRun: String?) {
         val missing = "echo \"Alpine is not installed yet: install an app from the Apps screen.\""
+        trimHistory()
         shellRc.writeText(
             "alias alpine='${alpineShell ?: missing}'\n" +
                 // A function rather than an alias, so `ssh phone torrent …` works too.
                 "torrent() { ${alpineRun?.let { "$it /usr/local/bin/torrent \"\$@\"" } ?: missing}; }\n" +
+                HISTORY_HOOK +
                 "[ -f \"\$HOME/.mkshrc\" ] && . \"\$HOME/.mkshrc\"\n"
         )
+    }
+
+    /** Keeps the shell history file short; it only ever grows otherwise. */
+    private fun trimHistory() {
+        if (shellHistory.length() < 256 * 1024) return
+        val lines = shellHistory.readLines()
+        shellHistory.writeText(lines.takeLast(1000).joinToString("\n", postfix = "\n"))
     }
 
     /** Environment shared by every daemon (on top of the app's own). */
@@ -71,6 +85,23 @@ class Paths(ctx: Context) {
     )
 
     companion object {
+        /**
+         * Android's mksh has no history file, so the prompt records the last command: ${|…;}
+         * runs in the shell itself, so remembering the previous entry costs no process.
+         */
+        private val HISTORY_HOOK = """
+            _homedroid_history() {
+            	REPLY=
+            	typeset c
+            	c=${'$'}(fc -ln -1 2>/dev/null) || return 0
+            	c=${'$'}{c#${'$'}'\t'}
+            	[[ -n ${'$'}c && ${'$'}c != "${'$'}_homedroid_last" ]] || return 0
+            	_homedroid_last=${'$'}c
+            	print -r -- "${'$'}{EPOCHREALTIME%.*} ${'$'}c" >> "${'$'}HOME/.shell_history"
+            }
+            [[ -o interactive ]] && PS1='${'$'}{|_homedroid_history;}'"${'$'}PS1"
+        """.trimIndent() + "\n"
+
         val TOOLS = listOf("sshd", "caddy", "cloudflared", "proot")
 
         private val DEFAULT_CADDYFILE = """

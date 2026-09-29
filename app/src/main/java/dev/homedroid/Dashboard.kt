@@ -21,6 +21,7 @@ class Dashboard(private val ctx: Context) {
     private val deploys = Deploys(ctx, paths)
     private val alpine = Alpine(ctx, paths)
     private val files = FileBrowser(ctx, paths)
+    private val ssh = SshAdmin(paths, alpine)
     private val sessions: MutableSet<String> = Collections.synchronizedSet(LinkedHashSet())
     private val http = Http(cfg.dashboardPort, ::handle)
 
@@ -34,6 +35,7 @@ class Dashboard(private val ctx: Context) {
             val svg = ctx.assets.open("favicon.svg").use { it.readBytes() }
             return Response(200, svg, "image/svg+xml", mapOf("Cache-Control" to "max-age=86400"))
         }
+        if (r.method == "GET" && r.path.startsWith("/vendor/")) return vendor(r)
         if (r.path == "/api/login" && r.method == "POST") return login(r)
         if (!r.path.startsWith("/api/")) return Response.error(404, "not found")
         if (!authorized(r)) return Response.error(401, "log in first")
@@ -53,6 +55,23 @@ class Dashboard(private val ctx: Context) {
             200, if (gzip) pageGzip else pageRaw, "text/html; charset=utf-8",
             if (gzip) headers + ("Content-Encoding" to "gzip") else headers,
         )
+    }
+
+    /** Third-party files (xterm.js), gzipped once; the page asks for them with a version, so cache them long. */
+    private val vendorCache = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
+
+    private fun vendor(r: Request): Response {
+        val name = r.path.removePrefix("/vendor/")
+        if (name !in VENDOR) return Response.error(404, "not found")
+        val gz = vendorCache.getOrPut(name) {
+            java.io.ByteArrayOutputStream().also { out ->
+                java.util.zip.GZIPOutputStream(out).use { z -> ctx.assets.open("vendor/$name").use { it.copyTo(z) } }
+            }.toByteArray()
+        }
+        val type = if (name.endsWith(".css")) "text/css" else "text/javascript"
+        val headers = mapOf("Cache-Control" to "max-age=2592000, immutable", "Vary" to "Accept-Encoding")
+        return if (r.headers["accept-encoding"].orEmpty().contains("gzip")) Response(200, gz, type, headers + ("Content-Encoding" to "gzip"))
+        else Response(200, ctx.assets.open("vendor/$name").use { it.readBytes() }, type, headers)
     }
 
     private val pageRaw by lazy { ctx.assets.open("dashboard.html").use { it.readBytes() } }
@@ -87,6 +106,8 @@ class Dashboard(private val ctx: Context) {
             r.method == "POST" && seg.size == 3 && seg[0] == "deploys" -> deployAction(seg[1], seg[2])
             r.method == "DELETE" && seg.size == 2 && seg[0] == "deploys" -> deleteDeploy(seg[1])
             seg[0] == "files" -> files.handle(r, seg.drop(1).filter { it.isNotEmpty() })
+            r.method == "GET" && seg == listOf("terminal") -> Terminal.open(r, cfg.sshEnabled && ServerService.running)
+            seg[0] == "ssh" -> ssh.handle(r, seg.drop(1))
             else -> Response.error(404, "no such endpoint")
         }
     }
@@ -136,6 +157,7 @@ class Dashboard(private val ctx: Context) {
             .put("ips", jsonArray(d.ips))
             .put("uptime", d.uptimeS)
             .put("running", ServerService.running)
+            .put("metrics", Metrics.sample(ctx))
     }
 
     private fun servicesJson() = jsonArray(
@@ -304,6 +326,7 @@ class Dashboard(private val ctx: Context) {
 
     companion object {
         private const val COOKIE = "homedroid_session"
+        private val VENDOR = setOf("xterm.js", "xterm.css", "addon-fit.js")
         private const val MAX_SESSIONS = 20
 
         private val SECURITY_HEADERS = mapOf(

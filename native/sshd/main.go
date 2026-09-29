@@ -1,5 +1,7 @@
 // Command sshd is a minimal SSH server for Homedroid: public-key auth only, interactive
-// shells with a PTY, exec, SFTP and local port forwarding (ssh -L).
+// shells with a PTY, exec, SFTP and local port forwarding (ssh -L). It also serves the
+// dashboard's web terminal on a loopback port (see terminal.go) and keeps a short log of
+// sessions (see sessions.go).
 package main
 
 import (
@@ -15,7 +17,9 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/creack/pty"
@@ -29,11 +33,17 @@ var (
 	authKeys = flag.String("authorized-keys", "authorized_keys", "authorized_keys path, re-read on every login")
 	home     = flag.String("home", ".", "working directory for sessions")
 	shell    = flag.String("shell", "/system/bin/sh", "shell for sessions")
+	termAddr = flag.String("terminal-listen", "", "loopback address for the web terminal (token in $HOMEDROID_TERMINAL_TOKEN)")
+	logPath  = flag.String("session-log", "", "file to append one JSON line per session to")
 )
 
 func main() {
 	flag.Parse()
 	log.SetFlags(0)
+	// Android starts app processes with SIGHUP ignored, and ignored signals are inherited
+	// through exec: shells would then survive their hangup. Handling it here (and doing
+	// nothing) gives children the default action back.
+	signal.Notify(make(chan os.Signal, 1), syscall.SIGHUP)
 
 	signer, err := loadHostKey(*hostKey)
 	if err != nil {
@@ -47,6 +57,9 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Printf("listening on %s, host key %s", ln.Addr(), ssh.FingerprintSHA256(signer.PublicKey()))
+	if *termAddr != "" {
+		go serveTerminal(*termAddr, os.Getenv("HOMEDROID_TERMINAL_TOKEN"))
+	}
 	for {
 		c, err := ln.Accept()
 		if err != nil {
@@ -87,12 +100,17 @@ func checkKey(meta ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error
 	}
 	want := key.Marshal()
 	for len(data) > 0 {
-		pk, _, _, rest, err := ssh.ParseAuthorizedKey(data)
+		pk, comment, _, rest, err := ssh.ParseAuthorizedKey(data)
 		if err != nil {
 			break
 		}
 		if bytes.Equal(pk.Marshal(), want) {
-			return &ssh.Permissions{}, nil
+			// Remembered for the session log: the key's name, or its fingerprint.
+			name := comment
+			if name == "" {
+				name = ssh.FingerprintSHA256(pk)
+			}
+			return &ssh.Permissions{Extensions: map[string]string{"key": name}}, nil
 		}
 		data = rest
 	}
@@ -100,21 +118,31 @@ func checkKey(meta ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error
 }
 
 func serveConn(c net.Conn, cfg *ssh.ServerConfig) {
+	start := time.Now()
 	sc, chans, reqs, err := ssh.NewServerConn(c, cfg)
 	if err != nil {
 		log.Printf("%s: handshake failed: %v", c.RemoteAddr(), err)
+		// Only failed logins are worth keeping, not port scanners that never try a key.
+		var authErr *ssh.ServerAuthError
+		if errors.As(err, &authErr) {
+			recordFailure(start, c.RemoteAddr(), "key not authorized")
+		}
 		c.Close()
 		return
 	}
 	log.Printf("%s: login as %q", sc.RemoteAddr(), sc.User())
-	defer log.Printf("%s: disconnected", sc.RemoteAddr())
+	s := newSession("ssh", start, sc.RemoteAddr(), sc.User(), sc.Permissions.Extensions["key"])
+	defer func() {
+		log.Printf("%s: disconnected", sc.RemoteAddr())
+		s.finish()
+	}()
 	go ssh.DiscardRequests(reqs) // remote forwarding (ssh -R) is not supported
 	for nc := range chans {
 		switch nc.ChannelType() {
 		case "session":
-			go handleSession(nc)
+			go handleSession(nc, s)
 		case "direct-tcpip":
-			go handleForward(nc)
+			go handleForward(nc, s)
 		default:
 			nc.Reject(ssh.UnknownChannelType, "unsupported channel type")
 		}
@@ -122,7 +150,7 @@ func serveConn(c net.Conn, cfg *ssh.ServerConfig) {
 }
 
 // handleForward serves ssh -L, e.g. reaching Caddy's admin API on localhost:2019.
-func handleForward(nc ssh.NewChannel) {
+func handleForward(nc ssh.NewChannel, s *session) {
 	var req struct {
 		Host     string
 		Port     uint32
@@ -133,7 +161,9 @@ func handleForward(nc ssh.NewChannel) {
 		nc.Reject(ssh.ConnectionFailed, "malformed request")
 		return
 	}
-	dst, err := net.Dial("tcp", net.JoinHostPort(req.Host, strconv.Itoa(int(req.Port))))
+	target := net.JoinHostPort(req.Host, strconv.Itoa(int(req.Port)))
+	s.forward(target)
+	dst, err := net.Dial("tcp", target)
 	if err != nil {
 		nc.Reject(ssh.ConnectionFailed, err.Error())
 		return
@@ -163,7 +193,7 @@ func handleForward(nc ssh.NewChannel) {
 	dst.Close()
 }
 
-func handleSession(nc ssh.NewChannel) {
+func handleSession(nc ssh.NewChannel, s *session) {
 	ch, reqs, err := nc.Accept()
 	if err != nil {
 		return
@@ -171,7 +201,16 @@ func handleSession(nc ssh.NewChannel) {
 	env := append(os.Environ(), "SHELL="+*shell)
 	var size *pty.Winsize
 	var tty *os.File
+	var shellCmd *exec.Cmd
 	started := false
+	// The channel is gone (client quit or the connection dropped): hang up a terminal session,
+	// like closing a terminal window. Input EOF alone doesn't count: `ssh -tt host < script`
+	// sends it long before the script is done.
+	defer func() {
+		if tty != nil {
+			hangup(shellCmd)
+		}
+	}()
 
 	for req := range reqs {
 		ok := false
@@ -211,6 +250,11 @@ func handleSession(nc ssh.NewChannel) {
 			started = true
 			var x struct{ Command string }
 			ssh.Unmarshal(req.Payload, &x) // empty for "shell"
+			if x.Command == "" {
+				s.shell()
+			} else {
+				s.command(x.Command)
+			}
 			cmd := exec.Command(*shell)
 			if x.Command != "" {
 				// Shells only read $ENV when interactive; load it for commands too, so
@@ -223,12 +267,13 @@ func handleSession(nc ssh.NewChannel) {
 			if req.WantReply {
 				req.Reply(true, nil)
 			}
-			tty = run(ch, cmd, size)
+			tty, shellCmd = run(ch, cmd, size), cmd
 			continue
 		case "subsystem":
-			var s struct{ Name string }
-			if !started && ssh.Unmarshal(req.Payload, &s) == nil && s.Name == "sftp" {
+			var sub struct{ Name string }
+			if !started && ssh.Unmarshal(req.Payload, &sub) == nil && sub.Name == "sftp" {
 				started, ok = true, true
+				s.sftp()
 				go serveSFTP(ch)
 			}
 		}
@@ -283,6 +328,21 @@ func run(ch ssh.Channel, cmd *exec.Cmd, size *pty.Winsize) *os.File {
 		exit(ch, cmd)
 	}()
 	return nil
+}
+
+// hangup sends SIGHUP to cmd's process group (its session, as the PTY made it a session
+// leader) and, if something is still running a few seconds later, SIGKILL.
+func hangup(cmd *exec.Cmd) {
+	if cmd.Process == nil {
+		return
+	}
+	pid := cmd.Process.Pid
+	syscall.Kill(-pid, syscall.SIGHUP)
+	time.AfterFunc(3*time.Second, func() {
+		if cmd.ProcessState == nil {
+			syscall.Kill(-pid, syscall.SIGKILL)
+		}
+	})
 }
 
 func serveSFTP(ch ssh.Channel) {

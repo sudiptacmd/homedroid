@@ -57,7 +57,10 @@ object Services {
                     "-hostkey", p.hostKey.path,
                     "-authorized-keys", p.authorizedKeys.path,
                     "-home", p.home.path,
-                )
+                    "-session-log", p.sessionLog.path,
+                    "-terminal-listen", "127.0.0.1:${Terminal.PORT}",
+                ),
+                mapOf("HOMEDROID_TERMINAL_TOKEN" to Terminal.token),
             )
         )
         if (c.webEnabled) add(

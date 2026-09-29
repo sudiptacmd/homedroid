@@ -75,7 +75,7 @@ h2 { font-size: 12px; font-weight: 650; color: var(--muted); text-transform: upp
   .side { display: none; }
   .top { display: flex; position: sticky; top: 0; z-index: 5; align-items: center; gap: 4px; padding: 8px 12px 8px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
   .top .brand { padding: 0; font-size: 15px; }
-  .tabbar { position: fixed; z-index: 5; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  .tabbar { position: fixed; z-index: 5; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
   .tabbar a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 6px; font-size: 11px; color: var(--muted); font-weight: 550; position: relative; }
   .tabbar a:hover { text-decoration: none; }
   .tabbar a[aria-current="page"] { color: var(--accent); }
@@ -147,7 +147,7 @@ pre { margin: 0; background: var(--code); border-radius: var(--r-sm); padding: 1
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Overview */
-.stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
 .stat { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .stat .k { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12.5px; font-weight: 550; }
 .stat .v { font-size: 24px; font-weight: 650; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
@@ -159,6 +159,26 @@ pre { margin: 0; background: var(--code); border-radius: var(--r-sm); padding: 1
 .item:first-child { border-top: 0; }
 .item .name { font-weight: 550; }
 .item .acts { display: flex; gap: 2px; flex: none; }
+
+.spark { display: block; width: 100%; height: 30px; }
+.spark path { fill: none; stroke: var(--accent); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.spark path.area { fill: var(--accent-soft); stroke: none; }
+.spark path.b { stroke: var(--ok); }
+.updown { display: flex; gap: 14px; }
+.updown span { display: inline-flex; align-items: baseline; gap: 4px; }
+
+/* SSH */
+.term-wrap { background: #0c0e12; border-radius: 0 0 var(--r) var(--r); padding: 8px 4px 4px 10px; height: min(62vh, 560px); }
+.term-wrap .xterm { height: 100%; }
+.term-idle { height: 100%; display: grid; place-items: center; color: #8a92a3; text-align: center; font-size: 13.5px; }
+.seg { display: inline-flex; background: var(--code); border-radius: var(--r-sm); padding: 3px; gap: 2px; }
+.seg button { border: 0; background: none; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 550; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.hist { max-height: 360px; overflow: auto; }
+.hist .item { min-height: 0; padding: 6px 16px; gap: 10px; }
+.hist .item .mono { white-space: pre-wrap; word-break: break-all; }
+.two { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); align-items: start; }
+@media (max-width: 480px) { .two { grid-template-columns: 1fr; } }
 
 /* Modules and deployments */
 .mod { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
@@ -280,6 +300,12 @@ dialog[open] { animation: pop .14s var(--ease); }
   <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5l9.5 17h-19z"/><path d="M12 10v4.5M12 17.5v.1"/></symbol>
   <symbol id="i-port" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.3 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.3-3.5-8.5s1-6 3.5-8.5z"/></symbol>
   <symbol id="i-git" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 12h6M15 12h6"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 9l3 3-3 3M12 15h5"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-temp" viewBox="0 0 24 24"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v7"/></symbol>
+  <symbol id="i-net" viewBox="0 0 24 24"><path d="M7 4v14M3 14l4 4 4-4"/><path d="M17 20V6M13 10l4-4 4 4"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M4 10a8 8 0 0 1 14-4l2 2"/><path d="M20 4v4h-4"/><path d="M20 14a8 8 0 0 1-14 4l-2-2"/><path d="M4 20v-4h4"/></symbol>
 </svg>
 
@@ -301,6 +327,7 @@ dialog[open] { animation: pop .14s var(--ease); }
       <a href="#modules" data-tab="modules"><svg class="i"><use href="#i-modules"/></svg>Modules<span class="count hidden" data-jobdot title="A job is running"></span></a>
       <a href="#deploys" data-tab="deploys"><svg class="i"><use href="#i-deploy"/></svg>Deployments</a>
       <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
+      <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal &amp; SSH</a>
     </nav>
     <div class="side-foot">
       <div class="hint ellipsis" id="sideDevice"></div>
@@ -325,10 +352,12 @@ dialog[open] { animation: pop .14s var(--ease); }
         <div class="card stat"><div class="skeleton" style="width:45%"></div><div class="skeleton" style="height:26px;width:70%"></div></div>
         <div class="card stat"><div class="skeleton" style="width:45%"></div><div class="skeleton" style="height:26px;width:70%"></div></div>
         <div class="card stat"><div class="skeleton" style="width:45%"></div><div class="skeleton" style="height:26px;width:70%"></div></div>
+        <div class="card stat"><div class="skeleton" style="width:45%"></div><div class="skeleton" style="height:26px;width:70%"></div></div>
+        <div class="card stat"><div class="skeleton" style="width:45%"></div><div class="skeleton" style="height:26px;width:70%"></div></div>
       </div>
       <h2>Reach this phone</h2>
       <div class="card pad reach" id="ovReach"><div class="skeleton" style="width:40%"></div></div>
-      <h2>Services</h2>
+      <h2 id="ovSvcHead">Services</h2>
       <div class="card" id="ovServices"><div class="item"><div class="skeleton grow"></div></div></div>
     </section>
 
@@ -374,6 +403,52 @@ dialog[open] { animation: pop .14s var(--ease); }
       </div>
       <div class="hint" style="margin-top:10px">Drop files or folders on the list to upload them into the open folder. Folders download as zip files.</div>
     </section>
+
+    <section data-view="ssh" class="hidden">
+      <div class="page-head"><div><h1>Terminal &amp; SSH</h1><div class="sub">A shell on the phone in your browser, the keys that may log in over SSH, and who did.</div></div></div>
+      <div class="card" style="overflow:hidden">
+        <div class="job-head" style="flex-wrap:wrap">
+          <div class="seg" role="group" aria-label="Shell">
+            <button data-act="termKind" data-kind="phone" aria-pressed="true">Phone shell</button>
+            <button data-act="termKind" data-kind="alpine" aria-pressed="false">Alpine Linux</button>
+          </div>
+          <span class="hint" id="termState">Not connected</span>
+          <div class="grow"></div>
+          <button class="btn sm" data-act="termStop" id="termStop" disabled><svg class="i"><use href="#i-x"/></svg>Disconnect</button>
+          <button class="btn primary sm" data-act="termStart" id="termStart">Connect</button>
+        </div>
+        <div class="term-wrap" id="termBox"><div class="term-idle"><div>Connect to open a shell on the phone.<br><span style="opacity:.75">Type <span class="mono">alpine</span> in the phone shell for Linux, or pick Alpine above.</span></div></div></div>
+      </div>
+      <div class="two" style="margin-top:12px">
+        <div>
+          <h2>SSH keys</h2>
+          <div class="card">
+            <div id="keyList"></div>
+            <form id="keyForm" class="pad" style="border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px">
+              <label class="field">Add a public key<textarea name="key" rows="3" class="mono" required spellcheck="false" placeholder="ssh-ed25519 AAAA… you@laptop"></textarea></label>
+              <div class="row">
+                <input name="name" placeholder="Name (optional), e.g. Work laptop" autocomplete="off" style="flex:1">
+                <button class="btn primary" type="submit"><svg class="i"><use href="#i-key"/></svg>Add key</button>
+              </div>
+              <div class="hint">On your computer: <span class="mono">cat ~/.ssh/id_ed25519.pub</span> (or create one with <span class="mono">ssh-keygen -t ed25519</span>). Then connect with <span class="mono" id="sshCmd">ssh -p 8022 phone</span>.</div>
+            </form>
+          </div>
+        </div>
+        <div>
+          <div class="row"><h2 class="grow">Sessions</h2><button class="btn ghost sm" data-act="clearSessions" style="margin-top:14px">Clear</button></div>
+          <div class="card hist" id="sessList"></div>
+          <div class="row" style="margin-top:4px">
+            <h2 class="grow">History</h2>
+            <div class="seg" role="group" aria-label="History" style="margin-top:14px">
+              <button data-act="histKind" data-kind="phone" aria-pressed="true">Phone shell</button>
+              <button data-act="histKind" data-kind="alpine" aria-pressed="false">Alpine</button>
+            </div>
+            <button class="btn ghost sm" data-act="clearHistory" style="margin-top:14px">Clear</button>
+          </div>
+          <div class="card hist" id="histList"></div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <nav class="tabbar" aria-label="Sections">
@@ -381,6 +456,7 @@ dialog[open] { animation: pop .14s var(--ease); }
     <a href="#modules" data-tab="modules"><svg class="i"><use href="#i-modules"/></svg>Modules<span class="count hidden" data-jobdot></span></a>
     <a href="#deploys" data-tab="deploys"><svg class="i"><use href="#i-deploy"/></svg>Deploy</a>
     <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
+    <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal</a>
   </nav>
 </div>
 
@@ -498,7 +574,7 @@ applyTheme();
 // ---- Routing and polling ---------------------------------------------------------------
 // The tab (and the open folder) live in the URL hash, so reloads and the back button work.
 // Only the visible tab polls, never while the page is hidden, faster only while a job runs.
-const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0};
+const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000};
 let tab = 'overview', authed = false, pollTimer = 0, seq = 0, busyJob = false;
 function route() {
   const [t, ...rest] = location.hash.slice(1).split('/').map(s => { try { return decodeURIComponent(s); } catch (e) { return s; } });
@@ -519,7 +595,8 @@ async function refresh() {
     if (tab === 'overview') await renderOverview();
     else if (tab === 'modules') await renderModules();
     else if (tab === 'deploys') await renderDeploys();
-    else await renderFiles();
+    else if (tab === 'files') await renderFiles();
+    else await renderSsh();
   } catch (e) { /* polling stays quiet; actions report their own errors */ }
   if (my !== seq || document.hidden) return; // a newer refresh owns the schedule
   const ms = busyJob && tab !== 'files' ? 1500 : POLL[tab];
@@ -570,10 +647,20 @@ function badge(state, restarts) {
 
 // ---- Overview --------------------------------------------------------------------------
 const level = (pct, low = false) => { const p = low ? 100 - pct : pct; return p > 90 ? 'bad' : p > 75 ? 'warn' : 'ok'; };
-function stat(ic, k, v, sub, pct, cls) {
+function stat(ic, k, v, sub, pct, cls, graph) {
   return `<div class="card stat"><div class="k">${icon(ic)}${k}</div><div class="v">${v}</div>
-    <div class="meter ${cls}"><i style="width:${Math.max(2, Math.min(100, pct))}%"></i></div><div class="s">${sub}</div></div>`;
+    ${graph || `<div class="meter ${cls}"><i style="width:${Math.max(2, Math.min(100, pct))}%"></i></div>`}<div class="s">${sub}</div></div>`;
 }
+// Recent samples for the small graphs, kept in the page only (about 3 minutes at one per 5 s).
+const hist = {cpu: [], rx: [], tx: []};
+function push(key, v) { const a = hist[key]; a.push(v); if (a.length > 36) a.shift(); }
+function spark(series, max, cls = ['']) {
+  const n = 35, top = Math.max(max, ...series.flat(), 1e-9);
+  const pts = s => s.map((v, i) => `${(i + n + 1 - s.length) * 100 / n},${30 - 28 * v / top}`).join(' L');
+  return `<svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none">${series.map((s, i) => s.length > 1
+    ? (i === 0 ? `<path class="area" d="M${pts(s)} L100,30 L${(n + 1 - s.length) * 100 / n},30Z"/>` : '') + `<path class="${cls[i] || ''}" d="M${pts(s)}"/>` : '').join('')}</svg>`;
+}
+const rate = b => b < 1024 ? b + ' B/s' : b < 1048576 ? (b / 1024).toFixed(b < 10240 ? 1 : 0) + ' KB/s' : (b / 1048576).toFixed(1) + ' MB/s';
 async function renderOverview() {
   const {status: s, modules: m, deploys: d, services} = await api('overview');
   noteJob(m.job);
@@ -581,14 +668,20 @@ async function renderOverview() {
   setHTML($('#ovSub'), `${esc(s.model)} · Android ${esc(s.android)} · up ${ago(s.uptime)}`);
   const ram = 100 * (1 - s.ramFreeMb / s.ramTotalMb), disk = 100 * (1 - s.storageFreeMb / s.storageTotalMb);
   const running = services.filter(x => x.state === 'running').length, crashing = services.some(x => x.state === 'backoff');
+  const mt = s.metrics;
+  push('cpu', mt.cpu); push('rx', mt.rxBps); push('tx', mt.txBps);
+  const hot = s.hot || ['hot', 'throttling', 'critical'].includes(mt.thermal), temp = mt.cpuTemp ?? s.batteryTemp;
   setHTML($('#ovStats'), [
-    stat('battery', 'Battery', `${s.battery}<small>%</small>`, `${s.charging ? 'Charging · ' : ''}${s.batteryTemp.toFixed(1)} °C${s.hot ? ' · <b style="color:var(--bad)">too hot</b>' : ''}`, s.battery, s.hot ? 'bad' : level(s.battery, true)),
+    stat('cpu', 'CPU load', `${mt.cpu.toFixed(mt.cpu < 10 ? 1 : 0)}<small>%</small>`, `Homedroid's processes, of ${mt.cores} cores`, 0, '', spark([hist.cpu], 10)),
+    stat('temp', 'Temperature', `${temp.toFixed(1)}<small> °C</small>`,
+      `${mt.cpuTemp != null ? `CPU · battery ${s.batteryTemp.toFixed(1)} °C` : 'Battery'} · ${hot ? `<b style="color:var(--bad)">${esc(mt.thermal === 'normal' ? 'too hot' : mt.thermal)}</b>` : esc(mt.thermal)}`,
+      Math.min(100, Math.max(0, (temp - 20) * 2.5)), hot ? 'bad' : temp >= 40 ? 'warn' : 'ok'),
+    stat('net', 'Network', `<span class="updown"><span>↓ ${rate(mt.rxBps)}</span></span>`, `↑ ${rate(mt.txBps)} upload · whole phone`, 0, '', spark([hist.rx, hist.tx], 10240, ['', 'b'])),
+    stat('battery', 'Battery', `${s.battery}<small>%</small>`, s.charging ? 'Charging' : 'On battery', s.battery, level(s.battery, true)),
     stat('memory', 'Memory in use', `${gb(s.ramTotalMb - s.ramFreeMb)}<small> / ${gb(s.ramTotalMb)} GB</small>`, `${gb(s.ramFreeMb)} GB free`, ram, level(ram)),
     stat('disk', 'Storage in use', `${gb(s.storageTotalMb - s.storageFreeMb)}<small> / ${gb(s.storageTotalMb)} GB</small>`, `${gb(s.storageFreeMb)} GB free`, disk, level(disk)),
-    stat('pulse', 'Services', `${running}<small> / ${services.length} running</small>`,
-      crashing ? '<span style="color:var(--bad)">Some keep crashing: check their logs</span>' : s.running ? 'Restarted automatically if they stop' : 'Server stopped',
-      services.length ? 100 * running / services.length : 0, crashing ? 'bad' : running === services.length ? 'ok' : 'warn'),
   ].join(''));
+  setHTML($('#ovSvcHead'), `Services · ${running} of ${services.length} running${crashing ? ' · <span style="color:var(--bad)">some keep crashing</span>' : ''}`);
   setHTML($('#ovReach'), s.ips.length
     ? s.ips.map(ip => `<span class="mono">${esc(ip.includes(':') ? `[${ip}]` : ip)}</span>`).join('') + `<span class="hint" style="margin-left:4px">Dashboard on port 8800, SSH and SFTP on 8022</span>`
     : '<span class="muted">No network connection</span>');
@@ -919,6 +1012,87 @@ dropBox.addEventListener('drop', async e => {
   queueUploads(out);
 });
 
+// ---- Terminal & SSH --------------------------------------------------------------------
+const term = {kind: 'phone', xterm: null, fit: null, ws: null, loading: null, histKind: 'phone'};
+/** xterm.js is only fetched when a terminal is first opened, so the rest of the page stays light. */
+function loadXterm() {
+  const add = (tag, attrs) => new Promise((ok, no) => { const el = Object.assign(document.createElement(tag), attrs, {onload: ok, onerror: no}); document.head.append(el); });
+  return term.loading ??= Promise.all([
+    add('link', {rel: 'stylesheet', href: '/vendor/xterm.css?v=6.0.0'}),
+    add('script', {src: '/vendor/xterm.js?v=6.0.0'}).then(() => add('script', {src: '/vendor/addon-fit.js?v=0.11.0'})),
+  ]);
+}
+function termState(text, connected) {
+  $('#termState').textContent = text;
+  $('#termStart').disabled = connected; $('#termStop').disabled = !connected;
+}
+async function termStart() {
+  if (term.ws) return;
+  termState('Connecting…', true);
+  try { await loadXterm(); } catch (e) { term.loading = null; termState('Could not load the terminal', false); return; }
+  const box = $('#termBox');
+  if (!term.xterm) {
+    box.innerHTML = '';
+    term.xterm = new Terminal({cursorBlink: true, fontSize: 13.5, scrollback: 3000, allowProposedApi: false,
+      fontFamily: 'ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace',
+      theme: {background: '#0c0e12', foreground: '#e8eaef', cursor: '#5b8cff', selectionBackground: '#2e3542'}});
+    term.fit = new FitAddon.FitAddon();
+    term.xterm.loadAddon(term.fit);
+    term.xterm.open(box);
+    term.xterm.onData(d => term.ws?.readyState === 1 && term.ws.send(new TextEncoder().encode(d)));
+    term.xterm.onResize(({cols, rows}) => term.ws?.readyState === 1 && term.ws.send(JSON.stringify({cols, rows})));
+    new ResizeObserver(() => { try { term.fit.fit(); } catch (e) {} }).observe(box);
+  }
+  term.fit.fit(); term.xterm.reset();
+  const {cols, rows} = term.xterm;
+  const ws = term.ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/terminal?cols=${cols}&rows=${rows}${term.kind === 'alpine' ? '&alpine=1' : ''}`);
+  ws.binaryType = 'arraybuffer';
+  ws.onopen = () => { termState(term.kind === 'alpine' ? 'Connected to Alpine Linux' : 'Connected to the phone shell', true); term.xterm.focus(); };
+  ws.onmessage = e => term.xterm.write(new Uint8Array(e.data));
+  ws.onclose = e => {
+    if (term.ws !== ws) return;
+    term.ws = null;
+    termState(e.code === 1000 || e.wasClean ? 'Disconnected' : 'Disconnected (is SSH & SFTP turned on?)', false);
+    term.xterm.write('\r\n\x1b[2m[session ended]\x1b[0m\r\n');
+    if (tab === 'ssh') refresh();
+  };
+}
+function termStop() { const ws = term.ws; term.ws = null; ws?.close(); termState('Disconnected', false); }
+function setSeg(b) { $$('button', b.parentElement).forEach(x => x.setAttribute('aria-pressed', x === b)); }
+
+async function renderSsh() {
+  const [keys, sessions, history] = await Promise.all([api('ssh/keys'), api('ssh/sessions'), api('ssh/history')]);
+  $('#sshCmd').textContent = `ssh -p 8022 ${location.hostname}`;
+  setHTML($('#keyList'), keys.map(k => `<div class="item">
+      <span class="ficon">${icon('key')}</span>
+      <div class="grow"><div class="name ellipsis">${esc(k.name || 'Unnamed key')}</div><div class="hint mono ellipsis" title="${esc(k.fingerprint)}">${esc(k.type)} · ${esc(k.fingerprint)}</div></div>
+      <div class="acts"><button class="btn ghost sm icon danger" data-act="removeKey" data-fp="${esc(k.fingerprint)}" data-name="${esc(k.name || 'this key')}" title="Remove" aria-label="Remove">${icon('trash')}</button></div>
+    </div>`).join('') || `<div class="empty">${icon('key')}<div>No keys yet: nobody can log in over SSH.</div></div>`);
+  const when = new Intl.DateTimeFormat(undefined, {dateStyle: 'medium', timeStyle: 'short'});
+  const short = new Intl.DateTimeFormat(undefined, {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+  const dur = sec => sec < 60 ? sec + ' s' : sec < 3600 ? Math.round(sec / 60) + ' min' : ago(sec);
+  setHTML($('#sessList'), sessions.map(x => {
+    const what = x.failed ? `<span style="color:var(--bad)">Rejected: ${esc(x.failed)}</span>` : [
+      x.shells ? `${x.shells} shell${x.shells > 1 ? 's' : ''}` : '', x.sftp ? 'file transfer' : '',
+      x.forwards?.length ? 'forwarded ' + esc(x.forwards.join(', ')) : ''].filter(Boolean).join(' · ');
+    return `<div class="item" style="align-items:flex-start">
+      <span class="dot ${x.failed ? 'backoff' : 'running'}" style="margin-top:7px"></span>
+      <div class="grow">
+        <div class="row" style="gap:6px;flex-wrap:wrap"><span class="name">${esc(x.via === 'web' ? 'Web terminal' : x.key || x.user || 'SSH')}</span><span class="hint">from ${esc(x.ip)}</span></div>
+        <div class="hint">${when.format(x.start * 1000)}${x.end && !x.failed ? ' · ' + dur(x.end - x.start) : ''}${what ? ' · ' + what : ''}</div>
+        ${x.commands?.length ? `<div class="mono" style="margin-top:2px;color:var(--text-2)">${x.commands.map(c => '$ ' + esc(c)).join('<br>')}</div>` : ''}
+      </div></div>`;
+  }).join('') || `<div class="empty">${icon('history')}<div>No sessions yet.</div></div>`);
+  const h = history[term.histKind];
+  setHTML($('#histList'), h.map(x => `<div class="item"><span class="hint" style="width:110px;flex:none">${x.time ? short.format(x.time * 1000) : ''}</span><span class="mono grow">${esc(x.command)}</span></div>`).join('')
+    || `<div class="empty">${icon('history')}<div>No commands yet.</div></div>`);
+}
+$('#keyForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target;
+  if (await run(api('ssh/keys', {method: 'POST', body: {key: f.elements.key.value, name: f.elements.name.value}}), 'Key added')) f.reset();
+};
+
 // ---- Actions: one delegated listener for every button ------------------------------------
 const ACT = {
   theme() { theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]; store('theme', theme === 'auto' ? null : theme); applyTheme(); },
@@ -952,6 +1126,15 @@ const ACT = {
   pickDir: () => $('#fPickDir').click(),
   cancelUploads() { files.uploads.forEach(u => { if (u.state === 'waiting') u.state = 'cancelled'; }); files.active?.xhr?.abort(); drawTray(); },
   clearUploads() { files.uploads = []; drawTray(); },
+  termStart, termStop,
+  termKind(b) { setSeg(b); term.kind = b.dataset.kind; if (term.ws) { termStop(); termStart(); } },
+  histKind(b) { setSeg(b); term.histKind = b.dataset.kind; $('#histList')._html = null; refresh(); },
+  async removeKey(b) {
+    const r = await ask({title: `Remove ${b.dataset.name}?`, text: 'It can no longer log in over SSH. Sessions already open stay open.', confirm: 'Remove', danger: true});
+    if (r) run(api(`ssh/keys?fingerprint=${encodeURIComponent(b.dataset.fp)}`, {method: 'DELETE'}), 'Key removed');
+  },
+  async clearSessions() { if (await ask({title: 'Clear the session log?', confirm: 'Clear', danger: true})) run(api('ssh/sessions', {method: 'DELETE'}), 'Cleared'); },
+  async clearHistory() { if (await ask({title: 'Clear the command history?', text: 'Of both the phone shell and Alpine.', confirm: 'Clear', danger: true})) run(api('ssh/history', {method: 'DELETE'}), 'Cleared'); },
 };
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]');

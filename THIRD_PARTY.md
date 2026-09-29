@@ -14,6 +14,7 @@ are the patch files in `native/patches/`.
 | golang.org/x/crypto | see `native/sshd/go.sum` | BSD-3-Clause | https://go.googlesource.com/crypto |
 | github.com/creack/pty | see `native/sshd/go.sum` | MIT | https://github.com/creack/pty |
 | github.com/pkg/sftp | see `native/sshd/go.sum` | BSD-2-Clause | https://github.com/pkg/sftp |
+| xterm.js and its fit addon (web terminal, in `app/src/main/assets/vendor`) | 6.0.0 / 0.11.0 | MIT | https://github.com/xtermjs/xterm.js |
 
 ## Downloaded at run time
 

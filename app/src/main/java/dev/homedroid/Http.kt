@@ -72,6 +72,8 @@ class Response(
     /** Streams the body instead of [body]: [length] bytes, or until the connection closes if null. */
     val stream: ((OutputStream) -> Unit)? = null,
     val length: Long? = null,
+    /** For status 101: takes over the connection (a WebSocket) once the headers are sent. */
+    val upgrade: ((InputStream, OutputStream) -> Unit)? = null,
 ) {
     companion object {
         fun json(o: Any, status: Int = 200, headers: Map<String, String> = emptyMap()) =
@@ -130,7 +132,17 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
         }
         // An uncaught exception on any thread would take down the whole app.
         try {
-            write(client, response)
+            if (response.upgrade != null) {
+                val out = client.getOutputStream()
+                val head = StringBuilder("HTTP/1.1 101 Switching Protocols\r\n")
+                for ((k, v) in response.headers) head.append(k).append(": ").append(v).append("\r\n")
+                out.write(head.append("\r\n").toString().toByteArray())
+                out.flush()
+                client.soTimeout = 0 // a terminal can sit idle for hours
+                response.upgrade.invoke(input, out)
+            } else {
+                write(client, response)
+            }
         } catch (_: Exception) {
             // The client went away mid-download.
         }
