@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lindroid</string>
+    <string name="start">Start server</string>
+    <string name="stop">Stop server</string>
+    <string name="ssh">SSH server (port 8022)</string>
+    <string name="web">Web server – Caddy (port 8080)</string>
+    <string name="autostart">Start on boot</string>
+    <string name="token">Cloudflare tunnel token</string>
+    <string name="keys">SSH authorized_keys (one public key per line)</string>
+    <string name="save">Save &amp; apply</string>
+    <string name="battery">Allow running in background</string>
+    <string name="logs">Logs</string>
+    <string name="phantom_tip">Android 12+ kills apps with many child processes. Run once from a PC:\n\nAndroid 14+: Developer options → Disable child process restrictions\n\nAndroid 12–13:\nadb shell device_config set_sync_disabled_for_tests persistent\nadb shell device_config put activity_manager max_phantom_processes 2147483647</string>
+</resources>
