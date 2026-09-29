@@ -56,6 +56,27 @@ a { color: var(--accent); }
 .hidden { display: none !important; }
 dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); width: min(900px, 94vw); padding: 16px; }
 dialog::backdrop { background: rgba(0,0,0,.4); }
+.files { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.files.drop { outline: 2px dashed var(--accent); outline-offset: -6px; }
+.frow { display: grid; grid-template-columns: 1fr 90px 150px 230px; gap: 10px; align-items: center; padding: 8px 12px; border-top: 1px solid var(--line); min-width: 0; }
+.frow:first-child { border-top: 0; }
+.frow.head { color: var(--muted); font-size: 13px; background: var(--code); }
+.frow .name { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.frow .name a, .frow .name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frow .name a { color: var(--text); text-decoration: none; cursor: pointer; }
+.frow .name a:hover { color: var(--accent); }
+.frow .num { color: var(--muted); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+.frow .acts { display: flex; gap: 4px; justify-content: flex-end; }
+.frow .acts button { font-size: 13px; padding: 3px 8px; }
+.crumbs { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; font-size: 14px; }
+.crumbs a { cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+.crumbs a:hover { background: var(--code); }
+.bar { height: 6px; background: var(--code); border-radius: 99px; overflow: hidden; }
+.bar > div { height: 100%; background: var(--accent); width: 0; }
+@media (max-width: 640px) {
+  .frow { grid-template-columns: 1fr auto; }
+  .frow .num { display: none; }
+}
 .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 14px; }
 </style>
 </head>
@@ -77,6 +98,7 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
       <button data-tab="overview" class="on">Overview</button>
       <button data-tab="modules">Modules</button>
       <button data-tab="deploys">Deployments</button>
+      <button data-tab="files">Files</button>
     </nav>
     <div class="spacer"></div>
     <button class="b" id="logout">Log out</button>
@@ -124,6 +146,23 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
       <h2>Deployments</h2>
       <div class="grid" id="deploys"></div>
     </section>
+
+    <section id="tab-files" class="hidden">
+      <div class="row" style="margin:8px 0 12px">
+        <select id="fRoot" style="width:auto;max-width:100%"></select>
+        <span class="muted" id="fFree"></span>
+        <div style="flex:1"></div>
+        <button class="b" id="fMkdir">New folder</button>
+        <button class="b" id="fUpDir">Upload folder</button>
+        <button class="b primary" id="fUp">Upload files</button>
+        <input type="file" id="fPick" multiple class="hidden">
+        <input type="file" id="fPickDir" webkitdirectory multiple class="hidden">
+      </div>
+      <div class="crumbs" id="fCrumbs"></div>
+      <div id="fUploads" class="card hidden" style="margin:10px 0"></div>
+      <div class="files" id="fList" style="margin-top:10px"></div>
+      <div class="muted" style="margin-top:8px">Drop files or folders onto the list to upload them here. Folders download as a zip.</div>
+    </section>
   </main>
 </div>
 
@@ -170,6 +209,7 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   tab = b.dataset.tab;
   document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('main > section').forEach(s => s.classList.toggle('hidden', s.id !== 'tab-' + tab));
+  filesLoaded = false;
   refresh();
 });
 
@@ -184,6 +224,7 @@ async function refresh() {
     if (tab === 'overview') await renderOverview();
     if (tab === 'modules') await renderModules();
     if (tab === 'deploys') await renderDeploys();
+    if (tab === 'files' && !filesLoaded) await renderFiles();
   } catch (e) { /* shown via toast on actions; polling stays quiet */ }
 }
 
@@ -279,6 +320,145 @@ async function renderDeploys() {
   showJob(m.job);
   $('#tab-deploys').append($('#jobBox'));
 }
+
+// --- Files ------------------------------------------------------------------------------
+let fRoot = null, fPath = '', filesLoaded = false, uploads = [], uploading = null;
+const size = n => n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(0) + ' KB' : n < 1073741824 ? (n / 1048576).toFixed(1) + ' MB' : (n / 1073741824).toFixed(2) + ' GB';
+const join = (...p) => p.filter(Boolean).join('/');
+const fUrl = (path, extra = '') => `/api/files/${encodeURIComponent(fRoot)}${extra}?path=${encodeURIComponent(path)}`;
+const INLINE = /\.(mp4|m4v|webm|mkv|mov|mp3|m4a|aac|flac|ogg|opus|wav|jpe?g|png|gif|webp|avif|pdf|txt|log|srt|vtt|md|json|conf|ya?ml)$/i;
+
+async function renderFiles() {
+  const roots = await api('files');
+  const sel = $('#fRoot');
+  if (!roots.some(r => r.id === fRoot)) { fRoot = roots[0]?.id; fPath = ''; }
+  sel.innerHTML = roots.map(r => `<option value="${esc(r.id)}" ${r.id === fRoot ? 'selected' : ''}>${esc(r.label)}</option>`).join('');
+  if (!fRoot) { $('#fList').innerHTML = '<div class="frow muted">No locations.</div>'; return; }
+  let d;
+  try { d = await api(`files/${encodeURIComponent(fRoot)}?path=${encodeURIComponent(fPath)}`); }
+  catch (e) { if (fPath) { fPath = ''; return renderFiles(); } throw e; }
+  filesLoaded = true;
+  $('#fFree').textContent = size(d.free) + ' free';
+  const parts = fPath ? fPath.split('/') : [];
+  $('#fCrumbs').innerHTML = [`<a data-p="">${esc(d.label)}</a>`].concat(parts.map((p, i) =>
+    `<span class="muted">/</span><a data-p="${esc(parts.slice(0, i + 1).join('/'))}">${esc(p)}</a>`)).join('');
+  $('#fCrumbs').querySelectorAll('a').forEach(a => a.onclick = () => openDir(a.dataset.p));
+  const rows = d.entries.map((e, i) => {
+    const p = join(fPath, e.name);
+    return `<div class="frow" data-i="${i}">
+      <div class="name">${e.dir ? '📁' : '📄'} ${e.dir
+        ? `<a data-open="${esc(p)}">${esc(e.name)}</a>`
+        : `<a href="${esc(fUrl(p, '/download'))}" download title="Download">${esc(e.name)}</a>`}</div>
+      <div class="num">${e.dir ? '' : size(e.size)}</div>
+      <div class="num">${new Date(e.modified).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'})}</div>
+      <div class="acts">
+        ${!e.dir && INLINE.test(e.name) ? `<a class="b" style="font-size:13px;padding:3px 8px;text-decoration:none;border:1px solid var(--line);border-radius:8px;color:var(--text)" href="${esc(fUrl(p, '/download'))}&inline=1" target="_blank" rel="noopener">Open</a>` : ''}
+        <button class="b" data-dl="${esc(p)}" title="${e.dir ? 'Download as zip' : 'Download'}">⬇</button>
+        <button class="b" data-mv="${esc(p)}" title="Rename or move">Rename</button>
+        <button class="b danger" data-rm="${esc(p)}" data-dir="${e.dir}" title="Delete">✕</button>
+      </div>
+    </div>`;
+  });
+  $('#fList').innerHTML = `<div class="frow head"><div>Name</div><div class="num">Size</div><div class="num">Modified</div><div></div></div>`
+    + (fPath ? `<div class="frow"><div class="name">↩ <a data-open="${esc(parts.slice(0, -1).join('/'))}">..</a></div></div>` : '')
+    + (rows.join('') || '<div class="frow muted">Empty folder. Drop files here to upload.</div>');
+  $('#fList').querySelectorAll('[data-open]').forEach(a => a.onclick = () => openDir(a.dataset.open));
+  $('#fList').querySelectorAll('[data-dl]').forEach(b => b.onclick = () => { location.href = fUrl(b.dataset.dl, '/download'); });
+  $('#fList').querySelectorAll('[data-mv]').forEach(b => b.onclick = () => moveEntry(b.dataset.mv));
+  $('#fList').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => removeEntry(b.dataset.rm, b.dataset.dir === 'true'));
+}
+function openDir(p) { fPath = p; renderFiles().catch(e => toast(e.message)); }
+$('#fRoot').onchange = e => { fRoot = e.target.value; openDir(''); };
+
+async function fileAct(path, opts, done) {
+  try { await api(path, Object.assign({method: 'POST'}, opts)); if (done) toast(done); await renderFiles(); }
+  catch (e) { toast(e.message); }
+}
+$('#fMkdir').onclick = () => {
+  const name = prompt('Folder name');
+  if (name && name.trim()) fileAct(`files/${encodeURIComponent(fRoot)}/mkdir?path=${encodeURIComponent(join(fPath, name.trim()))}`, {}, 'Created ' + name.trim());
+};
+function moveEntry(p) {
+  const to = prompt('New name, or a path from the top of this location to move it', p.split('/').pop());
+  if (!to || !to.trim()) return;
+  const dest = to.includes('/') ? to.trim().replace(/^\/+/, '') : join(fPath, to.trim());
+  fileAct(`files/${encodeURIComponent(fRoot)}/move?path=${encodeURIComponent(p)}`, {body: {to: dest}}, 'Moved to ' + dest);
+}
+function removeEntry(p, dir) {
+  if (confirm(`Delete ${p.split('/').pop()}${dir ? ' and everything in it' : ''}? This can't be undone.`))
+    fileAct(`files/${encodeURIComponent(fRoot)}?path=${encodeURIComponent(p)}`, {method: 'DELETE'}, 'Deleted');
+}
+
+// Uploads go one at a time as raw PUT bodies, streamed to disk on the phone.
+function queueUploads(items) {
+  const root = fRoot, base = fPath;
+  items.forEach(({file, rel}) => uploads.push({file, root, path: join(base, rel || file.name), loaded: 0, state: 'waiting'}));
+  showUploads(); nextUpload();
+}
+function nextUpload() {
+  if (uploading) return;
+  const u = uploads.find(x => x.state === 'waiting');
+  if (!u) { renderFiles().catch(() => {}); return; }
+  uploading = u; u.state = 'sending';
+  const send = overwrite => {
+    const x = u.xhr = new XMLHttpRequest();
+    x.open('PUT', `/api/files/${encodeURIComponent(u.root)}?path=${encodeURIComponent(u.path)}${overwrite ? '&overwrite=1' : ''}`);
+    x.upload.onprogress = e => { u.loaded = e.loaded; showUploads(); };
+    x.onload = () => {
+      if (x.status === 409 && !overwrite && confirm(`${u.path} already exists. Replace it?`)) return send(true);
+      let err = ''; try { err = JSON.parse(x.responseText).error || ''; } catch (e) {}
+      u.state = x.status < 300 ? 'done' : 'failed: ' + (err || x.status);
+      if (x.status === 401) showLogin();
+      finish();
+    };
+    x.onerror = () => { u.state = 'failed: connection lost'; finish(); };
+    x.onabort = () => { u.state = 'cancelled'; finish(); };
+    x.send(u.file);
+  };
+  const finish = () => { uploading = null; showUploads(); nextUpload(); };
+  send(false);
+}
+function showUploads() {
+  const box = $('#fUploads');
+  box.classList.toggle('hidden', !uploads.length);
+  const active = uploads.filter(u => u.state === 'waiting' || u.state === 'sending');
+  box.innerHTML = `<div class="row"><span class="title">Uploads</span><span class="muted">${active.length ? active.length + ' left' : 'finished'}</span>
+      <div style="flex:1"></div>${active.length ? '<button class="b" id="upCancel">Cancel all</button>' : '<button class="b" id="upClear">Clear</button>'}</div>`
+    + uploads.slice(-8).map(u => `<div><div class="row muted"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.path)}</span>
+      <span>${u.state === 'sending' ? size(u.loaded) + ' / ' + size(u.file.size) : esc(u.state)}</span></div>
+      <div class="bar"><div style="width:${u.state === 'done' ? 100 : u.file.size ? Math.floor(100 * u.loaded / u.file.size) : 0}%"></div></div></div>`).join('');
+  const c = $('#upCancel'); if (c) c.onclick = () => { uploads.forEach(u => { if (u.state === 'waiting') u.state = 'cancelled'; }); uploading?.xhr?.abort(); };
+  const k = $('#upClear'); if (k) k.onclick = () => { uploads = []; showUploads(); };
+}
+$('#fUp').onclick = () => $('#fPick').click();
+$('#fUpDir').onclick = () => $('#fPickDir').click();
+$('#fPick').onchange = e => { queueUploads([...e.target.files].map(file => ({file}))); e.target.value = ''; };
+$('#fPickDir').onchange = e => { queueUploads([...e.target.files].map(file => ({file, rel: file.webkitRelativePath}))); e.target.value = ''; };
+window.addEventListener('beforeunload', e => { if (uploading) e.preventDefault(); });
+
+// Drag and drop, including whole folders.
+const list = $('#fList');
+list.ondragover = e => { e.preventDefault(); list.classList.add('drop'); };
+list.ondragleave = () => list.classList.remove('drop');
+list.ondrop = async e => {
+  e.preventDefault(); list.classList.remove('drop');
+  const entries = [...e.dataTransfer.items].map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  if (!entries.length) return queueUploads([...e.dataTransfer.files].map(file => ({file})));
+  const out = [];
+  const walk = async (entry, prefix) => {
+    if (entry.isFile) out.push({file: await new Promise((ok, no) => entry.file(ok, no)), rel: prefix + entry.name});
+    else {
+      const reader = entry.createReader();
+      for (;;) {
+        const batch = await new Promise((ok, no) => reader.readEntries(ok, no));
+        if (!batch.length) break;
+        for (const child of batch) await walk(child, prefix + entry.name + '/');
+      }
+    }
+  };
+  for (const entry of entries) await walk(entry, '');
+  queueUploads(out);
+};
 
 $('#deployForm').onsubmit = async e => {
   e.preventDefault();

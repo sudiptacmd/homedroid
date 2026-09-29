@@ -20,6 +20,7 @@ class Dashboard(private val ctx: Context) {
     private val apps = Apps(ctx, paths)
     private val deploys = Deploys(ctx, paths)
     private val alpine = Alpine(ctx, paths)
+    private val files = FileBrowser(ctx, paths)
     private val sessions: MutableSet<String> = Collections.synchronizedSet(LinkedHashSet())
     private val http = Http(cfg.dashboardPort, ::handle)
 
@@ -69,6 +70,7 @@ class Dashboard(private val ctx: Context) {
             r.method == "POST" && seg == listOf("deploys") -> createDeploy(r)
             r.method == "POST" && seg.size == 3 && seg[0] == "deploys" -> deployAction(seg[1], seg[2])
             r.method == "DELETE" && seg.size == 2 && seg[0] == "deploys" -> deleteDeploy(seg[1])
+            seg[0] == "files" -> files.handle(r, seg.drop(1).filter { it.isNotEmpty() })
             else -> Response.error(404, "no such endpoint")
         }
     }
