@@ -30,7 +30,9 @@ from a web dashboard, where you can also deploy web apps straight from GitHub.
 
 ## Walkthrough
 
-<!-- walkthrough-video -->
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.4.1-beta/homedroid-walkthrough.mp4"><img src="docs/walkthrough-preview.gif" alt="Homedroid walkthrough: phone app, SSH, web dashboard, Jellyfin, Immich, qBittorrent" width="720"></a>
+
+A 3-minute tour of every module on an Android 10 emulator. [Watch the full video (MP4, 8 MB)](https://github.com/sudiptacmd/homedroid/releases/download/v0.4.1-beta/homedroid-walkthrough.mp4).
 
 ## Download
 
