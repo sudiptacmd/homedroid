@@ -278,6 +278,26 @@ dialog[open] { animation: pop .14s var(--ease); }
 @media (max-width: 860px) {
   .tabbar { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); overflow-x: auto; }
 }
+/* Setup guides */
+.guide-body { padding: 4px 18px 0; display: flex; flex-direction: column; gap: 12px; color: var(--text-2); min-height: 280px; }
+.guide-body h4 { margin: 0; font-size: 15px; color: var(--text); }
+.guide-body ol, .guide-body ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.guide-body p { margin: 0; }
+.guide-shot { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--code); }
+.guide-step { font-size: 12px; font-weight: 650; color: var(--accent); text-transform: uppercase; letter-spacing: .07em; }
+.guide-foot { display: flex; align-items: center; gap: 8px; padding: 16px 18px; }
+.guide-dots { flex: 1; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.guide-dots button { width: 8px; height: 8px; border-radius: 50%; border: 0; padding: 0; background: var(--line-2); cursor: pointer; }
+.guide-dots button[aria-current="step"] { background: var(--accent); width: 20px; border-radius: 99px; }
+.ports { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ports td { padding: 4px 8px; border-top: 1px solid var(--line); }
+.ports tr:first-child td { border-top: 0; }
+.update-pill { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--r-sm); background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 13px; }
+.update-pill:hover { text-decoration: none; filter: brightness(.97); }
+.notice.info { background: var(--accent-soft); }
+.notice.info svg.i { color: var(--accent); }
+.notice .btn { margin-left: auto; }
+.releasenotes { max-height: 220px; }
 </style>
 </head>
 <body>
@@ -326,6 +346,8 @@ dialog[open] { animation: pop .14s var(--ease); }
   <symbol id="i-temp" viewBox="0 0 24 24"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v7"/></symbol>
   <symbol id="i-net" viewBox="0 0 24 24"><path d="M7 4v14M3 14l4 4 4-4"/><path d="M17 20V6M13 10l4-4 4 4"/></symbol>
   <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7h8M8 11h6"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M4 10a8 8 0 0 1 14-4l2 2"/><path d="M20 4v4h-4"/><path d="M20 14a8 8 0 0 1-14 4l-2-2"/><path d="M4 20v-4h4"/></symbol>
 </svg>
 
@@ -352,6 +374,7 @@ dialog[open] { animation: pop .14s var(--ease); }
       <a href="#settings" data-tab="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</a>
     </nav>
     <div class="side-foot">
+      <a href="#settings" class="update-pill hidden" data-update-pill><svg class="i"><use href="#i-sparkle"/></svg><span></span></a>
       <div class="hint ellipsis" id="sideDevice"></div>
       <div class="row">
         <button class="btn ghost sm" data-act="theme" title="Switch theme"><svg class="i"><use href="#i-auto" data-themeicon/></svg><span data-themelabel>Auto</span></button>
@@ -362,6 +385,7 @@ dialog[open] { animation: pop .14s var(--ease); }
   <header class="top">
     <div class="brand"><img src="/favicon.svg" alt="">Homedroid</div>
     <div class="grow"></div>
+    <a href="#settings" class="btn ghost icon hidden" data-update-pill title="Update available" aria-label="Update available" style="color:var(--accent)"><svg class="i"><use href="#i-sparkle"/></svg><span class="sr"></span></a>
     <button class="btn ghost icon" data-act="theme" title="Switch theme" aria-label="Switch theme"><svg class="i"><use href="#i-auto" data-themeicon/></svg></button>
     <button class="btn ghost icon" data-act="logout" title="Log out" aria-label="Log out"><svg class="i"><use href="#i-logout"/></svg></button>
   </header>
@@ -405,6 +429,9 @@ dialog[open] { animation: pop .14s var(--ease); }
         <div class="row ipcam-actions"><button class="btn primary" id="saveSettings" type="submit">Save settings</button></div>
         <div id="settingsMessage" role="status"></div>
       </form>
+      <h2>App updates</h2>
+      <div class="card pad ipcam-stack" id="updateBox"><div class="skeleton" style="width:40%"></div></div>
+      <input type="file" id="apkPick" accept=".apk,application/vnd.android.package-archive" class="hidden">
       <h2>Connections</h2>
       <div class="card pad hint" id="settingsConnections"></div>
     </section>
@@ -531,6 +558,15 @@ dialog[open] { animation: pop .14s var(--ease); }
 <dialog id="logs" class="wide">
   <div class="dlg-head"><h3 id="logTitle"></h3><button class="btn ghost icon" data-act="closeLogs" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
   <div style="padding:0 18px 18px"><pre id="logBody" style="height:min(62vh,560px)"></pre></div>
+</dialog>
+<dialog id="guide" class="wide" style="width:min(760px, calc(100vw - 32px))">
+  <div class="dlg-head"><h3 id="guideTitle"></h3><button class="btn ghost icon" data-act="closeGuide" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="guide-body" id="guideBody"></div>
+  <div class="guide-foot">
+    <button class="btn" data-act="guideStep" data-d="-1" id="guidePrev">Back</button>
+    <div class="guide-dots" id="guideDots"></div>
+    <button class="btn primary" data-act="guideStep" data-d="1" id="guideNext">Next</button>
+  </div>
 </dialog>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
@@ -685,6 +721,7 @@ function showLogin() {
 }
 function showApp() {
   authed = true;
+  api('update').then(showUpdatePill).catch(() => {});
   $('#loginView').classList.add('hidden'); $('#appView').classList.remove('hidden');
   route();
 }
@@ -757,12 +794,16 @@ async function renderOverview() {
     stat('disk', 'Storage in use', `${gb(s.storageTotalMb - s.storageFreeMb)}<small> / ${gb(s.storageTotalMb)} GB</small>`, `${gb(s.storageFreeMb)} GB free`, disk, level(disk)),
   ].join(''));
   setHTML($('#ovSvcHead'), `Services · ${running} of ${services.length} running${crashing ? ' · <span style="color:var(--bad)">some keep crashing</span>' : ''}`);
-  setHTML($('#ovReach'), s.ips.length
-    ? s.ips.map(ip => `<span class="mono">${esc(ip.includes(':') ? `[${ip}]` : ip)}</span>`).join('') + `<span class="hint" style="margin-left:4px">Dashboard on port 8800, SSH and SFTP on 8022</span>`
+  const ts = m.core.find(x => x.id === 'tailscale')?.tailscale?.status;
+  const tsAddrs = ts?.state === 'Running' ? [ts.dnsName?.split('.')[0], ...(ts.ips || []).filter(ip => !ip.includes(':'))].filter(Boolean) : [];
+  setHTML($('#ovReach'), s.ips.length || tsAddrs.length
+    ? s.ips.map(ip => `<span class="mono">${esc(ip.includes(':') ? `[${ip}]` : ip)}</span>`).join('')
+      + tsAddrs.map(a => `<span class="mono" title="Tailscale">${esc(a)}</span>`).join('')
+      + `<span class="hint" style="margin-left:4px">Dashboard on port 8800, SSH and SFTP on 8022${tsAddrs.length ? ' · Tailscale names work from your tailnet' : ''}</span>`
     : '<span class="muted">No network connection</span>');
   // Name each process after the module or deployment it belongs to.
   const owner = {};
-  m.core.forEach(x => owner[{ssh: 'sshd', web: 'caddy', tunnel: 'cloudflared'}[x.id]] = {name: x.name, port: x.id === 'web' ? x.port : 0});
+  m.core.forEach(x => owner[{ssh: 'sshd', web: 'caddy', tunnel: 'cloudflared', tailscale: 'tailscaled'}[x.id]] = {name: x.name, port: x.id === 'web' ? x.port : 0});
   m.apps.forEach(x => (x.services || [x.id]).forEach((svc, i, all) =>
     owner[svc] = {name: all.length > 1 ? `${x.name} · ${svc.slice(x.id.length + 1)}` : x.name, port: i === all.length - 1 ? x.port : 0}));
   d.forEach(x => owner['deploy-' + x.id] = {name: x.name, port: x.port});
@@ -781,7 +822,7 @@ async function renderOverview() {
 }
 
 // ---- Modules ---------------------------------------------------------------------------
-const COLORS = {camera: '#0f766e', ssh: '#475569', web: '#0f766e', tunnel: '#ea580c', jellyfin: '#7c3aed', qbittorrent: '#2563eb', homeassistant: '#0891b2', immich: '#db2777'};
+const COLORS = {camera: '#0f766e', ssh: '#475569', web: '#0f766e', tunnel: '#ea580c', tailscale: '#1f2937', jellyfin: '#7c3aed', qbittorrent: '#2563eb', homeassistant: '#0891b2', immich: '#db2777'};
 let modules = null;
 function modCard(x) {
   const busy = modules.job.running;
@@ -800,10 +841,14 @@ function modCard(x) {
     <div class="desc">${esc(x.description)}</div>
     ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}
     ${x.notice ? `<div class="notice">${icon('alert')}<span>${esc(x.notice)}</span></div>` : ''}
+    ${x.id === 'tailscale' && x.enabled ? tailscaleInfo(x.tailscale) : ''}
     <div class="mod-foot">
       ${!x.installed ? `<button class="btn primary sm" data-act="install" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('download')}Install</button>` : ''}
       ${x.id === 'camera' && x.enabled ? `<a class="btn sm" href="#camera">${icon('camera')}Open IPCam</a>` : ''}
       ${openable ? `<a class="btn sm" href="${appUrl(x.port)}" target="_blank" rel="noopener">${icon('external')}Open</a>` : ''}
+      ${x.id === 'tailscale' && x.enabled ? `<button class="btn sm" data-act="tsSettings">${icon('settings')}Settings</button>` : ''}
+      ${x.id === 'tailscale' && x.tailscale?.status?.state === 'Running' ? `<button class="btn ghost sm" data-act="tsLogout">Log out</button>` : ''}
+      ${GUIDES[x.id] ? `<button class="btn ghost sm" data-act="guide" data-id="${esc(x.id)}">${icon('book')}Setup guide</button>` : ''}
       ${x.kind === 'app' && x.installed ? `
         <button class="btn ghost sm" style="margin-left:auto" data-act="clearMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>Clear data</button>
         <button class="btn ghost sm danger" data-act="removeMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('trash')}Remove</button>` : ''}
@@ -840,11 +885,17 @@ async function clearMod(x) {
   if (r) run(api(`modules/${x.id}/clear`, {method: 'POST', body: {deleteLibrary: !!r.checks[0]}}), `Clearing ${x.name}'s data`);
 }
 async function toggleMod(b) {
-  const x = findMod(b.dataset.id), on = !x.enabled, body = {};
+  const x = findMod(b.dataset.id), on = !x.enabled;
+  let body = {};
+  if (on && x.id === 'tailscale') {
+    body = await tailscaleDialog(true);
+    if (!body) return;
+  }
   if (on && x.id === 'tunnel') {
     const r = await ask({
       title: 'Turn on Cloudflare Tunnel', confirm: 'Turn on',
-      html: `<div class="hint">In the Cloudflare dashboard, open <b>Zero Trust → Networks → Tunnels</b>, create a <b>Cloudflared</b> tunnel and copy its token (the long string after <span class="mono">--token</span> in the install command). Then add public hostnames pointing to <span class="mono">http://localhost:&lt;port&gt;</span>.</div>`,
+      html: `<div class="hint">In the Cloudflare dashboard, open <b>Zero Trust → Networks → Tunnels</b>, create a <b>Cloudflared</b> tunnel and copy its token (the long string after <span class="mono">--token</span> in the install command). Then add public hostnames pointing to <span class="mono">http://localhost:&lt;port&gt;</span>.</div>
+        <button type="button" class="btn sm" style="align-self:flex-start" data-act="guide" data-id="tunnel">${icon('book')}Open the step-by-step guide</button>`,
       input: {label: 'Tunnel token (leave empty to keep the saved one)', placeholder: 'eyJhIjoi…', type: 'password'},
     });
     if (!r) return;
@@ -852,6 +903,160 @@ async function toggleMod(b) {
   }
   b.setAttribute('aria-checked', on); b.disabled = true;
   run(api(`modules/${x.id}/${on ? 'enable' : 'disable'}`, {method: 'POST', body}), `Turning ${on ? 'on' : 'off'} ${x.name}`);
+}
+
+// ---- Tailscale -------------------------------------------------------------------------
+const TS_STATE = {Running: 'Connected', NeedsLogin: 'Needs login', NeedsMachineAuth: 'Waiting for approval', Starting: 'Connecting', NoState: 'Starting', Stopped: 'Starting'};
+function tailscaleInfo(t) {
+  const st = t?.status || {}, parts = [];
+  if (st.state === 'NeedsLogin') {
+    parts.push(st.authUrl
+      ? `<div class="notice info">${icon('key')}<span>Log in to add this phone to your tailnet.</span><a class="btn primary sm" href="${esc(st.authUrl)}" target="_blank" rel="noopener">Log in to Tailscale</a></div>`
+      : `<div class="notice info">${icon('key')}<span>${t.hasAuthKey ? 'Logging in with the saved auth key…' : 'Getting a login link…'}</span><button class="btn sm" data-act="tsLogin">Retry</button></div>`);
+  } else if (st.state === 'NeedsMachineAuth') {
+    parts.push(`<div class="notice">${icon('alert')}<span>Approve this phone in the Tailscale admin console.</span><a class="btn sm" href="https://login.tailscale.com/admin/machines" target="_blank" rel="noopener">Machines</a></div>`);
+  }
+  const chips = [`<span class="chip">${icon('pulse')}${esc(TS_STATE[st.state] || st.state || 'Starting')}</span>`];
+  if (st.state === 'Running') {
+    (st.ips || []).filter(ip => !ip.includes(':')).forEach(ip => chips.push(`<span class="chip mono">${esc(ip)}</span>`));
+    if (st.dnsName) chips.push(`<span class="chip mono" title="MagicDNS name">${esc(st.dnsName)}</span>`);
+    chips.push(`<span class="chip">${st.peersOnline} of ${st.peers} device${st.peers === 1 ? '' : 's'} online</span>`);
+    if (st.serveUrl) chips.push(`<a class="chip" href="${esc(st.serveUrl)}" target="_blank" rel="noopener">${icon('external')}${t.serve === 'funnel' ? 'Public' : 'Tailnet'} HTTPS</a>`);
+    if (t.exitNode) chips.push(`<span class="chip">Exit node</span>`);
+  }
+  if (st.error) parts.push(`<div class="notice">${icon('alert')}<span>${esc(st.error)}</span></div>`);
+  return `<div class="chips">${chips.join('')}</div>${parts.join('')}`;
+}
+/** The settings form; resolves the body to send, or null if cancelled. */
+function tailscaleDialog(turnOn) {
+  const t = findMod('tailscale').tailscale, dlg = $('#modal'), form = $('#modalForm');
+  form.innerHTML = `
+    <div class="dlg-head"><h3>${turnOn ? 'Turn on Tailscale' : 'Tailscale settings'}</h3><button type="button" class="btn ghost sm" data-act="guide" data-id="tailscale">${icon('book')}Setup guide</button></div>
+    <div class="dlg-body">
+      <label class="field">Device name<input name="hostname" required maxlength="63" spellcheck="false" autocomplete="off">
+        <span class="hint" style="font-weight:400">How the phone shows up in your tailnet. With MagicDNS, other devices reach it as <span class="mono">http://<span data-host></span>:8800</span>.</span></label>
+      <label class="field">Auth key (optional)<input name="authKey" type="password" autocomplete="off" spellcheck="false" placeholder="${t.hasAuthKey ? 'Saved; leave empty to keep it' : 'tskey-auth-…, or leave empty to log in with a link'}"></label>
+      ${t.hasAuthKey ? `<label class="check"><input type="checkbox" name="clearAuthKey"><span>Forget the saved auth key</span></label>` : ''}
+      <label class="field">HTTPS address for this dashboard<select name="serve">
+        <option value="off">Off</option>
+        <option value="tailnet">Tailnet only (Tailscale Serve)</option>
+        <option value="funnel">Public internet (Tailscale Funnel)</option></select>
+        <span class="hint" style="font-weight:400">Gives the dashboard an https://…ts.net address. Funnel makes it reachable by anyone who knows the address; the password still protects it.</span></label>
+      <label class="check"><input type="checkbox" name="exitNode"><span>Offer this phone as an exit node<br><span class="hint">Your other devices can send their internet traffic through the phone. Approve it in the admin console.</span></span></label>
+      <label class="field">Subnet routes (optional)<input name="routes" placeholder="192.168.1.0/24" spellcheck="false" autocomplete="off">
+        <span class="hint" style="font-weight:400">Lets tailnet devices reach other machines on the phone's network. Comma-separated; approve them in the admin console.</span></label>
+      <label class="field">Tags (optional)<input name="tags" placeholder="tag:server" spellcheck="false" autocomplete="off">
+        <span class="hint" style="font-weight:400">ACL tags to request. Your tailnet policy must allow them.</span></label>
+      <label class="check"><input type="checkbox" name="proxy"><span>Local proxy on port ${t.proxyPort}<br><span class="hint">A SOCKS5 and HTTP proxy at 127.0.0.1:${t.proxyPort}, so programs on the phone can reach your other devices.</span></span></label>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn primary" value="ok">${turnOn ? 'Turn on' : 'Save'}</button>
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+    </div>`;
+  const f = form.elements;
+  f.hostname.value = t.hostname; f.serve.value = t.serve; f.exitNode.checked = t.exitNode;
+  f.routes.value = t.routes.replaceAll(',', ', '); f.tags.value = t.tags; f.proxy.checked = t.proxy;
+  const host = () => $('[data-host]', form).textContent = f.hostname.value || 'homedroid';
+  f.hostname.oninput = host; host();
+  return new Promise(resolve => {
+    dlg.onclose = () => resolve(dlg.returnValue !== 'ok' ? null : {
+      hostname: f.hostname.value.trim(), authKey: f.authKey.value.trim(), clearAuthKey: !!f.clearAuthKey?.checked,
+      serve: f.serve.value, exitNode: f.exitNode.checked, routes: f.routes.value, tags: f.tags.value, proxy: f.proxy.checked,
+    });
+    dlg.returnValue = '';
+    dlg.showModal();
+    f.hostname.focus();
+  });
+}
+async function tsSettings() {
+  const body = await tailscaleDialog(false);
+  if (body) run(api('tailscale', {method: 'POST', body}), 'Applying Tailscale settings');
+}
+
+// ---- Setup guides ----------------------------------------------------------------------
+const ext = (href, text) => `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+/** Ports of what's installed, for "point the hostname at localhost:<port>". */
+function portTable() {
+  const rows = (modules ? [...modules.core, ...modules.apps] : []).filter(x => x.port && x.installed && x.id !== 'ssh')
+    .map(x => `<tr><td>${esc(x.name)}</td><td class="mono">http://localhost:${x.port}</td></tr>`);
+  rows.push(`<tr><td>Dashboard</td><td class="mono">http://localhost:8800</td></tr>`);
+  return `<table class="ports">${rows.join('')}</table>`;
+}
+const GUIDES = {
+  tunnel: {title: 'Set up Cloudflare Tunnel', steps: [
+    {title: 'What you need', html: () => `
+      <p>Cloudflare Tunnel gives your apps public addresses like <span class="mono">https://media.example.com</span>. The phone connects out to Cloudflare, so it works on mobile data and behind CGNAT, with no port forwarding and HTTPS included.</p>
+      <ul><li>A free ${ext('https://dash.cloudflare.com/sign-up', 'Cloudflare account')}.</li>
+      <li>A domain that uses Cloudflare for DNS (add it under <b>Websites → Add a domain</b> and change its nameservers at your registrar).</li></ul>`},
+    {title: 'Create a tunnel', html: () => `
+      <ol><li>Open ${ext('https://one.dash.cloudflare.com/', 'Cloudflare Zero Trust')} and pick your account. The first time, choose a team name and the Free plan.</li>
+      <li>Go to <b>Networks → Tunnels</b> and click <b>Create a tunnel</b>.</li>
+      <li>Choose <b>Cloudflared</b>, name it (for example <span class="mono">homedroid</span>) and click <b>Save tunnel</b>.</li></ol>`},
+    {title: 'Copy the tunnel token', html: () => `
+      <ol><li>Cloudflare now shows <b>Install and run a connector</b>. Any operating system tab is fine; you won't run the command.</li>
+      <li>Copy the command and keep only the long part after <span class="mono">--token</span>. It starts with <span class="mono">eyJ</span>.</li>
+      <li>Leave the page open; you'll come back to add hostnames.</li></ol>
+      <p class="hint">The token works like a password for the tunnel. If it leaks, open the tunnel in Cloudflare and refresh its token.</p>`},
+    {title: 'Turn it on in Homedroid', img: 'tunnel-on.png', html: () => `
+      <p>In <b>Modules</b>, switch on <b>Cloudflare Tunnel</b>, paste the token and click <b>Turn on</b>.</p>
+      <p>Within a few seconds the module shows <b>running</b>, and in Cloudflare the connector appears and the tunnel turns <b>Healthy</b>. Click <b>Next</b> there.</p>`},
+    {title: 'Publish an app', html: () => `
+      <ol><li>In the tunnel, open <b>Public hostnames</b> (called <b>Published application routes</b> in newer dashboards) and click <b>Add</b>.</li>
+      <li>Pick a subdomain and your domain, for example <span class="mono">media</span> + <span class="mono">example.com</span>.</li>
+      <li>Set the service type to <b>HTTP</b> and the URL to the app's local address:</li></ol>
+      ${portTable()}
+      <p>Save, and the app is live at <span class="mono">https://media.example.com</span> in under a minute. Repeat for each app.</p>`},
+    {title: 'Keep private things private', html: () => `
+      <ul><li>Everything you publish is on the public internet. Use the apps' own logins, and strong passwords.</li>
+      <li>To publish the dashboard (port 8800), put ${ext('https://one.dash.cloudflare.com/', 'Cloudflare Access')} in front of it: <b>Access → Applications → Add an application → Self-hosted</b>, with a policy that allows only your email.</li>
+      <li>SSH (port 8022) can't go through a public hostname without Access; for private access to everything, use the <b>Tailscale</b> module instead.</li></ul>`},
+  ]},
+  tailscale: {title: 'Set up Tailscale', steps: [
+    {title: 'What you get', html: () => `
+      <p>Tailscale puts the phone on your private network (your <b>tailnet</b>). From your laptop or other phone you can open every app at <span class="mono">http://homedroid:&lt;port&gt;</span> and SSH to <span class="mono">homedroid</span>, from anywhere, without publishing anything on the internet.</p>
+      <ul><li>No port forwarding; works on mobile data and behind CGNAT.</li>
+      <li>Homedroid runs Tailscale in userspace mode: it needs no root and doesn't take the phone's VPN slot, so other VPN apps keep working.</li>
+      <li>The free Personal plan is enough.</li></ul>`},
+    {title: 'Install Tailscale on your other devices', html: () => `
+      <ol><li>Create an account at ${ext('https://login.tailscale.com/start', 'tailscale.com')} (Google, Microsoft, GitHub or Apple login).</li>
+      <li>Install ${ext('https://tailscale.com/download', 'Tailscale')} on the computers and phones you'll connect <i>from</i>, and sign in with the same account.</li></ol>
+      <p class="hint">You don't need the Tailscale app on the Homedroid phone; Homedroid brings its own.</p>`},
+    {title: 'Choose how the phone logs in', html: () => `
+      <p><b>Log-in link (easiest):</b> leave the auth key empty. Homedroid shows a <b>Log in to Tailscale</b> button; open it, sign in and click <b>Connect</b>.</p>
+      <p><b>Auth key (no clicking, good for rebuilding the phone):</b></p>
+      <ol><li>In the ${ext('https://login.tailscale.com/admin/settings/keys', 'admin console, Settings → Keys')}, click <b>Generate auth key</b>.</li>
+      <li>Leave <b>Reusable</b> and <b>Ephemeral</b> off. Turn on <b>Pre-approved</b> if your tailnet requires device approval.</li>
+      <li>Copy the key (<span class="mono">tskey-auth-…</span>). It is only shown once.</li></ol>`},
+    {title: 'Turn it on in Homedroid', img: 'tailscale-settings.png', html: () => `
+      <p>In <b>Modules</b>, switch on <b>Tailscale</b>. Pick a device name (it becomes the phone's address), paste the auth key or leave it empty, and click <b>Turn on</b>. Other options can wait; you can change them any time under <b>Settings</b>.</p>`},
+    {title: 'Log in', img: 'tailscale-login.png', html: () => `
+      <p>Without an auth key, the card shows <b>Log in to Tailscale</b>. Open it, sign in, and click <b>Connect</b>. A few seconds later the card shows <b>Connected</b> with the phone's <span class="mono">100.x.y.z</span> address and its name.</p>
+      <p class="hint">If your tailnet requires approval, approve the phone under ${ext('https://login.tailscale.com/admin/machines', 'Machines')}.</p>`},
+    {title: 'Connect from your devices', html: () => `
+      <p>On any device signed in to Tailscale:</p>
+      <ul><li>Dashboard: <span class="mono">http://homedroid:8800</span></li>
+      <li>Apps: <span class="mono">http://homedroid:&lt;port&gt;</span>, for example Jellyfin on 8096</li>
+      <li>SSH and SFTP: <span class="mono">ssh -p 8022 homedroid</span></li></ul>
+      <p>Tailscale logs devices out after 180 days by default. In ${ext('https://login.tailscale.com/admin/machines', 'Machines')}, open the phone's <b>…</b> menu and choose <b>Disable key expiry</b> so it stays connected.</p>`},
+    {title: 'Optional extras', html: () => `
+      <ul><li><b>HTTPS dashboard:</b> choose <i>Tailnet only</i> under Settings for an <span class="mono">https://homedroid.&lt;tailnet&gt;.ts.net</span> address. Turn on <b>MagicDNS</b> and <b>HTTPS Certificates</b> on the ${ext('https://login.tailscale.com/admin/dns', 'DNS page')} first.</li>
+      <li><b>Funnel</b> makes that address public. The tailnet policy must allow Funnel; if it doesn't, the card shows the link to turn it on.</li>
+      <li><b>Exit node</b> and <b>subnet routes</b> need approving under the phone's <b>Edit route settings</b> in Machines.</li>
+      <li><b>Local proxy</b> lets programs on the phone (in Alpine, for example) reach your other devices through <span class="mono">127.0.0.1:1055</span>.</li></ul>`},
+  ]},
+};
+const guide = {id: null, i: 0};
+function showGuide(id, i = 0) {
+  const g = GUIDES[id]; guide.id = id; guide.i = Math.max(0, Math.min(i, g.steps.length - 1));
+  const st = g.steps[guide.i], dlg = $('#guide');
+  $('#guideTitle').textContent = g.title;
+  $('#guideBody').innerHTML = `<div class="guide-step">Step ${guide.i + 1} of ${g.steps.length}</div><h4>${esc(st.title)}</h4>${st.html()}
+    ${st.img ? `<img class="guide-shot" src="/guides/${st.img}" alt="${esc(st.title)}" loading="lazy">` : ''}`;
+  $('#guideDots').innerHTML = g.steps.map((x, j) => `<button data-act="guideGo" data-i="${j}" title="${esc(x.title)}" aria-label="Step ${j + 1}: ${esc(x.title)}" ${j === guide.i ? 'aria-current="step"' : ''}></button>`).join('');
+  $('#guidePrev').disabled = guide.i === 0;
+  $('#guideNext').textContent = guide.i === g.steps.length - 1 ? 'Done' : 'Next';
+  if (!dlg.open) dlg.showModal();
+  $('#guideBody').scrollTop = 0;
 }
 
 // ---- Deployments -----------------------------------------------------------------------
@@ -1175,6 +1380,25 @@ const ACT = {
   async logout() { await api('logout', {method: 'POST'}).catch(() => {}); showLogin(); },
   logs: b => showLogs(b.dataset.svc, b.dataset.name),
   closeLogs: () => $('#logs').close(),
+  guide: b => showGuide(b.dataset.id),
+  guideGo: b => showGuide(guide.id, +b.dataset.i),
+  guideStep(b) {
+    const last = guide.i === GUIDES[guide.id].steps.length - 1;
+    if (+b.dataset.d > 0 && last) $('#guide').close(); else showGuide(guide.id, guide.i + +b.dataset.d);
+  },
+  closeGuide: () => $('#guide').close(),
+  updCheck: () => renderUpdate(true),
+  async updInstall() {
+    try { await api('update/install', {method: 'POST'}); toast('Downloading the update'); } catch (e) { toast(e.message, true); }
+    renderUpdate();
+  },
+  updUpload: () => $('#apkPick').click(),
+  tsSettings,
+  tsLogin: () => run(api('tailscale/login', {method: 'POST'}), 'Asking Tailscale for a login link'),
+  async tsLogout() {
+    if (await ask({title: 'Log out of Tailscale?', text: 'The phone leaves your tailnet until you log in again. Turn the module off instead to just pause it.', confirm: 'Log out', danger: true}))
+      run(api('tailscale/logout', {method: 'POST'}), 'Logged out of Tailscale');
+  },
   restartSvc: b => run(api(`services/${encodeURIComponent(b.dataset.svc)}/restart`, {method: 'POST'}), 'Restarting ' + b.dataset.name),
   toggleJob(b) { const el = b.closest('#jobBox, #depJob'); el._open = !el.querySelector('pre'); el._html = null; refresh(); },
   install(b) { const x = findMod(b.dataset.id); run(api(`modules/${x.id}/install`, {method: 'POST'}), `Installing ${x.name}`); },
@@ -1229,6 +1453,7 @@ function syncCameraNavigation(settings) {
 function cameraAction(path, opts, done) { return run(api(path, {method: 'POST', ...opts}), done); }
 let settingsLoaded = false;
 async function renderSettings() {
+  renderUpdate();
   if (settingsLoaded) return;
   try {
     const data = await api('settings');
@@ -1251,6 +1476,77 @@ $('#settingsForm').onsubmit = async e => {
     $('#settingsMessage').textContent = password ? 'Settings saved. Other sessions have been signed out. The phone now shows the new password.' : 'Settings saved';
   } catch (err) { $('#settingsMessage').textContent = err.message; }
   finally { $('#saveSettings').disabled = false; }
+};
+
+// ---- App updates -----------------------------------------------------------------------
+let update = null, updateTimer = 0, updateVersion = null;
+function showUpdatePill(u) {
+  $$('[data-update-pill]').forEach(a => {
+    a.classList.toggle('hidden', !u?.available);
+    if (u?.available) a.querySelector('span').textContent = `Update to ${u.latest.version}`;
+  });
+}
+async function renderUpdate(refresh = false) {
+  clearTimeout(updateTimer);
+  const box = $('#updateBox');
+  try { update = await api('update' + (refresh ? '?refresh=1' : '')); }
+  catch (e) { return setHTML(box, `<div class="notice">${icon('alert')}<span>${esc(e.message)}</span></div>`); }
+  const u = update, l = u.latest, busy = ['downloading', 'installing', 'confirm'].includes(u.state);
+  updateVersion ??= u.version;
+  showUpdatePill(u);
+  const lines = [`<div class="row" style="flex-wrap:wrap;gap:6px 14px">
+    <div class="grow"><div class="ipcam-title">${u.available ? `Homedroid ${esc(l.version)} is available` : 'Homedroid is up to date'}</div>
+    <div class="hint">Installed: ${esc(u.version)}${l ? ` · Latest release: ${esc(l.version)}${l.published ? `, ${new Date(l.published).toLocaleDateString()}` : ''}` : ''}${u.checkedAt ? ` · Checked ${new Date(u.checkedAt * 1000).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}` : ''}</div></div>
+    <button class="btn sm" data-act="updCheck" ${busy ? 'disabled' : ''}>${icon('sync')}Check now</button></div>`];
+  if (u.checkError) lines.push(`<div class="notice">${icon('alert')}<span>${esc(u.checkError)}</span></div>`);
+  if (u.state === 'downloading') {
+    const pct = u.total ? 100 * u.done / u.total : 0;
+    lines.push(`<div><div class="hint" style="margin-bottom:6px">Downloading ${u.total ? `${bytes(u.done)} of ${bytes(u.total)}` : bytes(u.done)}…</div><div class="meter"><i style="width:${Math.max(2, pct)}%"></i></div></div>`);
+  } else if (u.state === 'installing') {
+    lines.push(`<div class="notice info"><span class="spinner"></span><span>Handing the update to Android…</span></div>`);
+  } else if (u.state === 'confirm') {
+    lines.push(`<div class="notice info">${icon('alert')}<span><b>Confirm on the phone:</b> tap the “Homedroid update ready” notification, then <b>Update</b>. This page reloads when the new version is running.</span></div>`);
+  } else if (u.state === 'failed') {
+    lines.push(`<div class="notice">${icon('alert')}<span>The update didn't install: ${esc(u.error)}</span></div>`);
+  }
+  if (u.available && l.notes) lines.push(`<details><summary style="cursor:pointer">What's new in ${esc(l.version)}</summary><pre class="releasenotes" style="margin-top:8px">${esc(l.notes)}</pre></details>`);
+  lines.push(`<div class="row ipcam-actions">
+    ${u.available && l.apk ? `<button class="btn primary" data-act="updInstall" ${busy ? 'disabled' : ''}>${icon('download')}Download and install ${esc(l.version)}${l.size ? ` (${bytes(l.size)})` : ''}</button>` : ''}
+    <button class="btn" data-act="updUpload" ${busy ? 'disabled' : ''}>${icon('upload')}Install an APK file…</button></div>`);
+  lines.push(`<div class="hint">${u.silent ? 'Updates install without a prompt on this phone.' : 'Android asks you to confirm each update on the phone.'}
+    ${u.allowed ? '' : ' The first time, Android also asks you to allow Homedroid to install apps: turn on <b>Allow from this source</b>, then go back.'}
+    The server restarts on the new version by itself; settings, apps and data are kept.</div>`);
+  setHTML(box, lines.join(''));
+  if (busy) updateTimer = setTimeout(() => tab === 'settings' && renderUpdate(), 1500);
+  if (u.state === 'installing' || u.state === 'confirm') waitForNewVersion();
+}
+/** While Android installs, the server goes away; reload once it's back on a new version. */
+let waitingForUpdate = false;
+async function waitForNewVersion() {
+  if (waitingForUpdate) return;
+  waitingForUpdate = true;
+  while (true) {
+    await new Promise(r => setTimeout(r, 2000));
+    try {
+      const s = await api('status');
+      if (s.version && updateVersion && s.version !== updateVersion) { toast(`Updated to ${s.version}`); setTimeout(() => location.reload(), 800); return; }
+      if (update && !['installing', 'confirm'].includes((await api('update')).state)) { waitingForUpdate = false; if (tab === 'settings') renderUpdate(); return; }
+    } catch (e) { /* the server is restarting */ }
+  }
+}
+$('#apkPick').onchange = e => {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  const x = new XMLHttpRequest();
+  x.open('POST', '/api/update/upload');
+  x.upload.onprogress = ev => setHTML($('#updateBox'), `<div class="hint">Uploading ${esc(file.name)}: ${bytes(ev.loaded)} of ${bytes(ev.total)}</div><div class="meter"><i style="width:${Math.max(2, 100 * ev.loaded / ev.total)}%"></i></div>`);
+  x.onload = () => {
+    let err = null; try { err = JSON.parse(x.responseText).error; } catch (e) {}
+    if (x.status >= 400) toast(err || x.statusText, true); else toast('Update handed to Android');
+    renderUpdate();
+  };
+  x.onerror = () => { toast('Upload failed', true); renderUpdate(); };
+  x.send(file);
 };
 
 let cameraState = {}, audioContext = null, audioTimer = null, audioSequence = 0, audioTime = 0;

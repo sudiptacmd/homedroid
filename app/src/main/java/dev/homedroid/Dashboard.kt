@@ -36,6 +36,7 @@ class Dashboard(private val ctx: Context) {
             return Response(200, svg, "image/svg+xml", mapOf("Cache-Control" to "max-age=86400"))
         }
         if (r.method == "GET" && r.path.startsWith("/vendor/")) return vendor(r)
+        if (r.method == "GET" && r.path.startsWith("/guides/")) return guideImage(r.path.removePrefix("/guides/"))
         if (r.path == "/api/login" && r.method == "POST") return login(r)
         if (!r.path.startsWith("/api/")) return Response.error(404, "not found")
         if (!authorized(r)) return Response.error(401, "log in first")
@@ -72,6 +73,17 @@ class Dashboard(private val ctx: Context) {
         val headers = mapOf("Cache-Control" to "max-age=2592000, immutable", "Vary" to "Accept-Encoding")
         return if (r.headers["accept-encoding"].orEmpty().contains("gzip")) Response(200, gz, type, headers + ("Content-Encoding" to "gzip"))
         else Response(200, ctx.assets.open("vendor/$name").use { it.readBytes() }, type, headers)
+    }
+
+    /** Screenshots for the setup guides; they change only with the app. */
+    private fun guideImage(name: String): Response {
+        if (!Regex("[a-z0-9-]+\\.png").matches(name)) return Response.error(404, "not found")
+        val bytes = try {
+            ctx.assets.open("guides/$name").use { it.readBytes() }
+        } catch (_: java.io.IOException) {
+            return Response.error(404, "not found")
+        }
+        return Response(200, bytes, "image/png", mapOf("Cache-Control" to "max-age=86400"))
     }
 
     private val pageRaw by lazy { ctx.assets.open("dashboard.html").use { it.readBytes() } }
@@ -352,9 +364,9 @@ class Dashboard(private val ctx: Context) {
             emptyList<String>() -> {
                 val proxy = cfg.tailscaleProxy
                 saveTailscale(r.json())?.let { return it }
-                // The proxy is a tailscaled flag; everything else is applied with `tailscale up`.
-                if (proxy != cfg.tailscaleProxy) daemon("tailscaled")?.restart()
-                background { tailscale.apply() }
+                // The proxy is a tailscaled flag, so it needs a new process (which then applies
+                // everything); the rest is applied to the running one with `tailscale up`.
+                if (proxy != cfg.tailscaleProxy) ServerService.restart(ctx) else background { tailscale.apply() }
             }
             listOf("login") -> background { tailscale.apply() }
             listOf("logout") -> tailscale.logout()?.let { return Response.error(500, it) }

@@ -33,6 +33,7 @@ object Updater {
 
     /** idle, downloading, installing (handed to Android), confirm (waiting on the phone), failed. */
     @Volatile var state = "idle"; private set
+    @Volatile private var confirmSince = 0L
     @Volatile var error: String? = null; private set
     @Volatile private var done = 0L
     @Volatile private var total = 0L
@@ -42,6 +43,8 @@ object Updater {
 
     fun json(ctx: Context, refresh: Boolean): JSONObject {
         if (refresh || System.currentTimeMillis() - checkedAt > CHECK_EVERY_MS) check(ctx)
+        // Dismissing Android's prompt doesn't always report back; don't wait on it forever.
+        if (state == "confirm" && System.currentTimeMillis() - confirmSince > 10 * 60_000L) state = "idle"
         val current = installed(ctx)
         val l = latest
         return JSONObject()
@@ -146,14 +149,16 @@ object Updater {
     private fun install(ctx: Context, apk: File) {
         val pm = ctx.packageManager
         @Suppress("DEPRECATION")
-        val info = pm.getPackageArchiveInfo(apk.path, PackageManager.GET_SIGNING_CERTIFICATES)
+        // Android 10 leaves signingInfo empty for archives unless GET_SIGNATURES is asked for too.
+        val info = pm.getPackageArchiveInfo(apk.path, PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_SIGNATURES)
             ?: throw IOException("That file isn't an Android app")
         if (info.packageName != ctx.packageName) throw IOException("That APK is ${info.packageName}, not Homedroid")
         val mine = installed(ctx)
         if (info.longVersionCode < mine.longVersionCode) {
             throw IOException("That APK is an older version (${info.versionName}); Android won't downgrade")
         }
-        val theirs = info.signingInfo?.apkContentsSigners.orEmpty().map { it.toCharsString() }.toSet()
+        @Suppress("DEPRECATION")
+        val theirs = (info.signingInfo?.apkContentsSigners ?: info.signatures).orEmpty().map { it.toCharsString() }.toSet()
         val ours = mine.signingInfo?.apkContentsSigners.orEmpty().map { it.toCharsString() }.toSet()
         if (theirs != ours) throw IOException("That APK is signed with a different key (a debug build?), so it can't update this install")
 
@@ -212,6 +217,7 @@ object Updater {
                     @Suppress("DEPRECATION")
                     val confirm = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT) ?: return
                     state = "confirm"
+                    confirmSince = System.currentTimeMillis()
                     askOnPhone(ctx, confirm)
                 }
                 PackageInstaller.STATUS_SUCCESS -> state = "idle"
