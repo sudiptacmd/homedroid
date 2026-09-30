@@ -1479,7 +1479,7 @@ $('#settingsForm').onsubmit = async e => {
 };
 
 // ---- App updates -----------------------------------------------------------------------
-let update = null, updateTimer = 0, updateVersion = null;
+let update = null, updateTimer = 0, updateVersion = null, waitingForUpdate = false;
 function showUpdatePill(u) {
   $$('[data-update-pill]').forEach(a => {
     a.classList.toggle('hidden', !u?.available);
@@ -1490,7 +1490,11 @@ async function renderUpdate(refresh = false) {
   clearTimeout(updateTimer);
   const box = $('#updateBox');
   try { update = await api('update' + (refresh ? '?refresh=1' : '')); }
-  catch (e) { return setHTML(box, `<div class="notice">${icon('alert')}<span>${esc(e.message)}</span></div>`); }
+  catch (e) {
+    const msg = waitingForUpdate ? 'Android is installing the update; the server restarts on the new version in a moment…' : e.message;
+    if (waitingForUpdate) updateTimer = setTimeout(() => tab === 'settings' && renderUpdate(), 2000);
+    return setHTML(box, `<div class="notice ${waitingForUpdate ? 'info' : ''}">${waitingForUpdate ? '<span class="spinner"></span>' : icon('alert')}<span>${esc(msg)}</span></div>`);
+  }
   const u = update, l = u.latest, busy = ['downloading', 'installing', 'confirm'].includes(u.state);
   updateVersion ??= u.version;
   showUpdatePill(u);
@@ -1521,14 +1525,16 @@ async function renderUpdate(refresh = false) {
   if (u.state === 'installing' || u.state === 'confirm') waitForNewVersion();
 }
 /** While Android installs, the server goes away; reload once it's back on a new version. */
-let waitingForUpdate = false;
 async function waitForNewVersion() {
   if (waitingForUpdate) return;
   waitingForUpdate = true;
   while (true) {
     await new Promise(r => setTimeout(r, 2000));
     try {
-      const s = await api('status');
+      // Not api(): a 401 there would switch to the login screen mid-update.
+      const res = await fetch('/api/status');
+      if (res.status === 401) { location.reload(); return; }
+      const s = await res.json();
       if (s.version && updateVersion && s.version !== updateVersion) { toast(`Updated to ${s.version}`); setTimeout(() => location.reload(), 800); return; }
       if (update && !['installing', 'confirm'].includes((await api('update')).state)) { waitingForUpdate = false; if (tab === 'settings') renderUpdate(); return; }
     } catch (e) { /* the server is restarting */ }

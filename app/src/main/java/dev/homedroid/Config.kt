@@ -95,6 +95,11 @@ class Config(ctx: Context) {
             .joinToString("-") { it.joinToString("") }
     }
 
+    /** Hashes of logged-in dashboard sessions, oldest first. */
+    var dashboardSessions: List<String>
+        get() = prefs.getString("dashboard_sessions", "")!!.split(',').filter { it.isNotEmpty() }
+        set(v) = prefs.edit().putString("dashboard_sessions", v.joinToString(",")).apply()
+
     val dashboardPort: Int get() = 8800
 
     val sshPort: Int get() = 8022

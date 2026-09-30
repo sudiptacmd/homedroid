@@ -22,7 +22,8 @@ class Dashboard(private val ctx: Context) {
     private val alpine = Alpine(ctx, paths)
     private val files = FileBrowser(ctx, paths)
     private val ssh = SshAdmin(paths, alpine)
-    private val sessions: MutableSet<String> = Collections.synchronizedSet(LinkedHashSet())
+    /** SHA-256 of each session cookie, saved so logins survive restarts and app updates. */
+    private val sessions: MutableSet<String> = Collections.synchronizedSet(LinkedHashSet(cfg.dashboardSessions))
     private val http = Http(cfg.dashboardPort, ::handle)
 
     fun start() = http.start()
@@ -95,7 +96,7 @@ class Dashboard(private val ctx: Context) {
         val seg = r.path.removePrefix("/api/").split('/')
         return when {
             r.method == "POST" && seg == listOf("logout") -> {
-                r.cookie(COOKIE)?.let(sessions::remove)
+                r.cookie(COOKIE)?.let { sessions.remove(sha256(it)); saveSessions() }
                 Response.json(JSONObject().put("ok", true), headers = mapOf("Set-Cookie" to "$COOKIE=; Max-Age=0; Path=/"))
             }
             seg.firstOrNull() == "camera" -> cameraRoute(r, seg.drop(1))
@@ -148,8 +149,9 @@ class Dashboard(private val ctx: Context) {
     private fun newSession(): Response {
         val token = ByteArray(32).also(SecureRandom()::nextBytes).joinToString("") { "%02x".format(it) }
         synchronized(sessions) {
-            sessions += token
+            sessions += sha256(token)
             while (sessions.size > MAX_SESSIONS) sessions.remove(sessions.first())
+            saveSessions()
         }
         return Response.json(
             JSONObject().put("ok", true),
@@ -158,10 +160,15 @@ class Dashboard(private val ctx: Context) {
     }
 
     private fun authorized(r: Request): Boolean {
-        r.cookie(COOKIE)?.let { if (it in sessions) return true }
+        r.cookie(COOKIE)?.let { if (sha256(it) in sessions) return true }
         val bearer = r.headers["authorization"]?.removePrefix("Bearer ")?.trim() ?: return false
         return passwordMatches(bearer)
     }
+
+    private fun saveSessions() = synchronized(sessions) { cfg.dashboardSessions = sessions.toList() }
+
+    private fun sha256(s: String) =
+        MessageDigest.getInstance("SHA-256").digest(s.toByteArray()).joinToString("") { "%02x".format(it) }
 
     private fun passwordMatches(given: String) =
         MessageDigest.isEqual(given.toByteArray(), cfg.dashboardPassword.toByteArray())
@@ -420,6 +427,7 @@ class Dashboard(private val ctx: Context) {
             synchronized(sessions) {
                 cfg.dashboardPassword = password
                 sessions.clear()
+                saveSessions()
                 return newSession()
             }
         }
