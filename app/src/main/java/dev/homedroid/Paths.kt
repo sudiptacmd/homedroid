@@ -35,11 +35,11 @@ class Paths(ctx: Context) {
     fun ensure() {
         for (dir in listOf(bin, etc, logs, www, authorizedKeys.parentFile!!)) dir.mkdirs()
         // nativeLibraryDir changes on every app update, so always recreate the links.
-        for (name in TOOLS) {
+        for ((name, lib) in TOOLS) {
             val link = File(bin, name)
             link.delete()
             try {
-                Os.symlink(exe(name), link.path)
+                Os.symlink(exe(lib), link.path)
             } catch (_: ErrnoException) {
             }
         }
@@ -59,6 +59,7 @@ class Paths(ctx: Context) {
         shellRc.writeText(
             "alias alpine='${alpineShell ?: missing}'\n" +
                 // A function rather than an alias, so `ssh phone torrent …` works too.
+                "alias tailscale='tailscale --socket=${File(root, "tailscale/tailscaled.sock").path}'\n" +
                 "torrent() { ${alpineRun?.let { "$it /usr/local/bin/torrent \"\$@\"" } ?: missing}; }\n" +
                 HISTORY_HOOK +
                 "[ -f \"\$HOME/.mkshrc\" ] && . \"\$HOME/.mkshrc\"\n"
@@ -102,7 +103,9 @@ class Paths(ctx: Context) {
             [[ -o interactive ]] && PS1='${'$'}{|_homedroid_history;}'"${'$'}PS1"
         """.trimIndent() + "\n"
 
-        val TOOLS = listOf("sshd", "caddy", "cloudflared", "proot")
+        /** Command name to bundled binary; tailscaled is also the CLI when run as "tailscale". */
+        val TOOLS = listOf("sshd", "caddy", "cloudflared", "proot", "tailscaled").associateWith { it } +
+            ("tailscale" to "tailscaled")
 
         private val DEFAULT_CADDYFILE = """
             {

@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Updating the app from the web dashboard. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Only when the user moves app data to shared storage, an SD card or a USB drive. -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -56,7 +58,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Runs user-configured server daemons (SSH, web server, tunnel)" />
+                android:value="Runs user-configured server daemons (SSH, web server, tunnels, Tailscale)" />
         </service>
 
         <service android:name=".CameraService" android:exported="false"
@@ -70,5 +72,7 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+        <receiver android:name=".Updater$UpdateReceiver" android:exported="false" />
     </application>
 </manifest>

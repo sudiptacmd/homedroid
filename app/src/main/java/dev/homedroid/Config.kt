@@ -10,6 +10,12 @@ class Config(ctx: Context) {
         get() = prefs.getBoolean("camera", false)
         set(v) = prefs.edit().putBoolean("camera", v).apply()
 
+    /** Set while an update from the dashboard installs, so the server comes back afterwards. */
+    var resumeAfterUpdate: Boolean
+        get() = prefs.getBoolean("resume_after_update", false)
+        // commit(), not apply(): the process is killed as soon as the update installs.
+        set(v) { prefs.edit().putBoolean("resume_after_update", v).commit() }
+
     var autostart: Boolean
         get() = prefs.getBoolean("autostart", true)
         set(v) = prefs.edit().putBoolean("autostart", v).apply()
@@ -25,6 +31,42 @@ class Config(ctx: Context) {
     var tunnelToken: String
         get() = prefs.getString("tunnel_token", "")!!
         set(v) = prefs.edit().putString("tunnel_token", v).apply()
+
+    var tailscaleEnabled: Boolean
+        get() = prefs.getBoolean("tailscale", false)
+        set(v) = prefs.edit().putBoolean("tailscale", v).apply()
+
+    /** Optional; without one, the dashboard shows a login link instead. */
+    var tailscaleAuthKey: String
+        get() = prefs.getString("tailscale_authkey", "")!!
+        set(v) = prefs.edit().putString("tailscale_authkey", v).apply()
+
+    var tailscaleHostname: String
+        get() = prefs.getString("tailscale_hostname", null) ?: "homedroid"
+        set(v) = prefs.edit().putString("tailscale_hostname", v).apply()
+
+    var tailscaleExitNode: Boolean
+        get() = prefs.getBoolean("tailscale_exit_node", false)
+        set(v) = prefs.edit().putBoolean("tailscale_exit_node", v).apply()
+
+    /** Subnets to advertise, comma-separated CIDRs, e.g. the home LAN. */
+    var tailscaleRoutes: String
+        get() = prefs.getString("tailscale_routes", "")!!
+        set(v) = prefs.edit().putString("tailscale_routes", v).apply()
+
+    var tailscaleTags: String
+        get() = prefs.getString("tailscale_tags", "")!!
+        set(v) = prefs.edit().putString("tailscale_tags", v).apply()
+
+    /** How the dashboard is published over HTTPS: "off", "tailnet" (Serve) or "funnel". */
+    var tailscaleServe: String
+        get() = prefs.getString("tailscale_serve", "off")!!
+        set(v) = prefs.edit().putString("tailscale_serve", v).apply()
+
+    /** A SOCKS5 and HTTP proxy on localhost so programs on the phone can reach the tailnet. */
+    var tailscaleProxy: Boolean
+        get() = prefs.getBoolean("tailscale_proxy", false)
+        set(v) = prefs.edit().putBoolean("tailscale_proxy", v).apply()
 
     /** Host folder for an app's bulk data, or null to keep it inside Alpine. */
     fun storageDir(app: AppDef): String? = prefs.getString("storage.${app.storageKey}", null)

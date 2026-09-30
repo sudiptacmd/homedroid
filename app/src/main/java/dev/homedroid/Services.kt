@@ -74,6 +74,7 @@ object Services {
                 mapOf("TUNNEL_TOKEN" to c.tunnelToken),
             )
         )
+        if (c.tailscaleEnabled) add(Tailscale(p, c).spec())
         val alpine = Alpine(ctx, p)
         if (alpine.installed) {
             val deploys = Deploys(ctx, p)

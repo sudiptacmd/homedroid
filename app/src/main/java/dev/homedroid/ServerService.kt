@@ -162,7 +162,10 @@ class ServerService : Service() {
         }
         if (alpine.installed) paths.writeShellRc(alpine.shellCommand(), alpine.shellPrefix())
         else paths.writeShellRc(null, null)
-        supervisor = Supervisor(paths, Services.enabled(this, paths, Config(this))).also { it.start() }
+        val cfg = Config(this)
+        supervisor = Supervisor(paths, Services.enabled(this, paths, cfg)).also { it.start() }
+        // tailscaled keeps its own state, but settings changed while it was off still need applying.
+        if (cfg.tailscaleEnabled) Thread({ Tailscale(paths, cfg).apply() }, "tailscale-up").apply { isDaemon = true; start() }
     }
 
     private fun runDeployJob(id: String?, deploy: Boolean) {

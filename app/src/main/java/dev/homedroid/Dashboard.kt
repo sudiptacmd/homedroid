@@ -111,6 +111,13 @@ class Dashboard(private val ctx: Context) {
             seg[0] == "files" -> files.handle(r, seg.drop(1).filter { it.isNotEmpty() })
             r.method == "GET" && seg == listOf("terminal") -> Terminal.open(r, cfg.sshEnabled && ServerService.running)
             seg[0] == "ssh" -> ssh.handle(r, seg.drop(1))
+            seg[0] == "tailscale" -> tailscaleRoute(r, seg.drop(1))
+            r.method == "GET" && seg == listOf("update") -> Response.json(Updater.json(ctx, r.query["refresh"] == "1"))
+            r.method == "POST" && seg == listOf("update", "install") ->
+                Updater.installLatest(ctx)?.let { Response.error(409, it) } ?: Response.ok()
+            r.method == "POST" && seg == listOf("update", "upload") ->
+                Updater.installUpload(ctx, r)?.let { Response.error(409, it) }
+                    ?: Updater.error?.let { Response.error(400, it) } ?: Response.ok()
             else -> Response.error(404, "no such endpoint")
         }
     }
@@ -165,6 +172,7 @@ class Dashboard(private val ctx: Context) {
             .put("ips", jsonArray(d.ips))
             .put("uptime", d.uptimeS)
             .put("running", ServerService.running)
+            .put("version", ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName)
             .put("metrics", Metrics.sample(ctx))
     }
 
@@ -203,7 +211,8 @@ class Dashboard(private val ctx: Context) {
                     .put("port", m.port)
                     .put("kind", "core")
                     .put("installed", true)
-                    .put("enabled", coreEnabled(m.id)),
+                    .put("enabled", coreEnabled(m.id))
+                    .apply { if (m.id == "tailscale") put("tailscale", tailscaleJson()) },
                 m.service,
             )
         })
@@ -296,6 +305,7 @@ class Dashboard(private val ctx: Context) {
         "ssh" -> cfg.sshEnabled
         "web" -> cfg.webEnabled
         "tunnel" -> cfg.tunnelToken.isNotEmpty() && !cfg.isDisabled("tunnel")
+        "tailscale" -> cfg.tailscaleEnabled
         else -> false
     }
 
@@ -310,7 +320,73 @@ class Dashboard(private val ctx: Context) {
                 if (on && cfg.tunnelToken.isEmpty()) return Response.error(400, "a tunnel token is needed")
                 cfg.setDisabled("tunnel", !on)
             }
+            "tailscale" -> {
+                if (on) saveTailscale(r.json())?.let { return it }
+                cfg.tailscaleEnabled = on
+            }
         }
+        return null
+    }
+
+    // --- Tailscale ----------------------------------------------------------------------
+
+    private val tailscale get() = Tailscale(paths, cfg)
+
+    private fun tailscaleJson() = JSONObject()
+        .put("enabled", cfg.tailscaleEnabled)
+        .put("hostname", cfg.tailscaleHostname)
+        .put("hasAuthKey", cfg.tailscaleAuthKey.isNotEmpty())
+        .put("exitNode", cfg.tailscaleExitNode)
+        .put("routes", cfg.tailscaleRoutes)
+        .put("tags", cfg.tailscaleTags)
+        .put("serve", cfg.tailscaleServe)
+        .put("proxy", cfg.tailscaleProxy)
+        .put("proxyPort", Tailscale.PROXY_PORT)
+        .put("status", if (cfg.tailscaleEnabled) tailscale.status() else JSONObject().put("state", "Stopped"))
+
+    private fun tailscaleRoute(r: Request, seg: List<String>): Response {
+        if (r.method == "GET" && seg.isEmpty()) return Response.json(tailscaleJson())
+        if (r.method != "POST") return Response.error(404, "No such Tailscale endpoint")
+        if (!cfg.tailscaleEnabled || daemon("tailscaled") == null) return Response.error(409, "Turn on the Tailscale module first")
+        when (seg) {
+            emptyList<String>() -> {
+                val proxy = cfg.tailscaleProxy
+                saveTailscale(r.json())?.let { return it }
+                // The proxy is a tailscaled flag; everything else is applied with `tailscale up`.
+                if (proxy != cfg.tailscaleProxy) daemon("tailscaled")?.restart()
+                background { tailscale.apply() }
+            }
+            listOf("login") -> background { tailscale.apply() }
+            listOf("logout") -> tailscale.logout()?.let { return Response.error(500, it) }
+            else -> return Response.error(404, "No such Tailscale endpoint")
+        }
+        return Response.ok()
+    }
+
+    private fun background(block: () -> Unit) = Thread(block, "tailscale-up").apply { isDaemon = true; start() }
+
+    /** Validates and saves Tailscale settings present in [body]; returns an error, or null. */
+    private fun saveTailscale(body: JSONObject): Response? {
+        val host = body.optString("hostname", cfg.tailscaleHostname).trim().lowercase()
+        if (!Regex("[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?").matches(host)) {
+            return Response.error(400, "Use letters, digits and dashes for the device name")
+        }
+        val cidr = Regex("[0-9a-fA-F:.]+/[0-9]{1,3}")
+        val routes = body.optString("routes", cfg.tailscaleRoutes).split(',', ' ', '\n').map { it.trim() }.filter { it.isNotEmpty() }
+        routes.firstOrNull { !cidr.matches(it) }?.let { return Response.error(400, "$it isn't a subnet like 192.168.1.0/24") }
+        val tags = body.optString("tags", cfg.tailscaleTags).split(',', ' ').map { it.trim() }.filter { it.isNotEmpty() }
+            .map { if (it.startsWith("tag:")) it else "tag:$it" }
+        val serve = body.optString("serve", cfg.tailscaleServe)
+        if (serve !in setOf("off", "tailnet", "funnel")) return Response.error(400, "Unknown Serve mode")
+        cfg.tailscaleHostname = host
+        cfg.tailscaleRoutes = routes.joinToString(",")
+        cfg.tailscaleTags = tags.joinToString(",")
+        cfg.tailscaleServe = serve
+        if (body.has("exitNode")) cfg.tailscaleExitNode = body.optBoolean("exitNode")
+        if (body.has("proxy")) cfg.tailscaleProxy = body.optBoolean("proxy")
+        // An empty key keeps the saved one; "clearAuthKey" forgets it.
+        body.optString("authKey").trim().takeIf { it.isNotEmpty() }?.let { cfg.tailscaleAuthKey = it }
+        if (body.optBoolean("clearAuthKey")) cfg.tailscaleAuthKey = ""
         return null
     }
 
@@ -417,6 +493,7 @@ class Dashboard(private val ctx: Context) {
             Core("ssh", "SSH & SFTP", "Shell and file transfer, public-key login only.", 8022, "sshd"),
             Core("web", "Web hosting", "Caddy web server for ~/www and deployed sites.", 8080, "caddy"),
             Core("tunnel", "Cloudflare Tunnel", "Publishes services on the internet, no port forwarding.", 0, "cloudflared"),
+            Core("tailscale", "Tailscale", "Private access from your own devices, anywhere. No VPN slot or root needed.", 0, "tailscaled"),
         )
     }
 }
