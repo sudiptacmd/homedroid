@@ -202,6 +202,7 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
     private fun reason(status: Int) = when (status) {
         200 -> "OK"
         201 -> "Created"
+        204 -> "No Content"
         206 -> "Partial Content"
         302 -> "Found"
         304 -> "Not Modified"

@@ -120,7 +120,8 @@ class FileBrowser(private val ctx: Context, private val paths: Paths) {
         )
     }
 
-    private fun download(r: Request, f: File): Response {
+    /** Sends [f] with ranges (so videos seek); ?inline=1 shows it in the browser instead of saving it. */
+    fun download(r: Request, f: File): Response {
         if (f.isDirectory) return zip(f)
         if (!f.isFile) return Response.error(404, "no file ${f.name}")
         val size = f.length()

@@ -11,6 +11,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.graphics.ImageFormat
+import android.graphics.Rect
+import android.graphics.YuvImage
+import android.media.Image
 import android.hardware.camera2.*
 import android.media.ImageReader
 import android.media.MediaRecorder
@@ -18,6 +21,7 @@ import android.os.*
 import android.view.Surface
 import android.speech.tts.TextToSpeech
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -30,6 +34,7 @@ class CameraService : Service() {
             private set
         private const val CHANNEL = "camera"
         private const val STOP = "dev.homedroid.STOP_CAMERA"
+        private const val VIEWER_TIMEOUT_MS = 15_000L
         fun arm(ctx: Context) = ctx.startForegroundService(Intent(ctx, CameraService::class.java))
         fun stop(ctx: Context) = ctx.stopService(Intent(ctx, CameraService::class.java))
         fun directory(ctx: Context) = File(ctx.filesDir, "camera").apply { mkdirs() }
@@ -44,6 +49,9 @@ class CameraService : Service() {
                 }
                 JSONObject().put("id", id).put("name", "$facing camera ($id)")
                     .put("flash", c.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true)
+                    // The live view is sent as the sensor delivers it; the page rotates (and mirrors) it.
+                    .put("rotation", c.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 0)
+                    .put("front", facing == "Front")
             }
         }
     }
@@ -69,6 +77,17 @@ class CameraService : Service() {
     private var generation = 0
     private var error: String? = null
     @Volatile private var closing = false
+
+    // Live view: the camera the page asked to watch (kept while photos and videos interrupt it),
+    // whether its preview session is open, and the newest JPEG frame for the MJPEG stream.
+    private var liveWanted: String? = null
+    private var liveActive = false
+    private var liveTorch = false
+    private val frameLock = Object()
+    private var frame: ByteArray? = null
+    private var frameSeq = 0L
+    @Volatile private var lastViewer = 0L
+    private var lastFrameAt = 0L
 
     override fun onBind(intent: Intent?) = null
 
@@ -144,6 +163,17 @@ class CameraService : Service() {
                     }
                     "microphone/stop" -> { microphone.stop(); notifyState(if (recording) "Recording video" else "IPCam ready") }
                     "stop" -> { finishRecording(); cleanup() }
+                    "live/start" -> {
+                        val id = body.getString("id")
+                        require(manager.cameraIdList.contains(id)) { "Unknown camera" }
+                        lastViewer = SystemClock.elapsedRealtime()
+                        if (liveWanted != id) liveTorch = false
+                        liveWanted = id
+                        if (!busy && !recording && !liveActive) startLive(id)
+                        else if (liveActive && selected != id) startLive(id)
+                        handler.postDelayed(::checkViewers, VIEWER_TIMEOUT_MS)
+                    }
+                    "live/stop" -> stopLive()
                     "photo", "record" -> {
                         check(!busy && !recording) { "Camera is busy; stop the current capture first" }
                         begin(body.getString("id"), action == "record", body.optBoolean("flash"))
@@ -152,13 +182,19 @@ class CameraService : Service() {
                         check(!busy && !recording) { "Stop capture before changing the torch" }
                         val id = body.getString("id")
                         require(cameras(this).any { it.getString("id") == id && it.getBoolean("flash") }) { "This camera has no flash" }
-                        torchId?.let { manager.setTorchMode(it, false) }
-                        torchId = null
-                        if (body.getBoolean("enabled")) {
-                            manager.setTorchMode(id, true)
-                            torchId = id
+                        if (liveActive && liveWanted == id) {
+                            // The camera is open, so the torch goes through the live request instead.
+                            liveTorch = body.getBoolean("enabled")
+                            startLive(id)
+                        } else {
+                            torchId?.let { manager.setTorchMode(it, false) }
+                            torchId = null
+                            if (body.getBoolean("enabled")) {
+                                manager.setTorchMode(id, true)
+                                torchId = id
+                            }
+                            notifyState(if (torchId == null) "Camera ready for remote controls" else "Camera $id torch on")
                         }
-                        notifyState(if (torchId == null) "Camera ready for remote controls" else "Camera $id torch on")
                     }
                     else -> throw IllegalArgumentException("Unknown camera action")
                 }
@@ -175,7 +211,9 @@ class CameraService : Service() {
     fun audio(after: Long) = microphone.audio(after)
 
     private fun status() = JSONObject().put("armed", true).put("busy", busy).put("recording", recording)
-        .put("selected", selected ?: JSONObject.NULL).put("torch", torchId ?: JSONObject.NULL)
+        .put("selected", selected.takeUnless { liveActive } ?: JSONObject.NULL)
+        .put("torch", torchId ?: liveWanted.takeIf { liveTorch } ?: JSONObject.NULL)
+        .put("live", liveWanted ?: JSONObject.NULL)
         .put("error", error ?: JSONObject.NULL).put("microphone", microphone.status())
 
     @Suppress("MissingPermission", "DEPRECATION")
@@ -221,6 +259,13 @@ class CameraService : Service() {
                     prepare()
                 }
                 surface = recorder!!.surface
+                if (liveWanted != null) {
+                    val live = liveSize(map)
+                    previewReader = ImageReader.newInstance(live.width, live.height, ImageFormat.YUV_420_888, 2).apply {
+                        setOnImageAvailableListener(::onPreviewFrame, handler)
+                    }
+                    surfaces += previewReader!!.surface
+                }
             } else {
                 val sizes = map.getOutputSizes(ImageFormat.JPEG).orEmpty()
                 val size = sizes.filter { it.width.toLong() * it.height <= 12_000_000 }.maxByOrNull { it.width.toLong() * it.height }
@@ -247,7 +292,7 @@ class CameraService : Service() {
                     .minByOrNull { kotlin.math.abs(it.width.toLong() * it.height - 640L * 480) }
                     ?: error("Photo metering is unsupported")
                 previewReader = ImageReader.newInstance(previewSize.width, previewSize.height, ImageFormat.YUV_420_888, 2).apply {
-                    setOnImageAvailableListener({ source -> runCatching { source.acquireLatestImage()?.close() } }, handler)
+                    setOnImageAvailableListener(::onPreviewFrame, handler)
                 }
                 surfaces += previewReader!!.surface
             }
@@ -259,12 +304,14 @@ class CameraService : Service() {
                     device = camera
                     try {
                         camera.createCaptureSession(surfaces, object : CameraCaptureSession.StateCallback() {
+                            var withLive = video && previewReader != null
                             override fun onConfigured(s: CameraCaptureSession) {
                                 if (generation != token || closing) { s.close(); return }
                                 session = s
                                 try {
                                     val request = camera.createCaptureRequest(if (video) CameraDevice.TEMPLATE_RECORD else CameraDevice.TEMPLATE_STILL_CAPTURE).apply {
                                         addTarget(surface)
+                                        if (video && withLive) addTarget(previewReader!!.surface)
                                         set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
                                         set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
                                         set(CaptureRequest.FLASH_MODE, if (flash) CaptureRequest.FLASH_MODE_TORCH else CaptureRequest.FLASH_MODE_OFF)
@@ -313,6 +360,12 @@ class CameraService : Service() {
                             }
                             override fun onConfigureFailed(s: CameraCaptureSession) {
                                 s.close()
+                                // Some cameras can't record and stream at once: record without the live view.
+                                if (withLive && generation == token && !closing) {
+                                    withLive = false
+                                    try { camera.createCaptureSession(listOf(surface), this, handler) } catch (e: Exception) { fail(e.message ?: "Camera setup failed") }
+                                    return
+                                }
                                 if (generation == token) fail("Camera does not support this capture configuration")
                             }
                         }, handler)
@@ -350,7 +403,12 @@ class CameraService : Service() {
         } catch (e: Exception) { error = "Recording could not be saved: ${e.message}" }
     }
 
-    private fun fail(message: String) { error = message; cleanup() }
+    private fun fail(message: String) {
+        // A live view that fails would only fail again; give up on it.
+        if (liveActive) liveWanted = null
+        error = message
+        cleanup()
+    }
 
     private fun cleanup() {
         generation++
@@ -365,11 +423,131 @@ class CameraService : Service() {
         selected = null
         recording = false
         busy = false
+        liveActive = false
         if (!closing) notifyState(if (microphone.running) "IPCam microphone active" else "Camera ready for remote controls")
+        // A photo or video interrupted the live view: bring it back once the camera is free.
+        if (!closing && liveWanted != null) handler.post(::resumeLive)
+    }
+
+    private fun resumeLive() {
+        val id = liveWanted ?: return
+        if (!liveActive && !busy && !recording && !closing) startLive(id)
+    }
+
+    private fun stopLive() {
+        val wasLive = liveActive
+        liveWanted = null
+        liveTorch = false
+        if (wasLive) cleanup()
+        synchronized(frameLock) { frameLock.notifyAll() }
+    }
+
+    /** Stops the live view once no browser has fetched a frame for a while. */
+    private fun checkViewers() {
+        if (liveWanted == null) return
+        if (SystemClock.elapsedRealtime() - lastViewer >= VIEWER_TIMEOUT_MS) stopLive()
+        else handler.postDelayed(::checkViewers, VIEWER_TIMEOUT_MS)
+    }
+
+    private fun liveSize(map: android.hardware.camera2.params.StreamConfigurationMap) =
+        map.getOutputSizes(ImageFormat.YUV_420_888).orEmpty()
+            .minByOrNull { kotlin.math.abs(it.width.toLong() * it.height - 640L * 480) }
+            ?: error("Live view is unsupported")
+
+    /** Opens [id] with only a small preview stream, for watching. */
+    @Suppress("MissingPermission")
+    private fun startLive(id: String) {
+        cleanup()
+        val characteristics = manager.getCameraCharacteristics(id)
+        val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: error("No supported camera outputs")
+        val size = liveSize(map)
+        val token = generation
+        liveActive = true
+        selected = id
+        val reader = ImageReader.newInstance(size.width, size.height, ImageFormat.YUV_420_888, 2).apply {
+            setOnImageAvailableListener(::onPreviewFrame, handler)
+        }
+        previewReader = reader
+        notifyState("Live view on camera $id")
+        manager.openCamera(id, object : CameraDevice.StateCallback() {
+            override fun onOpened(camera: CameraDevice) {
+                if (generation != token || closing) { camera.close(); return }
+                device = camera
+                try {
+                    camera.createCaptureSession(listOf(reader.surface), object : CameraCaptureSession.StateCallback() {
+                        override fun onConfigured(s: CameraCaptureSession) {
+                            if (generation != token || closing) { s.close(); return }
+                            session = s
+                            try {
+                                s.setRepeatingRequest(camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                                    addTarget(reader.surface)
+                                    set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
+                                    set(CaptureRequest.FLASH_MODE, if (liveTorch) CaptureRequest.FLASH_MODE_TORCH else CaptureRequest.FLASH_MODE_OFF)
+                                    val modes = characteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES) ?: intArrayOf()
+                                    if (CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO in modes) {
+                                        set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                                    }
+                                }.build(), null, handler)
+                            } catch (e: Exception) { fail(e.message ?: "Live view failed") }
+                        }
+                        override fun onConfigureFailed(s: CameraCaptureSession) { s.close(); if (generation == token) fail("Live view is unsupported on this camera") }
+                    }, handler)
+                } catch (e: Exception) { fail(e.message ?: "Live view failed") }
+            }
+            override fun onDisconnected(camera: CameraDevice) { camera.close(); if (generation == token) fail("Camera disconnected or is in use by another app") }
+            override fun onError(camera: CameraDevice, code: Int) { camera.close(); if (generation == token) fail("Camera unavailable (error $code)") }
+        }, handler)
+    }
+
+    /** Turns preview frames into JPEGs for the live view, about 10 a second, and only while someone watches. */
+    private fun onPreviewFrame(source: ImageReader) {
+        val image = runCatching { source.acquireLatestImage() }.getOrNull() ?: return
+        image.use {
+            val now = SystemClock.elapsedRealtime()
+            if (liveWanted == null || now - lastViewer > VIEWER_TIMEOUT_MS || now - lastFrameAt < 100) return
+            lastFrameAt = now
+            val jpeg = runCatching { jpeg(it) }.getOrNull() ?: return
+            synchronized(frameLock) { frame = jpeg; frameSeq++; frameLock.notifyAll() }
+        }
+    }
+
+    private fun jpeg(image: Image): ByteArray {
+        val w = image.width
+        val h = image.height
+        val nv21 = ByteArray(w * h * 3 / 2)
+        val (y, u, v) = image.planes
+        val yBuf = y.buffer
+        var pos = 0
+        for (row in 0 until h) {
+            yBuf.position(row * y.rowStride)
+            yBuf.get(nv21, pos, w)
+            pos += w
+        }
+        val uBuf = u.buffer
+        val vBuf = v.buffer
+        for (row in 0 until h / 2) for (col in 0 until w / 2) {
+            nv21[pos++] = vBuf.get(row * v.rowStride + col * v.pixelStride)
+            nv21[pos++] = uBuf.get(row * u.rowStride + col * u.pixelStride)
+        }
+        return ByteArrayOutputStream().also { YuvImage(nv21, ImageFormat.NV21, w, h, null).compressToJpeg(Rect(0, 0, w, h), 60, it) }.toByteArray()
+    }
+
+    /**
+     * The next live frame after [after], waiting up to a second for one; null if none came.
+     * The page asks again as soon as it has shown a frame, so it gets as many as it can show.
+     */
+    fun nextFrame(after: Long): Pair<Long, ByteArray>? {
+        lastViewer = SystemClock.elapsedRealtime()
+        synchronized(frameLock) {
+            if (frameSeq == after && !closing) frameLock.wait(1000)
+            val f = frame
+            return if (frameSeq == after || f == null) null else frameSeq to f
+        }
     }
 
     override fun onDestroy() {
         closing = true
+        synchronized(frameLock) { frameLock.notifyAll() }
         speech?.stop()
         speech?.shutdown()
         if (instance === this) instance = null

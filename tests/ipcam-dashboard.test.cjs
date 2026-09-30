@@ -28,7 +28,7 @@ function setup() {
   const sections = ['overview', 'modules', 'deploys', 'camera'].map(x => { const el = element('#tab-' + x); el.id = 'tab-' + x; return el; });
   const document = {querySelector: x => x === '[data-tab="overview"]' ? nav[0] : element(x),
     querySelectorAll: x => x === '[data-camera-nav]' ? [element('#cameraNav')] : x === 'nav button' ? nav : x === 'main > section' ? sections : [],
-    createElement: element, body: {append() {}}};
+    createElement: element, body: {append() {}}, addEventListener() {}};
   let state = {armed: true, busy: false, recording: false, cameras: [{id: '0', name: 'Rear', flash: true}, {id: '1', name: 'Front', flash: false}], files: [], microphone: {running: false}};
   let enabled = true, failure = null;
   const requests = [];
@@ -106,4 +106,25 @@ test('settings polling preserves an in-progress edit', async () => {
   await t.run('renderSettings()');
   assert.equal(t.element('#settingsAutostart').checked, true);
   assert.equal(t.requests.filter(x => x.path === '/api/settings').length, 1);
+});
+test('saved captures can be previewed in the page before downloading', async () => {
+  const t = setup(); t.state({files: [{name: '1790000000000-ab.jpg', bytes: 2048}, {name: '1790000000001-cd.mp4', bytes: 4096}]});
+  await t.run('renderCamera()');
+  const markup = t.element('#cameraFiles').innerHTML;
+  assert.equal((markup.match(/data-act="previewCapture"/g) || []).length, 2);
+  assert.match(markup, /1790000000000-ab\.jpg\?inline=1/);
+  assert.match(markup, /download/);
+});
+test('a capture taken from the page is offered for preview', async () => {
+  const t = setup(); await t.run('renderCamera()');
+  await t.element('#cameraControls').onclick({target: {closest: () => ({dataset: {camera: '0', action: 'photo'}, disabled: false})}});
+  t.state({files: [{name: '1790000000002-ef.jpg', bytes: 10}]}); await t.run('renderCamera()');
+  assert.match(t.element('#captureNotice').innerHTML, /Photo saved/);
+  assert.match(t.element('#captureNotice').innerHTML, /data-name="1790000000002-ef.jpg"/);
+});
+test('each camera offers a live view', async () => {
+  const t = setup(); await t.run('renderCamera()');
+  assert.equal((t.element('#cameraControls').innerHTML.match(/data-action="live"/g) || []).length, 2);
+  t.state({live: '0'}); await t.run('renderCamera()');
+  assert.match(t.element('#cameraControls').innerHTML, /Close live view/);
 });

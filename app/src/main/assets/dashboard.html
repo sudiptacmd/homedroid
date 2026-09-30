@@ -297,7 +297,24 @@ dialog[open] { animation: pop .14s var(--ease); }
 .notice.info { background: var(--accent-soft); }
 .notice.info svg.i { color: var(--accent); }
 .notice .btn { margin-left: auto; }
+.notice .btn svg.i { color: inherit; margin: 0; }
+.notice.wrap { flex-wrap: wrap; align-items: center; }
+.notice.wrap > span { flex: 1 1 180px; }
+.notice.wrap .btn { margin-left: 0; }
 .releasenotes { max-height: 220px; }
+/* IPCam live view and capture previews */
+.live { overflow: hidden; margin-bottom: 16px; }
+.vf { position: relative; background: #000; overflow: hidden; margin: 0 auto; width: 100%; aspect-ratio: 4 / 3; }
+.vf img { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; object-fit: contain; transform: translate(-50%, -50%); }
+.vf .vf-wait { position: absolute; inset: 0; display: grid; place-items: center; color: #b4bac6; font-size: 13px; }
+.live-badge { background: var(--bad); color: #fff; }
+.live-badge::before { animation: pulse 1.2s ease-in-out infinite; }
+.capture { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.capture .thumb { width: 56px; height: 42px; border-radius: 6px; object-fit: cover; background: var(--code); flex: none; display: grid; place-items: center; color: var(--muted); }
+.capture .grow { min-width: 0; }
+#preview .media { padding: 0 18px 18px; }
+#preview .media img, #preview .media video { display: block; width: 100%; max-height: 72vh; object-fit: contain; background: #000; border-radius: var(--r-sm); }
+#preview .media audio { width: 100%; }
 </style>
 </head>
 <body>
@@ -346,6 +363,7 @@ dialog[open] { animation: pop .14s var(--ease); }
   <symbol id="i-temp" viewBox="0 0 24 24"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v7"/></symbol>
   <symbol id="i-net" viewBox="0 0 24 24"><path d="M7 4v14M3 14l4 4 4-4"/><path d="M17 20V6M13 10l4-4 4 4"/></symbol>
   <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7h8M8 11h6"/></symbol>
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M4 10a8 8 0 0 1 14-4l2 2"/><path d="M20 4v4h-4"/><path d="M20 14a8 8 0 0 1-14 4l-2-2"/><path d="M4 20v-4h4"/></symbol>
@@ -440,6 +458,16 @@ dialog[open] { animation: pop .14s var(--ease); }
       <div class="page-head"><div><h1>IPCam</h1><div class="sub">Cameras, microphone and announcements from your phone.</div></div></div>
       <div id="cameraStatus" class="notice" role="status"></div>
       <p class="hint">Enable IPCam access in the phone app, then you can turn the display off. Android privacy indicators stay active. Video and microphone audio are saved separately.</p>
+      <div class="card live hidden" id="liveBox">
+        <div class="job-head">
+          <span class="badge live-badge" id="liveBadge">Live</span>
+          <div class="grow ellipsis" id="liveName" style="font-weight:600"></div>
+          <button class="btn ghost sm" data-act="liveClose"><svg class="i"><use href="#i-x"/></svg>Close</button>
+        </div>
+        <div class="vf" id="liveFrame"><div class="vf-wait" id="liveWait">Starting the camera…</div><img id="liveImg" alt="Live camera view"></div>
+        <div class="row ipcam-actions pad" id="liveActions"></div>
+      </div>
+      <div id="captureNotice"></div>
       <div class="grid" id="cameraControls"></div>
       <div class="ipcam-grid"><div><h2>Microphone</h2>
       <div class="card pad ipcam-stack">
@@ -558,6 +586,12 @@ dialog[open] { animation: pop .14s var(--ease); }
 <dialog id="logs" class="wide">
   <div class="dlg-head"><h3 id="logTitle"></h3><button class="btn ghost icon" data-act="closeLogs" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
   <div style="padding:0 18px 18px"><pre id="logBody" style="height:min(62vh,560px)"></pre></div>
+</dialog>
+<dialog id="preview" class="wide">
+  <div class="dlg-head"><h3 id="previewTitle" class="ellipsis"></h3>
+    <a class="btn sm" id="previewDownload" download><svg class="i"><use href="#i-download"/></svg>Download</a>
+    <button class="btn ghost icon" data-act="closePreview" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="media" id="previewBody"></div>
 </dialog>
 <dialog id="guide" class="wide" style="width:min(760px, calc(100vw - 32px))">
   <div class="dlg-head"><h3 id="guideTitle"></h3><button class="btn ghost icon" data-act="closeGuide" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
@@ -681,7 +715,7 @@ const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000
 let tab = 'overview', authed = false, pollTimer = 0, seq = 0, busyJob = false;
 function route() {
   const [t, ...rest] = location.hash.slice(1).split('/').map(s => { try { return decodeURIComponent(s); } catch (e) { return s; } });
-  if (tab === 'camera' && t !== 'camera') stopListening();
+  if (tab === 'camera' && t !== 'camera') { stopListening(); closeLive(); }
   tab = t in POLL ? t : 'overview';
   if (tab === 'settings') settingsLoaded = false;
   $$('[data-tab]').forEach(a => a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
@@ -1387,6 +1421,10 @@ const ACT = {
     if (+b.dataset.d > 0 && last) $('#guide').close(); else showGuide(guide.id, guide.i + +b.dataset.d);
   },
   closeGuide: () => $('#guide').close(),
+  liveClose: () => closeLive(),
+  previewCapture: b => previewCapture(b.dataset.name),
+  closePreview: () => $('#preview').close(),
+  dismissCapture: () => setHTML($('#captureNotice'), ''),
   updCheck: () => renderUpdate(true),
   async updInstall() {
     try { await api('update/install', {method: 'POST'}); toast('Downloading the update'); } catch (e) { toast(e.message, true); }
@@ -1567,6 +1605,7 @@ async function renderCamera() {
       return `<div class="card pad ipcam-stack"><div class="ipcam-title">${esc(c.name)}</div>
         <label class="check"><input type="checkbox" data-flash="${esc(c.id)}" style="width:auto" ${!c.flash || disabled ? 'disabled' : ''}> Flash during capture${!c.flash ? ' (unavailable)' : ''}</label>
         <div class="row ipcam-actions">
+          <button class="btn" data-camera="${esc(c.id)}" data-action="live" ${!state.armed ? 'disabled' : ''}>${icon('eye')}${state.live === c.id ? 'Close live view' : 'Live view'}</button>
           <button class="btn" data-camera="${esc(c.id)}" data-action="photo" ${disabled ? 'disabled' : ''}>Take photo</button>
           <button class="btn primary" data-camera="${esc(c.id)}" data-action="record" ${disabled ? 'disabled' : ''}>Record video</button>
           ${c.flash ? `<button class="btn" data-camera="${esc(c.id)}" data-action="torch" ${disabled ? 'disabled' : ''}>${state.torch === c.id ? 'Turn flash off' : 'Turn flash on'}</button>` : ''}
@@ -1587,19 +1626,146 @@ async function renderCamera() {
     $('#recordMic').disabled = !state.armed || mic.running;
     $('#stopMic').disabled = !state.armed || !mic.running;
     $('#announceButton').disabled = !state.armed;
-    $('#cameraFiles').innerHTML = state.files.map(f => `<div class="row ipcam-actions ipcam-file"><a href="/api/camera/files/${encodeURIComponent(f.name)}" download>${esc(f.name)}</a><span class="hint">${(f.bytes / 1048576).toFixed(1)} MB</span></div>`).join('') || '<div class="hint">No captures yet.</div>';
+    setHTML($('#cameraFiles'), state.files.map(captureRow).join('') || '<div class="hint">No captures yet.</div>');
+    noteNewCapture(state.files);
+    renderLive(state);
     if (!mic.running && listening) stopListening();
   } catch (e) { $('#cameraStatus').textContent = e.message; }
 }
-$('#cameraControls').onclick = async e => {
+async function cameraButton(e) {
   const button = e.target.closest('button[data-action]'); if (!button) return;
   const id = button.dataset.camera, action = button.dataset.action;
+  if (action === 'live') { if (cameraState.live === id && live.id) closeLive(); else openLive(id); return; }
   const flash = [...$('#cameraControls').querySelectorAll('[data-flash]')].find(x => x.dataset.flash === id)?.checked || false;
+  if (action === 'photo' || action === 'record') expectCapture = true;
   button.disabled = true;
   await cameraAction('camera/' + action, {body: {id, flash, enabled: cameraState.torch !== id}}, action === 'photo' ? 'Taking photo…' : null);
   button.disabled = false;
   await renderCamera();
-};
+}
+$('#cameraControls').onclick = cameraButton;
+$('#liveActions').onclick = cameraButton;
+
+// Live view: the page asks the phone for the next JPEG frame as soon as it has shown one
+// (plain requests work in every browser, unlike MJPEG). The sensor's frames arrive sideways
+// on most phones, so the page rotates them by the camera's sensor orientation.
+const live = {id: null, gen: 0};
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function openLive(id) {
+  const fresh = !live.id;
+  live.id = id; live.opened = Date.now();
+  api('camera/live/start', {method: 'POST', body: {id}}).then(s => { cameraState = {...cameraState, ...s}; renderCamera(); })
+    .catch(e => { toast(e.message, true); closeLive(false); });
+  if (fresh) { $('#liveWait').classList.remove('hidden'); liveLoop(++live.gen); }
+  $('#liveBox').classList.remove('hidden');
+  renderLive(cameraState);
+  $('#liveBox').scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
+async function liveLoop(gen) {
+  let after = -1;
+  const img = $('#liveImg');
+  while (live.id && live.gen === gen) {
+    if (document.hidden) { await sleep(500); continue; }
+    try {
+      const res = await fetch(`/api/camera/live/frame?after=${after}`);
+      if (live.gen !== gen) return;
+      if (res.status === 401) return showLogin();
+      if (res.status !== 200) { if (res.status !== 204) await sleep(1000); continue; }
+      after = +res.headers.get('X-Frame');
+      const old = img.src;
+      img.src = URL.createObjectURL(await res.blob());
+      await img.decode().catch(() => {});
+      if (old.startsWith('blob:')) URL.revokeObjectURL(old);
+      $('#liveWait').classList.add('hidden');
+      fitLive();
+    } catch (e) { await sleep(1500); }
+  }
+}
+function closeLive(tell = true) {
+  const was = live.id;
+  live.id = null; live.gen++;
+  const img = $('#liveImg');
+  if (img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
+  img.removeAttribute('src');
+  $('#liveBox').classList.add('hidden');
+  if (tell && was) api('camera/live/stop', {method: 'POST'}).then(() => tab === 'camera' && renderCamera()).catch(() => {});
+}
+/** Frames pause while the page is hidden, and the phone turns the camera off; ask again on return. */
+document.addEventListener('visibilitychange', () => { if (live.id && !document.hidden && tab === 'camera') openLive(live.id); });
+function fitLive() {
+  const img = $('#liveImg'), w = img.naturalWidth, h = img.naturalHeight;
+  if (!w || !h) return;
+  const cam = (cameraState.cameras || []).find(c => c.id === live.id) || {}, r = cam.rotation || 0, side = r % 180 !== 0;
+  const [dw, dh] = side ? [h, w] : [w, h], box = $('#liveFrame');
+  box.style.aspectRatio = `${dw} / ${dh}`;
+  box.style.maxWidth = `calc(60vh * ${(dw / dh).toFixed(4)})`;
+  img.style.width = side ? `${(w / h * 100).toFixed(3)}%` : '100%';
+  img.style.height = side ? `${(h / w * 100).toFixed(3)}%` : '100%';
+  img.style.transform = `translate(-50%, -50%) rotate(${r}deg)`;
+}
+function renderLive(state) {
+  if (!live.id) return;
+  if (!state.armed || state.live == null && !state.busy && !state.recording) {
+    // Stopped on the phone, or after nobody watched for a while (not just not started yet).
+    if (state.live == null && Date.now() - live.opened > 5000) closeLive(false);
+    return;
+  }
+  if (state.live && state.live !== live.id) live.id = state.live;
+  const cam = (state.cameras || []).find(c => c.id === live.id) || {id: live.id, name: 'Camera'};
+  $('#liveName').textContent = cam.name;
+  const rec = state.recording && (state.selected == null || state.selected === cam.id);
+  $('#liveBadge').textContent = rec ? 'Recording' : state.busy ? 'Taking photo' : 'Live';
+  const busy = state.busy || state.recording;
+  setHTML($('#liveActions'), `
+    <button class="btn" data-camera="${esc(cam.id)}" data-action="photo" ${busy ? 'disabled' : ''}>${icon('camera')}Take photo</button>
+    ${state.recording ? `<button class="btn danger" data-action="stop">Stop recording</button>`
+      : `<button class="btn primary" data-camera="${esc(cam.id)}" data-action="record" ${busy ? 'disabled' : ''}>Record video</button>`}
+    ${cam.flash ? `<button class="btn" data-camera="${esc(cam.id)}" data-action="torch" ${busy ? 'disabled' : ''}>${state.torch === cam.id ? 'Turn flash off' : 'Turn flash on'}</button>` : ''}
+    <span class="hint">${state.recording ? 'The live view keeps running while recording where the camera allows it.' : 'The phone turns the camera off when you close this or leave the page.'}</span>`);
+  fitLive();
+}
+
+// Captures: preview in the page, or download.
+const captureUrl = (name, inline) => `/api/camera/files/${encodeURIComponent(name)}${inline ? '?inline=1' : ''}`;
+const captureKind = name => name.endsWith('.jpg') ? 'Photo' : name.endsWith('.mp4') ? 'Video' : 'Audio';
+function captureTime(name) {
+  const t = +name.split('-')[0];
+  return t ? new Date(t).toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'}) : name;
+}
+function captureRow(f) {
+  const kind = captureKind(f.name);
+  const thumb = kind === 'Photo' ? `<img class="thumb" src="${captureUrl(f.name, true)}" alt="" loading="lazy">`
+    : `<span class="thumb">${icon(kind === 'Video' ? 'video' : 'audio')}</span>`;
+  return `<div class="capture">${thumb}
+    <div class="grow"><div class="ellipsis" style="font-weight:550">${kind} · ${esc(captureTime(f.name))}</div><div class="hint ellipsis">${bytes(f.bytes)} · ${esc(f.name)}</div></div>
+    <button class="btn sm" data-act="previewCapture" data-name="${esc(f.name)}">${icon('eye')}<span class="lbl">Preview</span></button>
+    <a class="btn ghost sm icon" href="${captureUrl(f.name)}" download title="Download" aria-label="Download">${icon('download')}</a></div>`;
+}
+function previewCapture(name) {
+  const kind = captureKind(name), url = captureUrl(name, true);
+  $('#previewTitle').textContent = `${kind} · ${captureTime(name)}`;
+  $('#previewDownload').href = captureUrl(name);
+  $('#previewBody').innerHTML = kind === 'Photo' ? `<img src="${url}" alt="${esc(kind)}">`
+    : kind === 'Video' ? `<video src="${url}" controls autoplay playsinline></video>` : `<audio src="${url}" controls autoplay></audio>`;
+  $('#preview').showModal();
+}
+$('#preview').addEventListener('close', () => { $('#previewBody').innerHTML = ''; });
+// After a photo or video from this page, offer the new file right away.
+let knownCaptures = null, expectCapture = false;
+function noteNewCapture(files) {
+  const names = files.map(f => f.name);
+  if (knownCaptures && expectCapture) {
+    const fresh = names.find(n => !knownCaptures.has(n) && !n.endsWith('.wav'));
+    if (fresh) {
+      expectCapture = false;
+      setHTML($('#captureNotice'), `<div class="notice info wrap" style="margin-bottom:12px">${icon('check')}<span>${captureKind(fresh)} saved · ${esc(captureTime(fresh))}</span>
+        <button class="btn primary sm" data-act="previewCapture" data-name="${esc(fresh)}">${icon('eye')}Preview</button>
+        <a class="btn sm" href="${captureUrl(fresh)}" download>${icon('download')}Download</a>
+        <button class="btn ghost sm icon" data-act="dismissCapture" aria-label="Dismiss">${icon('x')}</button></div>`);
+    }
+  }
+  knownCaptures = new Set(names);
+}
 function stopListening() {
   listening = false; audioGeneration++; clearTimeout(audioTimer);
   if (audioContext) audioContext.close().catch(() => {});

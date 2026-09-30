@@ -459,11 +459,14 @@ class Dashboard(private val ctx: Context) {
             if (!Regex("[0-9]+-[0-9a-f-]+\\.(jpg|mp4|wav)").matches(name)) return Response.error(404, "No such capture")
             val file = java.io.File(dir, name)
             if (!file.isFile) return Response.error(404, "No such capture")
-            val type = when (file.extension) { "jpg" -> "image/jpeg"; "wav" -> "audio/wav"; else -> "video/mp4" }
-            return Response(200, byteArrayOf(), type, mapOf("Content-Disposition" to "attachment; filename=\"$name\""),
-                stream = { out -> file.inputStream().use { it.copyTo(out) } }, length = file.length())
+            return files.download(r, file)
         }
-        if (r.method == "POST" && seg.joinToString("/") in setOf("photo", "record", "stop", "torch", "microphone/start", "microphone/stop", "announce")) {
+        if (r.method == "GET" && seg == listOf("live", "frame")) {
+            val live = service ?: return Response.error(409, "Enable IPCam access in the phone app")
+            val (seq, jpeg) = live.nextFrame(r.query["after"]?.toLongOrNull() ?: -1) ?: return Response(204, byteArrayOf())
+            return Response(200, jpeg, "image/jpeg", mapOf("X-Frame" to seq.toString()))
+        }
+        if (r.method == "POST" && seg.joinToString("/") in setOf("photo", "record", "stop", "torch", "live/start", "live/stop", "microphone/start", "microphone/stop", "announce")) {
             return service?.request(seg.joinToString("/"), r.json())
                 ?: Response.error(409, "Enable IPCam camera and microphone access in the phone app first")
         }
@@ -504,7 +507,7 @@ class Dashboard(private val ctx: Context) {
         private const val MAX_SESSIONS = 20
 
         private val SECURITY_HEADERS = mapOf(
-            "Content-Security-Policy" to "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'",
+            "Content-Security-Policy" to "default-src 'self'; img-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'",
             "X-Frame-Options" to "DENY",
             "Referrer-Policy" to "no-referrer",
         )
