@@ -69,7 +69,7 @@ from the browser there. The server comes back on the new version by itself.
 | **Immich** | Google Photos-style backup (face/object recognition off: too heavy for phones) | 2283 |
 | **qBittorrent** | Downloads in order into the media library (shown in Jellyfin as *Downloads*) and keeps seeding; `torrent <magnet>` over SSH | 8081 |
 | **Home Assistant** | Home automation (network and cloud integrations) | 8123 |
-| **IPCam** | Remote photos, video, flash, microphone listening/recording and spoken announcements | 8800 |
+| **IPCam** | Live view of any camera, remote photos and video (previewed in the browser), flash, microphone listening/recording and spoken announcements | 8800 |
 | **Dashboard** | Manage everything from a browser: live load, files, a terminal, SSH access, deployments from Git | 8800 |
 
 - **Everything is a module.** Add, remove, turn on or off at any time, from the phone or the
