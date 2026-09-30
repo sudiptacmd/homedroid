@@ -16,7 +16,7 @@
 
 **Turn an old Android phone into a home server.** No root, no Termux, one app.
 
-Homedroid runs SSH, a web server, a Cloudflare tunnel and self-hosted apps (Jellyfin, Immich,
+Homedroid runs SSH, a web server, a Cloudflare tunnel, Tailscale and self-hosted apps (Jellyfin, Immich,
 qBittorrent, Home Assistant) on any Android 10+ phone, and manages them from the phone or
 from a web dashboard, where you can also deploy web apps straight from GitHub.
 
@@ -36,7 +36,7 @@ A 3-minute tour of every module on an Android 10 emulator. [Watch the full video
 
 ## Download
 
-Homedroid is in **beta (0.8.3)**. Get the APK from the
+Homedroid is in **beta (0.8.4)**. Get the APK from the
 [latest release](https://github.com/sudiptacmd/homedroid/releases):
 
 | Your phone | APK |
@@ -51,6 +51,12 @@ Open it on the phone and allow installing from your browser or file manager, or 
 the download. Every release is signed with the same key, so newer versions install over older
 ones and keep your data.
 
+**Updating:** from 0.8.4 on, open **Settings → App updates** in the dashboard and click
+**Download and install**: the phone fetches the right APK from the latest release and Android
+asks you to confirm on the phone (tap the *Homedroid update ready* notification). On Android 12
+and later, updates after the first one install without a prompt. You can also upload an APK
+from the browser there. The server comes back on the new version by itself.
+
 ## Features
 
 | Module | What you get | Port |
@@ -58,6 +64,7 @@ ones and keep your data.
 | **SSH & SFTP** | Shell and file transfer, public-key login, `ssh -L` port forwarding | 8022 |
 | **Web hosting** | Caddy serving `~/www`, plus sites deployed from GitHub | 8080 |
 | **Cloudflare Tunnel** | Publish services on the internet: no port forwarding, works behind CGNAT | – |
+| **Tailscale** | Private access to every module from your own devices, anywhere; optional HTTPS (Serve/Funnel), exit node, subnet routes. Userspace mode: no root, no VPN slot | – |
 | **Jellyfin** | Media server with **hardware transcoding on the phone's video encoder** | 8096 |
 | **Immich** | Google Photos-style backup (face/object recognition off: too heavy for phones) | 2283 |
 | **qBittorrent** | Downloads in order into the media library (shown in Jellyfin as *Downloads*) and keeps seeding; `torrent <magnet>` over SSH | 8081 |
@@ -102,6 +109,11 @@ To publish a service on the internet, create a tunnel in the Cloudflare Zero Tru
 point a public hostname at `http://localhost:<port>`, and turn on the Cloudflare Tunnel module
 with the tunnel token.
 
+To reach the phone privately from anywhere, turn on the Tailscale module and log in with the
+link it shows (or paste an auth key). Every module is then at `http://homedroid:<port>` from
+your devices on the tailnet, and `ssh -p 8022 homedroid` works too. Both modules have a
+step-by-step **Setup guide** in the dashboard.
+
 ### The dashboard
 
 `http://<phone-ip>:8800`, on a computer or a phone:
@@ -113,7 +125,8 @@ with the tunnel token.
 
 - **Overview:** CPU load, temperature, upload and download speed, battery, memory and storage,
   and every service with its logs and a restart button.
-- **Modules:** install, remove and turn modules on or off. **Clear data** resets an app like a
+- **Modules:** install, remove and turn modules on or off; set up Cloudflare Tunnel and
+  Tailscale with built-in guides. **Clear data** resets an app like a
   fresh install; **Remove** can also delete its data. The media or photo library is only
   deleted if you tick it separately.
 - **Deployments:** web apps from Git (see [below](#deploying-from-github)).

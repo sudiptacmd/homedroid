@@ -8,6 +8,7 @@ are the patch files in `native/patches/`.
 |-----------|---------|---------|--------|
 | Caddy | v2.11.4 | Apache-2.0 | https://github.com/caddyserver/caddy |
 | cloudflared | 2026.9.3 | Apache-2.0 | https://github.com/cloudflare/cloudflared |
+| Tailscale (tailscaled and CLI) | v1.102.5 | BSD-3-Clause | https://github.com/tailscale/tailscale |
 | PRoot (Termux fork) | 5.1.107.95 | GPL-2.0-or-later | https://github.com/termux/proot |
 | talloc | 2.4.3 | LGPL-3.0-or-later | https://talloc.samba.org |
 | FFmpeg | 9.0.2 (LGPL build, no GPL components enabled) | LGPL-2.1-or-later | https://ffmpeg.org |
