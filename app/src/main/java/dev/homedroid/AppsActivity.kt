@@ -54,7 +54,7 @@ class AppsActivity : MobileActivity() {
         apps = Apps(this, Paths(this))
         cfg = Config(this)
 
-        val list = design.page("Make it yours", "Your favorite services, running on this phone.", "Apps")
+        val list = design.page("Apps")
         list.addView(design.row("Modules & connections", "Manage SSH, web hosting, tunnels, camera and AI") { DashboardActivity.open(this, "modules") })
         list.addView(design.label("APP LIBRARY"))
         for (app in apps.catalog) list.addView(card(app))

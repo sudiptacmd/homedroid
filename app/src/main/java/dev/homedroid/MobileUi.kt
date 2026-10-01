@@ -99,7 +99,7 @@ class MobileUi(val activity: Activity) {
             setOnCheckedChangeListener { _, on -> changed(on) }
         }, LinearLayout.LayoutParams(-1, -2))
     }
-    fun page(title: String, subtitle: String, selected: String? = null): LinearLayout {
+    fun page(selected: String? = null): LinearLayout {
         val shell = column().apply { setBackgroundColor(this@MobileUi.background) }
         shell.setOnApplyWindowInsetsListener { view, insets ->
             if (Build.VERSION.SDK_INT >= 30) {
@@ -112,9 +112,7 @@ class MobileUi(val activity: Activity) {
             insets
         }
         val content = column().apply { setPadding(dp(20), dp(20), dp(20), dp(24)) }
-        content.addView(text("H O M E D R O I D", 11f, accent, true))
-        content.addView(text(title, 30f, ink, true).apply { setPadding(0, dp(12), 0, dp(4)) })
-        content.addView(text(subtitle, 14f, muted).apply { setPadding(0, 0, 0, dp(20)) })
+        content.addView(text("H O M E D R O I D", 11f, accent, true).apply { setPadding(0, 0, 0, dp(16)) })
         shell.addView(ScrollView(activity).apply { isFillViewport = true; addView(content) }, LinearLayout.LayoutParams(-1, 0, 1f))
         if (selected != null) {
             val nav = LinearLayout(activity).apply { setBackgroundColor(surface); setPadding(dp(8), dp(6), dp(8), dp(6)) }

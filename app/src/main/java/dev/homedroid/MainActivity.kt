@@ -35,7 +35,7 @@ class MainActivity : MobileActivity() {
         super.onCreate(savedInstanceState)
         cfg = Config(this)
         Paths(this).ensure()
-        val page = design.page("Your home server", "A little phone. A lot of possibilities.", "Overview")
+        val page = design.page("Overview")
         val hero = design.card()
         hero.addView(design.text("SERVER STATUS", 11f, design.accent, true))
         headline = design.text("Ready when you are", 25f, design.ink, true)
@@ -150,9 +150,11 @@ class MainActivity : MobileActivity() {
 
     private fun refresh() {
         val sv = ServerService.supervisor
-        val live = sv?.daemons.orEmpty().count { it.state == Supervisor.State.RUNNING }
+        val running = sv?.daemons.orEmpty().filter { it.state == Supervisor.State.RUNNING }.map { serviceName(it.spec.name) }
         headline.setTextIfChanged(if (sv != null) "Your server is online" else if (ServerService.active) "Starting your server…" else "Ready when you are")
-        summary.setTextIfChanged(if (sv != null) "$live of ${sv.daemons.size} services running" else if (ServerService.active) "Getting your services ready." else "Start your server to bring your apps online.")
+        summary.setTextIfChanged(if (sv != null) {
+            if (running.isEmpty()) "No services running yet." else "Running: ${running.joinToString(" · ")}"
+        } else if (ServerService.active) "Getting your services ready." else "Start your server to bring your apps online.")
         toggle.setTextIfChanged(if (ServerService.active) "Stop server" else "Start server")
         val dev = Device(this)
         battery.setTextIfChanged(if (dev.batteryPercent < 0) "Unknown" else "${dev.batteryPercent}%")
@@ -169,7 +171,7 @@ class MainActivity : MobileActivity() {
             if (names.isEmpty()) services.addView(design.text("Services appear here when the server starts.", 14f, design.muted).apply { setPadding(0, 0, 0, design.dp(16)) })
             sv?.daemons?.forEach { daemon ->
                 val card = design.card()
-                card.addView(design.text(daemon.spec.name.replaceFirstChar { it.uppercase() }, 16f, design.ink, true))
+                card.addView(design.text(serviceName(daemon.spec.name), 16f, design.ink, true))
                 val state = design.text("", 13f, design.muted); serviceRows[daemon.spec.name] = state; card.addView(state)
                 card.addView(design.button("Restart service") { ServerService.supervisor?.daemons?.firstOrNull { it.spec.name == daemon.spec.name }?.restart() })
                 services.addView(card)
@@ -186,5 +188,14 @@ class MainActivity : MobileActivity() {
                 setTextColor(if (d.state == Supervisor.State.BACKOFF) design.warning else design.muted)
             }
         }
+    }
+
+    private fun serviceName(name: String): String = when (name) {
+        "sshd" -> "SSH & SFTP"
+        "caddy" -> "Web hosting"
+        "cloudflared" -> "Cloudflare Tunnel"
+        "tailscaled" -> "Tailscale"
+        "ai-llama" -> "AI (llama.cpp)"
+        else -> name.replaceFirstChar { it.uppercase() }
     }
 }

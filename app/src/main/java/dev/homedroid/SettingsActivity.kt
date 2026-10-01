@@ -20,7 +20,7 @@ class SettingsActivity : MobileActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         cfg = Config(this)
-        val page = design.page("Settings", "Make this phone work your way.", "Settings")
+        val page = design.page("Settings")
         page.addView(design.label("PREFERENCES"))
         page.addView(design.row("Appearance", "${cfg.appearance.replaceFirstChar { it.uppercase() }} · light, dark or follow your phone") {
             val values = arrayOf("system", "light", "dark")
