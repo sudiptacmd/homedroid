@@ -111,9 +111,16 @@ class Ai(context: Context) {
     private fun localUp(): Boolean = localAlias != null && try {
         (URL("http://127.0.0.1:${AiCore.LOCAL_PORT}/health").openConnection() as HttpURLConnection).run {
             connectTimeout = 500; readTimeout = 1000
-            try { responseCode == 200 } finally { disconnect() }
+            try { (responseCode == 200).also { healthError = if (it) null else "health check answered $responseCode" } } finally { disconnect() }
         }
-    } catch (_: IOException) { false }
+    } catch (e: IOException) {
+        // Expected while the model loads; shown in the dashboard if it stays that way.
+        healthError = e.message ?: e.javaClass.simpleName
+        false
+    }
+
+    /** Why the last health check of the local model failed, for the dashboard. */
+    @Volatile private var healthError: String? = null
 
     private fun hot() = ctx.getSystemService(PowerManager::class.java).currentThermalStatus >= PowerManager.THERMAL_STATUS_SEVERE
 
@@ -242,6 +249,7 @@ class Ai(context: Context) {
                 localUp() -> "ready"
                 else -> "loading"
             })
+            .put("localError", healthError ?: JSONObject.NULL)
             .put("contextSize", cfg.contextSize)
             .put("threads", cfg.threads)
             .put("effectiveThreads", cfg.effectiveThreads)
