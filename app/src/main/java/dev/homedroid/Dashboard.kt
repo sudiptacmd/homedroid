@@ -25,10 +25,12 @@ class Dashboard(private val ctx: Context) {
     private val http = Http(cfg.dashboardPort, threads = 32, handler = ::handle)
     private val cluster = Cluster(ctx) { r, peer -> route(r, peer) }
     private val ai = Ai(ctx)
+    private val routines = Routines(ctx, ai)
 
     fun start() {
         http.start()
         ai.start()
+        routines.start()
         try {
             cluster.start()
         } catch (e: java.io.IOException) {
@@ -37,6 +39,7 @@ class Dashboard(private val ctx: Context) {
     }
 
     fun stop() {
+        routines.stop()
         ai.stop()
         cluster.stop()
         http.stop()
@@ -155,6 +158,7 @@ class Dashboard(private val ctx: Context) {
                 Response.json(JSONObject().put("ok", true), headers = mapOf("Set-Cookie" to "$COOKIE=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict"))
             }
             seg.firstOrNull() == "camera" -> cameraRoute(r, seg.drop(1))
+            seg.firstOrNull() == "ai" && seg.getOrNull(1) in setOf("routines", "briefs", "speak") -> routines.handle(r, seg.drop(1))
             seg.firstOrNull() == "ai" -> ai.handle(r, seg.drop(1))
             r.method == "GET" && seg == listOf("status") -> Response.json(status())
             // Everything the overview shows, in one request instead of four.

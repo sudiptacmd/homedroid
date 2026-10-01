@@ -487,6 +487,34 @@ dialog[open] { animation: pop .14s var(--ease); }
         </form>
       </div>
 
+      <div class="row" style="margin-top:28px"><h2 class="grow" style="margin:0">Routines</h2>
+        <button class="btn primary sm" data-act="rtNew">New routine</button></div>
+      <p class="hint" style="margin:6px 0 10px">Scheduled tasks: read news, the weather, your phones and unread email, then brief you by voice, in Briefs below, or as a push to your phone. Routines only read; they can't send email or act for you.</p>
+      <div class="grid" id="rtList"></div>
+      <div class="row" style="margin-top:20px"><h2 class="grow" style="margin:0">Briefs</h2><button class="btn ghost sm" data-act="rtClearBriefs">Clear</button></div>
+      <div class="card" id="rtBriefs" style="margin-top:10px"></div>
+      <details class="card pad" style="margin-top:12px" id="rtSettingsBox"><summary style="cursor:pointer;font-weight:600">Email and push settings for routines</summary>
+        <form id="rtSettings" class="ipcam-stack" style="margin-top:12px">
+          <div class="hint">Email is read over IMAP with an <b>app password</b> (Gmail, Outlook, iCloud and Fastmail all offer one in their security settings). Nothing is marked as read, and email only goes to cloud models in routines where you allow it.</div>
+          <div class="ai-row">
+            <label class="field">IMAP server<input name="host" placeholder="imap.gmail.com" autocomplete="off" spellcheck="false"></label>
+            <label class="field">Port<input name="port" type="number" min="1" max="65535" value="993"></label>
+            <label class="field">Email address<input name="user" autocomplete="off" spellcheck="false"></label>
+            <label class="field">App password<input name="password" type="password" autocomplete="new-password"></label>
+            <label class="field">Look back (hours)<input name="hours" type="number" min="1" max="168" value="12"></label>
+          </div>
+          <div class="hint">Push to your own phone, also away from home: <b>ntfy</b> (install the ntfy app and subscribe to a hard-to-guess topic) or a <b>Telegram</b> bot (create one with @BotFather, then message it once; the chat id is your user id, from @userinfobot).</div>
+          <div class="ai-row">
+            <label class="field">ntfy server<input name="ntfyServer" value="https://ntfy.sh" spellcheck="false"></label>
+            <label class="field">ntfy topic<input name="ntfyTopic" placeholder="homedroid-7f3k2q" spellcheck="false"></label>
+            <label class="field">ntfy token (optional)<input name="ntfyToken" type="password" autocomplete="off"></label>
+            <label class="field">Telegram bot token<input name="tgToken" type="password" autocomplete="off" placeholder="123456:ABC…"></label>
+            <label class="field">Telegram chat id<input name="tgChat" placeholder="123456789" spellcheck="false"></label>
+          </div>
+          <div class="row"><button class="btn" type="submit">Save</button><span class="hint" id="rtSettingsMsg"></span></div>
+        </form>
+      </details>
+
       <h2>On this phone</h2>
       <div class="card pad ipcam-stack">
         <div id="aiLocalStatus"></div>
@@ -1925,7 +1953,8 @@ function aiWhere() {
 const fits = (ramMb, total) => ramMb < total * 0.55 ? ['running', 'Fits this phone'] : ramMb < total * 0.75 ? ['starting', 'Tight on memory'] : ['backoff', 'Too big for this phone'];
 async function renderAi() {
   aiLoad();
-  const s = aiState.s = await api('ai');
+  const [s, routineData, briefs] = await Promise.all([api('ai'), api('ai/routines'), api('ai/briefs')]);
+  aiState.s = s; renderRoutines(s, routineData, briefs);
   setHTML($('#aiOff'), s.enabled ? '' : `<div class="notice info wrap" style="margin-bottom:16px">${icon('sparkle')}<span>AI is off on this phone. Turn it on to chat and to open the API for your other apps.</span><button class="btn primary sm" data-act="aiEnable">Turn on AI</button></div>`);
   // Model picker: rebuilt only when the list changes, so a pick isn't lost while polling.
   const groups = {};
@@ -2015,6 +2044,147 @@ $('#aiAddForm').onsubmit = async e => {
 };
 $('#aiFallback').onchange = e => run(api('ai/settings', {method: 'POST', body: {fallback: e.target.value}}), 'Saved');
 
+// Routines: what runs when, the briefs they wrote, and where those go.
+const rt = {list: [], settings: null, briefs: [], open: new Set()};
+const SOURCE = {rss: 'News feed', web: 'Web page', weather: 'Weather', phone: 'This phone', email: 'Unread email'};
+const when = sc => sc.type === 'interval' ? `Every ${sc.hours} hour${sc.hours > 1 ? 's' : ''}` : `${sc.type === 'weekdays' ? 'Weekdays' : 'Every day'} at ${sc.time}`;
+const fmtTime = t => new Date(t).toLocaleString([], {weekday: 'short', hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric'});
+function renderRoutines(s, data, briefs) {
+  rt.list = data.routines; rt.settings = data.settings; rt.briefs = briefs;
+  const phones = phoneName();
+  setHTML($('#rtList'), rt.list.map(r => {
+    const delivered = [r.speak ? `speaks on ${esc(phones[r.speak] || 'a phone')}` : '', r.ntfy ? 'ntfy' : '', r.telegram ? 'Telegram' : '', 'Briefs'].filter(Boolean).join(' · ');
+    const model = s.models.find(m => m.id === r.model);
+    return `<div class="card mod">
+      <div class="mod-head"><div class="avatar" style="background:#9333ea">${icon('history')}</div>
+        <div class="grow"><div class="title ellipsis">${esc(r.name)}</div>${r.running ? badge('starting') : r.lastError ? `<span class="badge failed">last run failed</span>` : r.lastRun ? '<span class="badge running">ok</span>' : '<span class="badge plain">not run yet</span>'}</div>
+        <button class="switch" role="switch" aria-checked="${r.enabled}" aria-label="${esc(r.name)} on" data-act="rtToggle" data-id="${esc(r.id)}"></button></div>
+      <div class="chips"><span class="chip">${icon('history')}${esc(when(r.schedule))}</span>
+        <span class="chip">${icon('sparkle')}${model ? (model.local ? 'On this phone' : esc(model.label)) : 'model missing'}</span>
+        ${r.sources.map(x => `<span class="chip">${esc(SOURCE[x.type] || x.type)}</span>`).join('')}</div>
+      <div class="hint">${r.enabled ? `Next: ${fmtTime(r.nextRun)}` : 'Paused'} · ${delivered}</div>
+      ${r.lastError ? `<div class="notice">${icon('alert')}<span>${esc(r.lastError)}</span></div>` : ''}
+      <div class="mod-foot"><button class="btn sm" data-act="rtRun" data-id="${esc(r.id)}" ${r.running || !s.enabled ? 'disabled' : ''}>Run now</button>
+        <button class="btn ghost sm" data-act="rtEdit" data-id="${esc(r.id)}">${icon('edit')}Edit</button><div class="grow"></div>
+        <button class="btn ghost sm icon danger" data-act="rtDelete" data-id="${esc(r.id)}" title="Delete" aria-label="Delete">${icon('trash')}</button></div></div>`;
+  }).join('') || `<div class="card empty" style="grid-column:1/-1">${icon('history')}<div>No routines yet. Start from a template: a morning brief, an inbox skim or a news digest.</div>
+    <div style="margin-top:12px"><button class="btn primary" data-act="rtNew">${icon('plus')}New routine</button></div></div>`);
+  setHTML($('#rtBriefs'), briefs.map(b => {
+    const open = rt.open.has(b.id), failed = !!b.error;
+    const sent = Object.entries(b.delivery || {}).map(([k, v]) => `${k}: ${v}`).join(' · ');
+    return `<div class="item" style="align-items:flex-start;flex-direction:column;gap:6px;padding:10px 16px">
+      <div class="row" style="width:100%"><span class="dot ${failed ? 'backoff' : 'running'}"></span>
+        <div class="grow"><b>${esc(b.name)}</b> <span class="hint">· ${fmtTime(b.time)} · ${b.seconds}s${b.where ? ` · ${b.where === 'local' ? 'on this phone' : 'cloud'}` : ''}</span></div>
+        ${failed ? '' : `<button class="btn ghost sm" data-act="rtSpeak" data-id="${esc(b.id)}">${icon('speaker')}Read aloud</button>`}
+        <button class="btn ghost sm" data-act="rtOpen" data-id="${esc(b.id)}">${open ? 'Less' : 'More'}</button>
+        <button class="btn ghost sm icon" data-act="rtDeleteBrief" data-id="${esc(b.id)}" title="Delete" aria-label="Delete">${icon('x')}</button></div>
+      <div class="ai-msg assistant" style="max-width:100%;${open ? '' : 'max-height:4.8em;overflow:hidden'}">${failed ? `<span style="color:var(--bad)">${esc(b.error)}</span>` : md(b.text)}
+        ${b.note || sent ? `<div class="meta">${esc([b.note, sent].filter(Boolean).join(' · '))}</div>` : ''}</div></div>`;
+  }).join('') || `<div class="empty">${icon('book')}<div>Briefs from your routines appear here.</div></div>`);
+  const f = $('#rtSettings').elements;
+  if (!$('#rtSettings').dataset.loaded) {
+    const st = rt.settings;
+    f.host.value = st.email.host; f.port.value = st.email.port; f.user.value = st.email.user; f.hours.value = st.email.hours;
+    f.password.placeholder = st.email.hasPassword ? 'Saved; leave empty to keep it' : '';
+    f.ntfyServer.value = st.ntfy.server; f.ntfyTopic.value = st.ntfy.topic; f.ntfyToken.placeholder = st.ntfy.hasToken ? 'Saved' : '';
+    f.tgChat.value = st.telegram.chat; f.tgToken.placeholder = st.telegram.hasToken ? 'Saved; leave empty to keep it' : '123456:ABC…';
+    $('#rtSettings').dataset.loaded = '1';
+  }
+}
+/** Phone ids to names, for "speak on": "self" is the phone being managed. */
+function phoneName() {
+  const names = {self: node ? cluster?.members.find(m => m.id === node)?.name || 'this phone' : 'this phone'};
+  for (const m of cluster?.members || []) if (m.id !== node) names[m.id] = m.name;
+  if (node && cluster) names[cluster.self.id] = cluster.self.name;
+  return names;
+}
+$('#rtSettings').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target.elements, b = e.submitter; b.disabled = true; $('#rtSettingsMsg').textContent = f.host.value ? 'Saving and checking the mailbox…' : 'Saving…';
+  try {
+    await api('ai/routines/settings', {method: 'POST', body: {
+      email: {host: f.host.value.trim(), port: +f.port.value, user: f.user.value.trim(), password: f.password.value, hours: +f.hours.value},
+      ntfy: {server: f.ntfyServer.value.trim(), topic: f.ntfyTopic.value.trim(), token: f.ntfyToken.value},
+      telegram: {token: f.tgToken.value.trim(), chat: f.tgChat.value.trim()}}});
+    f.password.value = ''; f.ntfyToken.value = ''; f.tgToken.value = ''; delete e.target.dataset.loaded;
+    $('#rtSettingsMsg').textContent = 'Saved';
+  } catch (err) { $('#rtSettingsMsg').textContent = err.message; }
+  finally { b.disabled = false; refresh(); }
+};
+
+const TEMPLATES = {
+  morning: {name: 'Morning brief', schedule: {type: 'weekdays', time: '07:00'}, speak: 'self',
+    sources: [{type: 'weather'}, {type: 'rss', url: 'https://feeds.bbci.co.uk/news/world/rss.xml'}, {type: 'rss', url: 'https://www.theverge.com/rss/index.xml'}, {type: 'email'}, {type: 'phone'}],
+    instruction: 'Give me my morning brief: the weather and what to wear, the five most important news stories in one line each, emails that need a reply today, and anything wrong with my phone server. Keep it under 200 words so it can be read aloud.'},
+  inbox: {name: 'Inbox skim', schedule: {type: 'interval', hours: 3}, sources: [{type: 'email'}],
+    instruction: 'List the unread emails that need my attention, most important first, one line each: who, and what they want. Skip newsletters and promotions. If nothing needs attention, say so in one line.'},
+  news: {name: 'News digest', schedule: {type: 'daily', time: '18:00'}, sources: [{type: 'rss', url: 'https://feeds.bbci.co.uk/news/world/rss.xml'}],
+    instruction: "Summarize today's top stories in six bullet points, one line each."},
+  phone: {name: 'Phone check', schedule: {type: 'daily', time: '09:00'}, sources: [{type: 'phone'}],
+    instruction: 'Tell me in two sentences whether anything on my phone server needs attention.'},
+};
+function newRoutine(b) {
+  openMenu(b, [
+    {icon: 'sun', label: 'Morning brief', run: () => editRoutine(TEMPLATES.morning)},
+    {icon: 'history', label: 'Inbox skim', run: () => editRoutine(TEMPLATES.inbox)},
+    {icon: 'book', label: 'News digest', run: () => editRoutine(TEMPLATES.news)},
+    {icon: 'pulse', label: 'Phone check', run: () => editRoutine(TEMPLATES.phone)},
+    {icon: 'plus', label: 'Blank routine', run: () => editRoutine({name: '', schedule: {type: 'daily', time: '08:00'}, sources: [], instruction: ''})},
+  ]);
+}
+function sourceRow(x) {
+  const field = x.type === 'rss' || x.type === 'web' ? `<input data-k="url" value="${esc(x.url || '')}" placeholder="https://…" spellcheck="false" style="flex:1">`
+    : x.type === 'weather' ? `<input data-k="place" value="${esc(x.place || '')}" placeholder="Town or city" style="flex:1"><button type="button" class="btn sm" data-act="rtPlace">Look up</button>`
+    : `<span class="hint" style="flex:1">${x.type === 'email' ? 'Unread mail from the account in the settings below' : "Battery, storage and services of the phone running the routine"}</span>`;
+  return `<div class="row" data-src="${x.type}" data-lat="${x.lat ?? ''}" data-lon="${x.lon ?? ''}"><span class="chip" style="width:96px;justify-content:center">${SOURCE[x.type]}</span>${field}
+    <button type="button" class="btn ghost sm icon" data-act="rtDropSource" aria-label="Remove">${icon('x')}</button></div>`;
+}
+function editRoutine(r) {
+  const s = aiState.s, dlg = $('#modal'), form = $('#modalForm'), phones = phoneName();
+  const models = s.models.map(m => `<option value="${esc(m.id)}">${esc(m.local ? 'On this phone' : m.label)} · ${esc(m.name)}</option>`).join('');
+  form.innerHTML = `<div class="dlg-head"><h3>${r.id ? 'Edit' : 'New'} routine</h3></div><div class="dlg-body">
+    <label class="field">Name<input name="name" required maxlength="40" value="${esc(r.name)}"></label>
+    <div class="ai-row"><label class="field">When<select name="type"><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="interval">Every few hours</option></select></label>
+      <label class="field" data-at>At<input name="time" type="time" value="${esc(r.schedule.time || '07:00')}"></label>
+      <label class="field" data-every>Every (hours)<input name="hours" type="number" min="1" max="24" value="${r.schedule.hours || 3}"></label>
+      <label class="field">Model<select name="model">${models || '<option value="">No models yet</option>'}</select></label></div>
+    <div class="field" style="gap:6px"><span>Read</span><div id="rtSources" class="ipcam-stack" style="gap:6px">${r.sources.map(sourceRow).join('')}</div>
+      <div class="row" style="flex-wrap:wrap">${Object.entries(SOURCE).map(([k, v]) => `<button type="button" class="btn ghost sm" data-act="rtAddSource" data-type="${k}">${icon('plus')}${v}</button>`).join('')}</div></div>
+    <label class="field">Then<textarea name="instruction" rows="3" maxlength="2000" placeholder="What should the brief say?">${esc(r.instruction)}</textarea></label>
+    <label class="check" data-cloudemail><input type="checkbox" name="cloudEmail" ${r.cloudEmail ? 'checked' : ''}><span>Allow cloud models to read my email in this routine<br><span class="hint">Otherwise it runs only with a model on this phone, or fails.</span></span></label>
+    <div class="ai-row"><label class="field">Read it aloud on<select name="speak"><option value="">Don't read aloud</option>${Object.entries(phones).filter(([, n]) => n).map(([id, n]) => `<option value="${esc(id)}">${esc(n[0].toUpperCase() + n.slice(1))}</option>`).join('')}</select></label></div>
+    <label class="check"><input type="checkbox" name="ntfy" ${r.ntfy ? 'checked' : ''}><span>Push with ntfy${rt.settings.ntfy.topic ? '' : ' <span class="hint">(set it up below first)</span>'}</span></label>
+    <label class="check"><input type="checkbox" name="telegram" ${r.telegram ? 'checked' : ''}><span>Send to Telegram${rt.settings.telegram.hasToken ? '' : ' <span class="hint">(set it up below first)</span>'}</span></label>
+  </div><div class="dlg-foot"><button class="btn primary" value="ok">Save</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>`;
+  const f = form.elements;
+  f.type.value = r.schedule.type; f.speak.value = r.speak || '';
+  if (r.model && s.models.some(m => m.id === r.model)) f.model.value = r.model;
+  else { const local = s.models.find(m => m.local); if (local) f.model.value = local.id; }
+  const sync = () => {
+    $('[data-at]', form).classList.toggle('hidden', f.type.value === 'interval');
+    $('[data-every]', form).classList.toggle('hidden', f.type.value !== 'interval');
+    $('[data-cloudemail]', form).classList.toggle('hidden', !$('#rtSources [data-src="email"]'));
+  };
+  f.type.onchange = sync; form._sync = sync; sync();
+  dlg.classList.add('wide');
+  dlg.onclose = async () => {
+    dlg.classList.remove('wide');
+    if (dlg.returnValue !== 'ok') return;
+    const sources = $$('#rtSources [data-src]').map(row => {
+      const x = {type: row.dataset.src};
+      $$('input[data-k]', row).forEach(i => x[i.dataset.k] = i.value.trim());
+      if (row.dataset.lat) { x.lat = +row.dataset.lat; x.lon = +row.dataset.lon; }
+      return x;
+    });
+    const body = {id: r.id, name: f.name.value, enabled: r.enabled ?? true, model: f.model.value,
+      schedule: {type: f.type.value, time: f.time.value, hours: +f.hours.value}, sources, instruction: f.instruction.value,
+      cloudEmail: f.cloudEmail.checked, speak: f.speak.value, ntfy: f.ntfy.checked, telegram: f.telegram.checked};
+    // On an error, reopen the form with what was entered.
+    if (!await run(api('ai/routines', {method: 'POST', body}), 'Routine saved')) editRoutine({...r, ...body});
+  };
+  dlg.returnValue = ''; dlg.showModal(); f.name.focus();
+}
+
 // ---- Actions: one delegated listener for every button ------------------------------------
 const ACT = {
   theme() { theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]; store('theme', theme === 'auto' ? null : theme); applyTheme(); },
@@ -2090,6 +2260,27 @@ const ACT = {
     b.dataset.answer === 'approve' ? 'Phone added to the cluster' : 'Request rejected'),
   manageNode(b) { setNode(b.dataset.id); location.hash = '#overview'; },
   placeApp: b => placeApp(b.dataset.kind, b.dataset.id),
+  rtNew: b => newRoutine(b),
+  rtEdit: b => editRoutine(rt.list.find(r => r.id === b.dataset.id)),
+  rtRun: b => run(api(`ai/routines/${encodeURIComponent(b.dataset.id)}/run`, {method: 'POST'}), 'Running; the brief appears below when it is done'),
+  rtToggle(b) { const r = rt.list.find(x => x.id === b.dataset.id); run(api('ai/routines', {method: 'POST', body: {...r, enabled: !r.enabled}}), r.enabled ? 'Paused' : 'Resumed'); },
+  async rtDelete(b) {
+    const r = rt.list.find(x => x.id === b.dataset.id);
+    if (await ask({title: `Delete ${r.name}?`, text: 'Its briefs stay in Briefs.', confirm: 'Delete', danger: true})) run(api(`ai/routines/${encodeURIComponent(r.id)}`, {method: 'DELETE'}), 'Deleted');
+  },
+  rtOpen(b) { rt.open.has(b.dataset.id) ? rt.open.delete(b.dataset.id) : rt.open.add(b.dataset.id); $('#rtBriefs')._html = null; refresh(); },
+  rtSpeak(b) { const x = rt.briefs.find(y => y.id === b.dataset.id); run(api('ai/speak', {method: 'POST', body: {text: x.text}}), 'Reading it aloud on the phone'); },
+  rtDeleteBrief: b => run(api(`ai/briefs/${encodeURIComponent(b.dataset.id)}`, {method: 'DELETE'})),
+  async rtClearBriefs() { if (await ask({title: 'Delete all briefs?', confirm: 'Delete', danger: true})) run(api('ai/briefs', {method: 'DELETE'}), 'Cleared'); },
+  rtAddSource(b) { $('#rtSources').insertAdjacentHTML('beforeend', sourceRow({type: b.dataset.type})); $('#modalForm')._sync(); },
+  rtDropSource(b) { b.closest('[data-src]').remove(); $('#modalForm')._sync(); },
+  async rtPlace(b) {
+    const row = b.closest('[data-src]'), input = $('input', row);
+    try {
+      const p = await api('ai/routines/place', {method: 'POST', body: {name: input.value}});
+      input.value = p.place; row.dataset.lat = p.lat; row.dataset.lon = p.lon; toast('Found ' + p.place);
+    } catch (e) { toast(e.message, true); }
+  },
   aiNew() { aiState.ctrl?.abort(); aiState.msgs = []; aiSave(); drawChat(); $('#aiText').focus(); },
   aiEnable: () => run(api('modules/ai/enable', {method: 'POST'}), 'Turning on AI'),
   aiRuntime: () => run(api('ai/runtime/install', {method: 'POST'}), 'Installing llama.cpp: follow it in Modules'),
