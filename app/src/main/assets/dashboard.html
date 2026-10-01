@@ -578,6 +578,7 @@ dialog[open] { animation: pop .14s var(--ease); }
         <input type="file" id="fPickDir" webkitdirectory multiple class="hidden">
       </div>
       <div class="card tray hidden" id="fTray"></div>
+      <div class="card tray hidden" id="fXfer"></div>
       <div class="card drop" id="fBox">
         <div class="crumbs" id="fCrumbs"></div>
         <table class="ftable">
@@ -1261,11 +1262,19 @@ const kind = name => Object.keys(KINDS).find(k => KINDS[k].test(name)) || 'file'
 const dateFmt = new Intl.DateTimeFormat(undefined, {dateStyle: 'medium', timeStyle: 'short'});
 function goFiles(root, path) { location.hash = ['files', root, ...(path ? path.split('/') : [])].map(encodeURIComponent).join('/'); }
 
+/** Online phones other than this one's view: this phone first. */
+const clusterPhones = () => [{id: null, name: cluster?.self.name || 'This phone'}, ...(cluster?.members || []).filter(m => m.online)];
 async function renderFiles() {
-  const roots = await api('files');
+  // In a cluster, every phone's locations are offered, grouped by phone.
+  const others = (cluster?.members.length ? clusterPhones() : []).filter(p => p.id !== node);
+  const [roots, ...more] = await Promise.all([api('files'), ...others.map(p => api('files', {at: p.id}).catch(() => []))]);
   if (!roots.some(r => r.id === files.root)) { files.root = roots[0]?.id; files.path = ''; }
-  setHTML($('#fRoot'), roots.map(r => `<option value="${esc(r.id)}">${esc(r.label)}</option>`).join(''));
-  $('#fRoot').value = files.root || '';
+  const opts = (id, list) => list.map(r => `<option value="${esc(id || '')}|${esc(r.id)}">${esc(r.label)}</option>`).join('');
+  const current = cluster?.members.find(m => m.id === node)?.name || cluster?.self.name;
+  setHTML($('#fRoot'), others.length
+    ? `<optgroup label="${esc(current)}">${opts(node, roots)}</optgroup>` + others.map((p, i) => more[i].length ? `<optgroup label="${esc(p.name)}">${opts(p.id, more[i])}</optgroup>` : '').join('')
+    : opts(node, roots));
+  $('#fRoot').value = `${node || ''}|${files.root || ''}`;
   if (!files.root) {
     setHTML($('#fCrumbs'), '');
     return setHTML($('#fRows'), `<tr><td colspan="4"><div class="empty">No locations yet. Install an app, or allow file access in the phone app.</div></td></tr>`);
@@ -1376,7 +1385,69 @@ function drawTray() {
     }).join('');
 }
 addEventListener('beforeunload', e => { if (files.active) e.preventDefault(); });
-$('#fRoot').onchange = e => goFiles(e.target.value, '');
+$('#fRoot').onchange = e => {
+  // "<phone>|<location>": a location on another phone switches to managing that phone.
+  const [phone, root] = e.target.value.split('|');
+  if ((phone || null) !== node) setNode(phone || null);
+  goFiles(root, '');
+};
+
+// Copies between phones run on the receiving phone; follow them here until they finish.
+const xfer = {watch: [], timer: 0};
+async function transferDialog(p, dir, move) {
+  const name = p.split('/').pop(), dlg = $('#modal'), form = $('#modalForm');
+  const targets = clusterPhones().filter(x => x.id !== node);
+  form.innerHTML = `<div class="dlg-head"><h3>${move ? 'Move' : 'Copy'} ${esc(name)} to another phone</h3></div>
+    <div class="dlg-body">
+      <label class="field">Phone<select name="phone">${targets.map(x => `<option value="${esc(x.id || '')}">${esc(x.name)}</option>`).join('')}</select></label>
+      <label class="field">Location<select name="root"><option>Loading…</option></select></label>
+      <label class="field">Folder<input name="folder" value="${esc(files.path)}" placeholder="Top of the location" spellcheck="false" autocomplete="off"></label>
+      <div class="hint">${dir ? 'The folder and everything in it go' : 'The file goes'} straight from phone to phone. ${move ? 'It is deleted here once the copy is complete.' : ''}</div>
+    </div>
+    <div class="dlg-foot"><button class="btn primary" value="ok">${move ? 'Move' : 'Copy'}</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>`;
+  const f = form.elements;
+  const loadRoots = async () => {
+    try {
+      const roots = await api('files', {at: f.phone.value || null});
+      setHTML(f.root, roots.map(r => `<option value="${esc(r.id)}">${esc(r.label)} · ${bytes(r.free)} free</option>`).join('') || '<option value="">No locations</option>');
+      if (roots.some(r => r.id === files.root)) f.root.value = files.root;
+    } catch (e) { setHTML(f.root, `<option value="">${esc(e.message)}</option>`); }
+  };
+  f.phone.onchange = loadRoots;
+  loadRoots();
+  dlg.onclose = async () => {
+    if (dlg.returnValue !== 'ok' || !f.root.value) return;
+    const at = f.phone.value || null, dest = join(f.folder.value.trim().replace(/^\/+|\/+$/g, ''), name);
+    try {
+      const t = await api(`files/${encodeURIComponent(f.root.value)}/fetch?path=${encodeURIComponent(dest)}`, {method: 'POST', at,
+        body: {from: node || cluster.self.id, root: files.root, path: p, move}});
+      xfer.watch.push({at, id: t.id, to: targets.find(x => (x.id || '') === f.phone.value)?.name, from: node, root: files.root});
+      pollTransfers();
+    } catch (e) { toast(e.message, true); }
+  };
+  dlg.returnValue = ''; dlg.showModal();
+}
+async function pollTransfers() {
+  clearTimeout(xfer.timer);
+  const phones = [...new Set(xfer.watch.map(w => w.at))];
+  const lists = await Promise.all(phones.map(at => api('files/transfers', {at}).catch(() => [])));
+  const items = xfer.watch.map(w => ({w, t: lists[phones.indexOf(w.at)].find(t => t.id === w.id)})).filter(x => x.t);
+  const tray = $('#fXfer');
+  tray.classList.toggle('hidden', !items.length);
+  const running = items.filter(x => x.t.state === 'running');
+  setHTML(tray, !items.length ? '' : `<div class="job-head">${running.length ? '<span class="spinner"></span>' : `<span style="color:var(--ok)">${icon('check')}</span>`}
+      <div class="grow" style="font-weight:600">${running.length ? `Sending ${running.length} item${running.length > 1 ? 's' : ''} to other phones` : 'Transfers finished'}</div>
+      ${running.length ? '' : '<button class="btn ghost sm" data-act="clearXfer">Dismiss</button>'}</div>`
+    + items.slice(-6).map(({w, t}) => {
+      const pct = t.state === 'done' ? 100 : t.total ? Math.floor(100 * t.done / t.total) : 0;
+      return `<div class="up"><span class="ellipsis">${esc(t.name)} → ${esc(w.to)}</span><span class="muted">${t.state === 'running' ? `${pct}% · ${bytes(t.done)}` : esc(t.error ? 'failed: ' + t.error : t.state)}</span>
+        <div class="meter ${t.state === 'failed' ? 'bad' : 'ok'}"><i style="width:${pct}%"></i></div></div>`;
+    }).join(''));
+  // A finished move empties a folder here: show it.
+  if (items.some(x => x.t.state === 'done' && x.t.move && !x.w.seen && x.w.from === node && tab === 'files')) refresh();
+  items.forEach(x => { if (x.t.state !== 'running') x.w.seen = true; });
+  if (running.length) xfer.timer = setTimeout(pollTransfers, 1500);
+}
 $('#fPick').onchange = e => { queueUploads([...e.target.files].map(file => ({file}))); e.target.value = ''; };
 $('#fPickDir').onchange = e => { queueUploads([...e.target.files].map(file => ({file, rel: file.webkitRelativePath}))); e.target.value = ''; };
 $('.ftable thead').onclick = e => {
@@ -1746,6 +1817,10 @@ const ACT = {
     if (!dir && OPENABLE.test(name)) items.push({icon: 'external', label: 'Open in the browser', run: () => open(fUrl(p, true) + '&inline=1', '_blank', 'noopener')});
     items.push({icon: 'download', label: dir ? 'Download as zip' : 'Download', run: () => { location.href = fUrl(p, true); }});
     items.push({icon: 'edit', label: 'Rename or move…', run: () => rename(p)});
+    if (cluster && clusterPhones().some(x => x.id !== node)) {
+      items.push({icon: 'cluster', label: 'Copy to another phone…', run: () => transferDialog(p, dir, false)});
+      items.push({icon: 'cluster', label: 'Move to another phone…', run: () => transferDialog(p, dir, true)});
+    }
     items.push({icon: 'trash', label: 'Delete…', danger: true, run: () => removeFile(p, dir)});
     openMenu(b, items);
   },
@@ -1753,6 +1828,7 @@ const ACT = {
   pickDir: () => $('#fPickDir').click(),
   cancelUploads() { files.uploads.forEach(u => { if (u.state === 'waiting') u.state = 'cancelled'; }); files.active?.xhr?.abort(); drawTray(); },
   clearUploads() { files.uploads = []; drawTray(); },
+  clearXfer() { xfer.watch = []; pollTransfers(); },
   termStart, termStop,
   termKind(b) { setSeg(b); term.kind = b.dataset.kind; if (term.ws) { termStop(); termStart(); } },
   histKind(b) { setSeg(b); term.histKind = b.dataset.kind; $('#histList')._html = null; refresh(); },

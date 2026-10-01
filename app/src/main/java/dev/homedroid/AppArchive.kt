@@ -129,7 +129,8 @@ object AppArchive {
     private fun walk(roots: List<Root>, visit: (String, Path, BasicFileAttributes) -> Unit) {
         for (root in roots) {
             val base = root.dir.toPath()
-            if (!Files.isDirectory(base, LinkOption.NOFOLLOW_LINKS)) continue
+            // A root may also be a single file (copying one file between phones).
+            if (!Files.exists(base, LinkOption.NOFOLLOW_LINKS)) continue
             val skip = root.skip?.canonicalFile?.toPath()
             Files.walkFileTree(base, object : SimpleFileVisitor<Path>() {
                 override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {

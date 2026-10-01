@@ -20,6 +20,29 @@ import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
+/** Copies from other phones into this one: running and recent, for the dashboard. */
+object Transfers {
+    class Transfer(val id: Int, val name: String, val from: String, val move: Boolean) {
+        @Volatile var total = 0L
+        @Volatile var done = 0L
+        @Volatile var state = "running"
+        @Volatile var error: String? = null
+        val started = System.currentTimeMillis()
+        fun json(): JSONObject = JSONObject().put("id", id).put("name", name).put("from", from).put("move", move)
+            .put("total", total).put("done", done).put("state", state).put("error", error ?: JSONObject.NULL)
+    }
+
+    private val list = ArrayDeque<Transfer>()
+    private var next = 1
+
+    @Synchronized fun start(name: String, from: String, move: Boolean) = Transfer(next++, name, from, move).also {
+        list.addLast(it)
+        while (list.size > 20) list.removeFirst()
+    }
+
+    @Synchronized fun json() = jsonArray(list.map { it.json() })
+}
+
 /** A folder the file browser may show, and nothing outside it. */
 class FileRoot(val id: String, val label: String, val dir: File)
 
@@ -59,7 +82,10 @@ class FileBrowser(private val ctx: Context, private val paths: Paths) {
             JSONObject().put("id", root.id).put("label", root.label)
                 .put("free", root.dir.usableSpace).put("total", root.dir.totalSpace)
         }))
+        if (seg == listOf("transfers") && r.method == "GET") return Response.json(Transfers.json())
         val root = roots().firstOrNull { it.id == seg[0] } ?: return Response.error(404, "no such location")
+        if (seg.getOrNull(1) == "pack" && r.method == "GET") return pack(r, root)
+        if (seg.getOrNull(1) == "fetch" && r.method == "POST") return fetch(r, root)
         val rel = r.query["path"].orEmpty()
         val op = r.method to seg.getOrNull(1)
         val onLink = op == ("POST" to "move") || op == ("DELETE" to null)
@@ -225,6 +251,61 @@ class FileBrowser(private val ctx: Context, private val paths: Paths) {
             return Response.error(500, "could not save ${f.name}")
         }
         return Response.json(JSONObject().put("ok", true), 201)
+    }
+
+    // --- between phones in a cluster -------------------------------------------------------
+
+    /** A file or folder as an [AppArchive] stream, for the phone copying it (?size=1 measures it). */
+    private fun pack(r: Request, root: FileRoot): Response {
+        if (r.peer == null) return Response.error(403, "Only other phones in the cluster can do this")
+        val f = resolve(root, r.query["path"].orEmpty(), follow = false) ?: return Response.error(403, "outside ${root.label}")
+        if (f == root.dir.canonicalFile || !Files.exists(f.toPath(), LinkOption.NOFOLLOW_LINKS)) return Response.error(404, "nothing to copy")
+        val parts = listOf(AppArchive.Root("f", f))
+        if (r.query["size"] == "1") return Response.json(JSONObject().put("bytes", AppArchive.size(parts)).put("dir", f.isDirectory))
+        return Response(200, ByteArray(0), "application/octet-stream", stream = { AppArchive.write(parts, it) })
+    }
+
+    /**
+     * Copies (or with "move", moves) a file or folder from another phone into [root] at ?path=,
+     * in the background; see [Transfers]. The data goes straight between the phones.
+     */
+    private fun fetch(r: Request, root: FileRoot): Response {
+        val body = r.json()
+        val cluster = Cluster.instance ?: return Response.error(409, "The cluster isn't running")
+        val src = cluster.state.peer(body.optString("from")) ?: return Response.error(404, "That phone isn't in the cluster")
+        val srcRoot = body.optString("root").takeIf { Regex("[a-z0-9]{1,40}").matches(it) } ?: return Response.error(400, "invalid location")
+        val srcPath = body.optString("path").trim('/').takeIf { it.isNotEmpty() } ?: return Response.error(400, "pick something to copy")
+        val dest = resolve(root, r.query["path"].orEmpty(), follow = false) ?: return Response.error(403, "outside ${root.label}")
+        if (dest == root.dir.canonicalFile) return Response.error(400, "pick a name for the copy")
+        if (Files.exists(dest.toPath(), LinkOption.NOFOLLOW_LINKS)) return Response.error(409, "${dest.name} already exists here")
+        val move = body.optBoolean("move")
+        val t = Transfers.start(dest.name, src.name, move)
+        Thread({
+            val tmp = File(dest.parentFile, ".${dest.name}.transfer")
+            try {
+                val q = "?path=${URLEncoder.encode(srcPath, "UTF-8")}"
+                val (status, size) = cluster.peerJson(src, "GET", "/api/files/$srcRoot/pack$q&size=1")
+                if (status != 200) throw IOException(size.optString("error", "${src.name} answered $status"))
+                t.total = size.optLong("bytes")
+                dest.parentFile!!.mkdirs()
+                if (t.total > dest.parentFile!!.usableSpace) throw IOException("not enough space here for ${dest.name}")
+                cluster.peerStream(src, "/api/files/$srcRoot/pack$q").use { res ->
+                    if (res.status != 200) throw IOException("${src.name} answered ${res.status}")
+                    AppArchive.read(listOf(AppArchive.Root("f", tmp)), res.body) { t.done = it }
+                }
+                if (Files.exists(dest.toPath(), LinkOption.NOFOLLOW_LINKS) || !tmp.renameTo(dest)) throw IOException("could not save ${dest.name}")
+                if (move) {
+                    val (st, o) = cluster.peerJson(src, "DELETE", "/api/files/$srcRoot$q")
+                    if (st != 200) throw IOException("copied, but couldn't delete it on ${src.name}: ${o.optString("error")}")
+                }
+                t.state = "done"
+            } catch (e: Exception) {
+                if (Files.exists(tmp.toPath(), LinkOption.NOFOLLOW_LINKS)) try { deleteTree(tmp.toPath()) } catch (_: IOException) {}
+                t.error = e.message ?: e.javaClass.simpleName
+                t.state = "failed"
+            }
+        }, "file-transfer").apply { isDaemon = true; start() }
+        return Response.json(t.json())
     }
 
     private fun deleteTree(path: Path) {

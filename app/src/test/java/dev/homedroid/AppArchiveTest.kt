@@ -53,6 +53,16 @@ class AppArchiveTest {
         assertEquals("a library is merged, not replaced", "mine", File(dst, "keep.txt").readText())
     }
 
+    @Test fun aSingleFileCanBeARoot() {
+        val src = File(tmp.newFolder("a"), "movie.mkv").apply { writeBytes(ByteArray(70_000) { it.toByte() }) }
+        val out = ByteArrayOutputStream()
+        assertEquals(70_000L, AppArchive.size(listOf(AppArchive.Root("f", src))))
+        AppArchive.write(listOf(AppArchive.Root("f", src)), out)
+        val dst = File(tmp.newFolder("b"), "copy.mkv")
+        AppArchive.read(listOf(AppArchive.Root("f", dst)), ByteArrayInputStream(out.toByteArray()))
+        assertArrayEquals(src.readBytes(), dst.readBytes())
+    }
+
     private fun hostile(vararg entries: Pair<Char, String>): ByteArray = ByteArrayOutputStream().also { b ->
         DataOutputStream(b).apply {
             write("HDMOVE1\n".toByteArray())
