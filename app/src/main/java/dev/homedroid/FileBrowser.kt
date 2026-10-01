@@ -154,11 +154,17 @@ class FileBrowser(private val ctx: Context, private val paths: Paths) {
         if (!f.isFile) return Response.error(404, "no file ${f.name}")
         val size = f.length()
         val inline = r.query["inline"] == "1"
+        val type = mimeType(f.name)
+        // Files are the user's, not the dashboard's: never let one run script on this origin.
+        // Video and audio can't run script (nosniff keeps them media), and a sandboxed player
+        // page would fetch them from an opaque origin, without the session: Chrome then fails
+        // to play them at all.
+        val playable = type.startsWith("video/") || type.startsWith("audio/")
         val headers = mutableMapOf(
             "Content-Disposition" to (if (inline) "inline" else "attachment") + "; filename*=UTF-8''" + encode(f.name),
             "Accept-Ranges" to "bytes",
-            // Files are the user's, not the dashboard's: never let one run script on this origin.
-            "Content-Security-Policy" to "sandbox; default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'",
+            "Content-Security-Policy" to (if (playable) "" else "sandbox; ") +
+                "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'",
         )
         var start = 0L
         var end = size - 1
@@ -181,7 +187,7 @@ class FileBrowser(private val ctx: Context, private val paths: Paths) {
             headers["Content-Range"] = "bytes $start-$end/$size"
         }
         val count = if (size == 0L) 0 else end - start + 1
-        return Response(status, ByteArray(0), mimeType(f.name), headers, stream = { out ->
+        return Response(status, ByteArray(0), type, headers, stream = { out ->
             RandomAccessFile(f, "r").use { raf ->
                 raf.seek(start)
                 val buf = ByteArray(1 shl 16)
