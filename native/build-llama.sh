@@ -66,8 +66,7 @@ manifest="{\"llama\": \"$LLAMA_TAG\", \"abis\": {"
 first=1
 for abi in "${abis[@]}"; do
   echo "== llama.cpp $LLAMA_TAG for $abi"
-  prefix="$work/install-$abi"
-  rm -rf "$prefix" "build-$abi"
+  rm -rf "build-$abi"
 
   # OpenCL: build the Khronos loader only to link against. On the phone, the vendor's own
   # libOpenCL.so (present on Qualcomm phones) is used; elsewhere the backend just doesn't load.
@@ -81,7 +80,6 @@ for abi in "${abis[@]}"; do
 
   cmake -S llama.cpp -B "build-$abi" -G Ninja -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_TOOLCHAIN_FILE="$toolchain" -DANDROID_ABI="$abi" -DANDROID_PLATFORM="android-$API" -DANDROID_STL=c++_shared \
-    -DCMAKE_INSTALL_PREFIX="$prefix" \
     -DBUILD_SHARED_LIBS=ON -DGGML_BACKEND_DL=ON -DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DGGML_LLAMAFILE=OFF \
     "${cpu[@]}" \
     -DGGML_VULKAN=ON -DVulkan_INCLUDE_DIR="$work/vulkan-headers/include" \
@@ -90,15 +88,20 @@ for abi in "${abis[@]}"; do
     -DCMAKE_CXX_FLAGS="-I$work/host/include" \
     -DGGML_OPENCL=ON -DGGML_OPENCL_EMBED_KERNELS=ON -DGGML_OPENCL_USE_ADRENO_KERNELS=ON \
     -DOpenCL_INCLUDE_DIR="$work/opencl-headers" -DOpenCL_LIBRARY="$work/build-opencl-$abi/libOpenCL.so" \
-    -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TOOLS=ON -DLLAMA_BUILD_SERVER=ON
-  cmake --build "build-$abi" --target llama-server llama-bench --parallel
-  cmake --install "build-$abi" > /dev/null
+    -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TOOLS=ON -DLLAMA_BUILD_SERVER=ON \
+    -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF
+  # Everything: the CPU and GPU backends are loaded at runtime, so no program depends on them.
+  cmake --build "build-$abi" --parallel
 
   # What the phone runs: the two programs, every library they load, and the C++ runtime.
+  # llama.cpp puts programs and libraries (backends included) in the build's bin/.
   bundle="$work/bundle-$abi"
   rm -rf "$bundle"; mkdir -p "$bundle"
-  cp "$prefix/bin/llama-server" "$prefix/bin/llama-bench" "$bundle/"
-  find "$prefix/lib" -maxdepth 1 -name '*.so*' -exec cp -P {} "$bundle/" \;
+  cp "build-$abi/bin/llama-server" "build-$abi/bin/llama-bench" "$bundle/"
+  find "build-$abi/bin" -maxdepth 1 -name '*.so*' -exec cp -P {} "$bundle/" \;
+  ls -l "$bundle"
+  ls "$bundle" | grep -q libggml-vulkan || { echo "no Vulkan backend was built for $abi" >&2; exit 1; }
+  ls "$bundle" | grep -q libggml-cpu || { echo "no CPU backend was built for $abi" >&2; exit 1; }
   triple=$(case $abi in arm64-v8a) echo aarch64-linux-android;; x86_64) echo x86_64-linux-android;; esac)
   cp "$sysroot/usr/lib/$triple/libc++_shared.so" "$bundle/"
   # The vendor's OpenCL is used at runtime, never this stub loader.
