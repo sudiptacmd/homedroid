@@ -1,0 +1,41 @@
+name: Bug report
+description: Something doesn't work on your phone
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping! Logs from real phones are the most useful thing you can send.
+  - type: input
+    id: phone
+    attributes:
+      label: Phone and Android version
+      placeholder: Galaxy S9+, Android 10
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Homedroid version
+      placeholder: 0.9.3-beta
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Install Jellyfin
+        2. Pick the SD card as storage location
+        3. …
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Dashboard → Overview → the service's log, or `files/logs/` over SFTP. Remove anything private.
+      render: text

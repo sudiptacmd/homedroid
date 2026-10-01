@@ -1,0 +1,45 @@
+name: Works on my phone
+description: Tell us how Homedroid runs on your phone (and share benchmark numbers)
+labels: [phone report]
+body:
+  - type: markdown
+    attributes:
+      value: Every phone report helps others pick a phone and helps us fix device-specific problems. Good news is welcome too!
+  - type: input
+    id: phone
+    attributes:
+      label: Phone, chip and Android version
+      placeholder: Pixel 4a (Snapdragon 730G), Android 13
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Homedroid version
+      placeholder: 0.9.3-beta
+  - type: checkboxes
+    id: works
+    attributes:
+      label: What did you try?
+      options:
+        - label: Dashboard, SSH and web hosting
+        - label: Jellyfin (did hardware transcoding work?)
+        - label: Immich
+        - label: qBittorrent
+        - label: Home Assistant
+        - label: USB drive or microSD card
+        - label: AI on the phone (GPU or CPU?)
+        - label: Cluster with another phone
+  - type: textarea
+    id: notes
+    attributes:
+      label: How did it go?
+      description: Anything that worked well, anything that didn't, how warm the phone got.
+    validations:
+      required: true
+  - type: textarea
+    id: bench
+    attributes:
+      label: Benchmark output (optional)
+      description: Output of `python tools/bench.py` (see the README's Measurements section).
+      render: text

@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Homedroid – Turn your old Android phone into a home server (no root)</title>
+<meta name="description" content="Homedroid turns an old Android phone into a self-hosted home server: Jellyfin with hardware transcoding, a NAS for USB drives and SD cards, Immich, qBittorrent, Home Assistant, on-phone AI, SSH and a web dashboard. No root, one free APK.">
+<meta name="keywords" content="android home server, old phone server, self-hosted, jellyfin android, android nas, no root, home server app, raspberry pi alternative, immich android, qbittorrent android, llama.cpp android, homelab">
+<link rel="canonical" href="https://sudiptacmd.github.io/homedroid/">
+<meta name="theme-color" content="#07090d">
+<link rel="icon" href="img/homedroid-mark.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="img/homedroid-mark-512.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="Homedroid – your old Android phone, now a home server">
+<meta property="og:description" content="Jellyfin, a NAS, photo backup, torrents, AI and a web dashboard on any Android 10+ phone. No root, one free APK.">
+<meta property="og:url" content="https://sudiptacmd.github.io/homedroid/">
+<meta property="og:image" content="https://sudiptacmd.github.io/homedroid/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid: your old phone, now a home server">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Homedroid – your old Android phone, now a home server">
+<meta name="twitter:description" content="Jellyfin, a NAS, photo backup, torrents, AI and a web dashboard on any Android 10+ phone. No root.">
+<meta name="twitter:image" content="https://sudiptacmd.github.io/homedroid/img/social-preview.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Homedroid",
+  "description": "Turn an old Android phone into a home server: Jellyfin with hardware transcoding, a NAS for USB drives and SD cards, Immich, qBittorrent, Home Assistant, on-phone AI, SSH and a web dashboard. No root.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Android 10+",
+  "softwareVersion": "0.9.3-beta",
+  "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+  "url": "https://sudiptacmd.github.io/homedroid/",
+  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases",
+  "codeRepository": "https://github.com/sudiptacmd/homedroid",
+  "image": "https://sudiptacmd.github.io/homedroid/img/social-preview.png",
+  "screenshot": "https://sudiptacmd.github.io/homedroid/media/overview.jpg",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07090d; --bg-2: #0c1016; --panel: rgba(18, 24, 33, .72); --line: rgba(126, 231, 135, .14); --line-2: rgba(255, 255, 255, .08);
+  --text: #e8eef6; --text-2: #a9b4c4; --muted: #6f7b8c; --green: #7ee787; --green-2: #3ddc84; --cyan: #39d0ff; --violet: #a78bfa;
+  --r: 18px; --mono: "JetBrains Mono", ui-monospace, monospace; --display: "Space Grotesk", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: var(--green); text-decoration: none; }
+a:hover { text-decoration: underline; }
+img, video { max-width: 100%; display: block; }
+.wrap { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+h1, h2, h3 { font-family: var(--display); letter-spacing: -.02em; line-height: 1.08; margin: 0; }
+h2 { font-size: clamp(30px, 4.4vw, 52px); }
+.eyebrow { font: 500 12.5px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--green); display: inline-flex; gap: 10px; align-items: center; }
+.eyebrow::before { content: ""; width: 26px; height: 1px; background: currentColor; box-shadow: 0 0 10px currentColor; }
+.lead { color: var(--text-2); font-size: clamp(17px, 1.6vw, 19px); max-width: 640px; }
+.grad { background: linear-gradient(92deg, var(--green) 0%, var(--cyan) 60%, var(--violet) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Background: grid, glow, scanline */
+.bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.bg::before { content: ""; position: absolute; inset: -50% -50% 0; background-image: linear-gradient(var(--line-2) 1px, transparent 1px), linear-gradient(90deg, var(--line-2) 1px, transparent 1px); background-size: 64px 64px; transform: perspective(700px) rotateX(58deg) translateY(-10%); transform-origin: top; mask-image: linear-gradient(to bottom, transparent 0%, #000 35%, transparent 85%); animation: grid 18s linear infinite; opacity: .55; }
+.bg::after { content: ""; position: absolute; inset: 0; background: radial-gradient(900px 520px at 78% -8%, rgba(126, 231, 135, .16), transparent 60%), radial-gradient(700px 480px at 6% 18%, rgba(57, 208, 255, .10), transparent 60%), radial-gradient(800px 600px at 50% 110%, rgba(167, 139, 250, .08), transparent 60%); }
+@keyframes grid { to { background-position: 0 64px, 0 0; } }
+
+/* Nav */
+nav { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px) saturate(140%); background: rgba(7, 9, 13, .62); border-bottom: 1px solid var(--line-2); }
+nav .wrap { display: flex; align-items: center; gap: 22px; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--text); font: 700 19px var(--display); }
+.brand:hover { text-decoration: none; }
+.brand img { width: 30px; height: 30px; filter: drop-shadow(0 0 10px rgba(126, 231, 135, .55)); }
+nav .links { display: flex; gap: 22px; margin-left: auto; }
+nav .links a { color: var(--text-2); font-size: 14.5px; }
+nav .links a:hover { color: var(--text); text-decoration: none; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 46px; padding: 0 20px; border-radius: 12px; font: 600 15px Inter, sans-serif; border: 1px solid var(--line-2); color: var(--text); background: rgba(255, 255, 255, .03); transition: transform .15s, box-shadow .2s, border-color .2s, background .2s; cursor: pointer; white-space: nowrap; }
+.btn:hover { text-decoration: none; transform: translateY(-1px); border-color: rgba(255, 255, 255, .22); background: rgba(255, 255, 255, .06); }
+.btn.primary { color: #04130a; background: linear-gradient(180deg, #9af0a2, var(--green-2)); border-color: transparent; box-shadow: 0 0 0 1px rgba(126, 231, 135, .4), 0 10px 40px -10px rgba(61, 220, 132, .7); }
+.btn.primary:hover { box-shadow: 0 0 0 1px rgba(126, 231, 135, .6), 0 14px 50px -8px rgba(61, 220, 132, .9); }
+.btn.sm { height: 38px; padding: 0 14px; font-size: 14px; border-radius: 10px; }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.star-count { font: 500 12.5px var(--mono); color: var(--text-2); padding-left: 8px; border-left: 1px solid var(--line-2); }
+
+/* Hero */
+.hero { padding: clamp(48px, 9vw, 110px) 0 60px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
+.hero h1 { font-size: clamp(42px, 6.6vw, 82px); margin: 18px 0 22px; }
+.hero .cta { display: flex; gap: 12px; flex-wrap: wrap; margin: 30px 0 18px; }
+.hero .meta { font: 13px var(--mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.hero .meta span::before { content: "▹ "; color: var(--green); }
+.device { position: relative; justify-self: center; width: min(330px, 78vw); }
+.device .frame { position: relative; border-radius: 42px; padding: 11px; background: linear-gradient(160deg, #222b37, #0d1218 55%, #1b232d); box-shadow: 0 0 0 1px rgba(126, 231, 135, .35), 0 0 60px rgba(126, 231, 135, .25), 0 40px 90px -20px rgba(0, 0, 0, .9); }
+.device video { border-radius: 32px; aspect-ratio: 1080 / 2400; width: 100%; object-fit: cover; background: #e9f2ec; }
+.device .chip { position: absolute; font: 500 12.5px var(--mono); padding: 9px 13px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(10px); color: var(--text); white-space: nowrap; box-shadow: 0 12px 30px -12px rgba(0, 0, 0, .8); animation: float 6s ease-in-out infinite; }
+.device .chip b { color: var(--green); font-weight: 500; }
+.device .c1 { left: -44%; top: 14%; }
+.device .c2 { right: -34%; top: 46%; animation-delay: -2s; }
+.device .c3 { left: -30%; bottom: 12%; animation-delay: -4s; }
+@keyframes float { 50% { transform: translateY(-10px); } }
+
+/* Ticker */
+.ticker { border-block: 1px solid var(--line-2); background: rgba(12, 16, 22, .6); overflow: hidden; }
+.ticker .row { display: flex; gap: 46px; padding: 16px 0; width: max-content; animation: tick 38s linear infinite; font: 500 14px var(--mono); color: var(--text-2); }
+.ticker .row span::before { content: "◆"; color: var(--green); margin-right: 12px; font-size: 10px; vertical-align: 2px; }
+@keyframes tick { to { transform: translateX(-50%); } }
+
+section { padding: clamp(70px, 10vw, 120px) 0 0; }
+.head { display: grid; gap: 16px; margin-bottom: 42px; }
+
+/* Feature showcase */
+.show { display: grid; gap: 22px; }
+.feat { display: grid; grid-template-columns: 1fr 1.25fr; gap: 0; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--panel); overflow: hidden; position: relative; }
+.feat::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; background: linear-gradient(130deg, rgba(126, 231, 135, .45), transparent 30%, transparent 70%, rgba(57, 208, 255, .35)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; opacity: .6; }
+.feat:nth-child(even) { grid-template-columns: 1.25fr 1fr; }
+.feat:nth-child(even) .txt { order: 2; }
+.feat .txt { padding: clamp(24px, 3.4vw, 44px); display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+.feat h3 { font-size: clamp(24px, 2.6vw, 32px); }
+.feat p { color: var(--text-2); margin: 0; }
+.feat ul { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; color: var(--text-2); font-size: 15px; }
+.feat li::before { content: "→"; color: var(--green); margin-right: 10px; font-family: var(--mono); }
+.feat .vid { position: relative; background: #05070a; border-left: 1px solid var(--line-2); min-height: 260px; }
+.feat:nth-child(even) .vid { border-left: 0; border-right: 1px solid var(--line-2); }
+.feat .vid video { width: 100%; height: 100%; object-fit: cover; object-position: left top; }
+.feat .tag { position: absolute; left: 14px; top: 14px; font: 500 11.5px var(--mono); letter-spacing: .08em; color: var(--green); background: rgba(5, 7, 10, .75); border: 1px solid var(--line); padding: 5px 9px; border-radius: 8px; backdrop-filter: blur(6px); }
+.kicker { font: 500 12px var(--mono); color: var(--cyan); letter-spacing: .12em; text-transform: uppercase; }
+
+/* Module grid */
+.mods { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.mod { border: 1px solid var(--line-2); border-radius: 14px; padding: 20px; background: rgba(14, 19, 26, .6); transition: border-color .2s, transform .2s, background .2s; }
+.mod:hover { border-color: rgba(126, 231, 135, .35); transform: translateY(-2px); background: rgba(18, 26, 34, .8); }
+.mod .ic { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-size: 19px; background: rgba(126, 231, 135, .08); border: 1px solid var(--line); margin-bottom: 14px; }
+.mod b { display: block; font: 600 16.5px var(--display); margin-bottom: 4px; }
+.mod span { color: var(--text-2); font-size: 14.5px; }
+.mod code { font: 12px var(--mono); color: var(--muted); display: block; margin-top: 10px; }
+
+/* Tech */
+.tech { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { border: 1px solid var(--line-2); border-radius: var(--r); padding: 28px; background: var(--panel); position: relative; overflow: hidden; }
+.card .n { font: 500 13px var(--mono); color: var(--green); }
+.card h3 { font-size: 22px; margin: 12px 0 12px; }
+.card p { color: var(--text-2); margin: 0 0 12px; font-size: 15.5px; }
+.card pre { margin: 16px 0 0; font: 12.5px/1.65 var(--mono); color: #b8f5bd; background: #05080b; border: 1px solid var(--line); border-radius: 12px; padding: 14px; overflow-x: auto; white-space: pre; }
+.card pre i { color: var(--muted); font-style: normal; }
+.card::after { content: ""; position: absolute; width: 220px; height: 220px; right: -90px; top: -90px; background: radial-gradient(circle, rgba(126, 231, 135, .14), transparent 70%); }
+
+/* Video */
+.player { border-radius: 22px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 0 0 1px rgba(126, 231, 135, .12), 0 0 90px -20px rgba(126, 231, 135, .35); background: #05070a; aspect-ratio: 16 / 9; position: relative; }
+.player video { width: 100%; height: 100%; }
+.player .fallback { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--text-2); padding: 20px; }
+
+/* Get started */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; counter-reset: s; }
+.step { border: 1px solid var(--line-2); border-radius: 14px; padding: 22px; background: rgba(14, 19, 26, .6); counter-increment: s; }
+.step::before { content: "0" counter(s); font: 500 13px var(--mono); color: var(--green); display: block; margin-bottom: 10px; }
+.step b { font: 600 17px var(--display); display: block; margin-bottom: 6px; }
+.step p { margin: 0; color: var(--text-2); font-size: 14.5px; }
+.term { margin-top: 18px; font: 13.5px/1.8 var(--mono); background: #05080b; border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; color: #cfe9d2; overflow-x: auto; white-space: pre; }
+.term .p { color: var(--green); }
+.term .c { color: var(--muted); }
+
+/* Contribute */
+.contrib { border-radius: 24px; padding: clamp(28px, 5vw, 56px); border: 1px solid var(--line); background: radial-gradient(600px 300px at 90% 0%, rgba(126, 231, 135, .16), transparent 70%), radial-gradient(500px 300px at 0% 100%, rgba(57, 208, 255, .12), transparent 70%), var(--bg-2); display: grid; grid-template-columns: 1.1fr .9fr; gap: 36px; align-items: center; }
+.ways { display: grid; gap: 12px; }
+.way { display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line-2); background: rgba(7, 9, 13, .55); color: var(--text); transition: border-color .2s, transform .2s; }
+.way:hover { text-decoration: none; border-color: rgba(126, 231, 135, .4); transform: translateX(3px); }
+.way .e { font-size: 20px; line-height: 1.2; }
+.way b { display: block; font-weight: 600; }
+.way span { color: var(--text-2); font-size: 14px; }
+
+footer { margin-top: 110px; border-top: 1px solid var(--line-2); padding: 34px 0 50px; color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 30px; justify-content: space-between; }
+footer a { color: var(--text-2); }
+
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.on { opacity: 1; transform: none; }
+
+@media (max-width: 960px) {
+  .hero { grid-template-columns: 1fr; }
+  .device .c1 { left: -18%; } .device .c2 { right: -16%; } .device .c3 { left: -12%; }
+  .feat, .feat:nth-child(even) { grid-template-columns: 1fr; }
+  .feat:nth-child(even) .txt { order: 0; }
+  .feat .vid, .feat:nth-child(even) .vid { border: 0; border-top: 1px solid var(--line-2); aspect-ratio: 16 / 10; min-height: 0; }
+  .tech { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr 1fr; }
+  .contrib { grid-template-columns: 1fr; }
+  nav .links { display: none; }
+}
+@media (max-width: 560px) {
+  .steps { grid-template-columns: 1fr; }
+  .device .chip { display: none; }
+  .hero .cta .btn { flex: 1 1 100%; }
+  nav .wrap { gap: 12px; }
+  nav .btn.gh .label { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .reveal { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+
+<nav aria-label="Main">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Homedroid home"><img src="img/homedroid-mark.svg" alt="" width="30" height="30">Homedroid</a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#tour">Video tour</a>
+      <a href="#how">How it works</a>
+      <a href="#start">Get started</a>
+      <a href="#contribute">Contribute</a>
+    </div>
+    <a class="btn sm gh" href="https://github.com/sudiptacmd/homedroid" aria-label="Homedroid on GitHub">
+      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      <span class="label">Star</span><span class="star-count" id="stars" hidden></span>
+    </a>
+  </div>
+</nav>
+
+<main id="top">
+  <header class="wrap hero">
+    <div>
+      <span class="eyebrow">Free · open source · no root</span>
+      <h1>Your old Android phone is now a <span class="grad">home server.</span></h1>
+      <p class="lead">Homedroid turns the phone in your drawer into a media server, a NAS, a photo backup, a torrent box, a web host and a private AI, all run from one app and managed from a sleek web dashboard. One APK. No root. No Linux skills needed.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/sudiptacmd/homedroid/releases">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>Download the APK</a>
+        <a class="btn" href="#tour">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>Watch the 4-minute tour</a>
+      </div>
+      <div class="meta"><span>Android 10+</span><span>~50 MB APK</span><span>arm64 · armv7 · x86_64</span><span>GPL-3.0</span></div>
+    </div>
+    <div class="device">
+      <div class="frame">
+        <video src="media/phone.mp4" poster="media/phone.jpg" autoplay muted loop playsinline aria-label="The Homedroid app on a phone: server status, app library and settings"></video>
+      </div>
+      <div class="chip c1"><b>●</b> Jellyfin · running</div>
+      <div class="chip c2">SD card · <b>510 MB free</b></div>
+      <div class="chip c3">llama.cpp · <b>on device</b></div>
+    </div>
+  </header>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="row">
+      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>Phone clusters</span>
+      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>Phone clusters</span>
+    </div>
+  </div>
+
+  <section id="features" class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">What it does</span>
+      <h2>A full homelab, <span class="grad">in your pocket.</span></h2>
+      <p class="lead">That phone has an 8-core CPU, a hardware video encoder, gigabytes of RAM, Wi-Fi and a built-in battery backup. It deserves better than a drawer. Everything below is a real recording of Homedroid running.</p>
+    </div>
+
+    <div class="show">
+      <article class="feat reveal">
+        <div class="txt">
+          <span class="kicker">Dashboard</span>
+          <h3>Everything at a glance, from any browser</h3>
+          <p>Live CPU, temperature, network, battery, memory and storage, plus every service with its logs and a restart button. It works offline and on your phone too.</p>
+          <ul><li>Install apps with one click</li><li>Start on boot, auto-restart on crash</li><li>Updates itself from GitHub releases</li></ul>
+        </div>
+        <div class="vid"><span class="tag">LIVE · DASHBOARD</span><video data-src="media/overview.mp4" poster="media/overview.jpg" muted loop playsinline preload="none" aria-label="Homedroid dashboard overview"></video></div>
+      </article>
+
+      <article class="feat reveal">
+        <div class="txt">
+          <span class="kicker">Files &amp; NAS</span>
+          <h3>Plug in a USB drive. It's a NAS now.</h3>
+          <p>MicroSD cards and USB drives show up next to the phone's own storage. Stream videos in the browser, drag in whole folders, download folders as zip, or mount it all over SFTP.</p>
+          <ul><li>Apps can keep their libraries on the card</li><li>Pull the card: apps wait, nothing gets lost</li><li><code>sshfs</code>, rclone, WinSCP, Finder</li></ul>
+        </div>
+        <div class="vid"><span class="tag">LIVE · FILES</span><video data-src="media/files.mp4" poster="media/files.jpg" muted loop playsinline preload="none" aria-label="Browsing the media library and an SD card, playing a video and uploading photos"></video></div>
+      </article>
+
+      <article class="feat reveal">
+        <div class="txt">
+          <span class="kicker">Media</span>
+          <h3>Jellyfin, transcoded by the phone's video chip</h3>
+          <p>Your movies and shows on every TV, laptop and phone. Homedroid routes Jellyfin's hardware encoding to Android's MediaCodec, so the dedicated video hardware does the heavy lifting while the CPU stays cool.</p>
+          <ul><li>qBittorrent downloads straight into the library</li><li>Watch while it's still downloading</li><li>Immich for Google Photos-style backup</li></ul>
+        </div>
+        <div class="vid"><span class="tag">LIVE · JELLYFIN</span><video data-src="media/jellyfin.mp4" poster="media/jellyfin.jpg" muted loop playsinline preload="none" aria-label="Signing in to Jellyfin on the phone and playing Sintel"></video></div>
+      </article>
+
+      <article class="feat reveal">
+        <div class="txt">
+          <span class="kicker">Linux</span>
+          <h3>A real Linux shell, without root</h3>
+          <p>Alpine Linux runs inside the app. Open a terminal in the browser or SSH in, install packages with <code>apk</code>, and grab a torrent with one command.</p>
+          <ul><li>SSH &amp; SFTP with public keys</li><li>Every session logged, rejected logins too</li><li><code>torrent 'magnet:?…'</code> from anywhere</li></ul>
+        </div>
+        <div class="vid"><span class="tag">LIVE · TERMINAL</span><video data-src="media/terminal.mp4" poster="media/terminal.jpg" muted loop playsinline preload="none" aria-label="Alpine Linux in the browser terminal, adding a torrent"></video></div>
+      </article>
+
+      <article class="feat reveal">
+        <div class="txt">
+          <span class="kicker">AI</span>
+          <h3>A private AI that never leaves the phone</h3>
+          <p>llama.cpp, built for Android, runs Qwen, Llama and Gemma models on the phone's GPU or CPU, whichever its own benchmark finds faster. Your other apps can use it through an OpenAI-compatible API.</p>
+          <ul><li>Picks the best model your phone can handle</li><li>Optional cloud fallback when it's hot</li><li>Routines that brief you every morning</li></ul>
+        </div>
+        <div class="vid"><span class="tag">LIVE · AI ON DEVICE</span><video data-src="media/ai.mp4" poster="media/ai.jpg" muted loop playsinline preload="none" aria-label="Chatting with a model running on the phone"></video></div>
+      </article>
+
+      <article class="feat reveal">
+        <div class="txt">
+          <span class="kicker">Deploy</span>
+          <h3>Push to GitHub, it's live on your phone</h3>
+          <p>Point it at a repository and Homedroid detects Node.js, Python or a static site, builds it and serves it. It checks the branch every 5 minutes and keeps the old version running if a build fails.</p>
+          <ul><li>Cloudflare Tunnel puts it on the internet</li><li>Works behind CGNAT, no port forwarding</li><li>Private repos with a read-only token</li></ul>
+        </div>
+        <div class="vid"><span class="tag">LIVE · DEPLOYMENTS</span><video data-src="media/deploys.mp4" poster="media/deploys.jpg" muted loop playsinline preload="none" aria-label="Deploying a static site from GitHub and opening it"></video></div>
+      </article>
+
+      <article class="feat reveal">
+        <div class="txt">
+          <span class="kicker">Cluster</span>
+          <h3>Two old phones? Make them one server.</h3>
+          <p>Pair phones with a 6-digit code over mutual TLS. Manage any of them from one dashboard, see every camera on one page, and move apps, with their data, to whichever phone has room.</p>
+          <ul><li>Live health of every phone</li><li>Copy and move files between phones</li><li>Mix Android versions freely</li></ul>
+        </div>
+        <div class="vid"><span class="tag">LIVE · CLUSTER</span><video data-src="media/cluster.mp4" poster="media/cluster.jpg" muted loop playsinline preload="none" aria-label="A two-phone cluster: switching to the other phone and browsing its movies"></video></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Modules</span>
+      <h2>Turn on what you need. <span class="grad">Nothing else runs.</span></h2>
+    </div>
+    <div class="mods reveal">
+      <div class="mod"><div class="ic">🎬</div><b>Jellyfin</b><span>Media server with hardware transcoding.</span><code>:8096</code></div>
+      <div class="mod"><div class="ic">🖼️</div><b>Immich</b><span>Photo &amp; video backup from its official images.</span><code>:2283</code></div>
+      <div class="mod"><div class="ic">🧲</div><b>qBittorrent</b><span>Sequential downloads into your library.</span><code>:8081</code></div>
+      <div class="mod"><div class="ic">🏠</div><b>Home Assistant</b><span>Automations with network and cloud integrations.</span><code>:8123</code></div>
+      <div class="mod"><div class="ic">🧠</div><b>AI</b><span>llama.cpp on device + an OpenAI-compatible API.</span><code>:8090/v1</code></div>
+      <div class="mod"><div class="ic">📷</div><b>IPCam</b><span>Live view, motion clips, mic and announcements.</span><code>dashboard</code></div>
+      <div class="mod"><div class="ic">🔐</div><b>SSH &amp; SFTP</b><span>Key-only shell and file transfer, port forwarding.</span><code>:8022</code></div>
+      <div class="mod"><div class="ic">🌐</div><b>Web hosting</b><span>Caddy serving your site and deployments.</span><code>:8080</code></div>
+      <div class="mod"><div class="ic">☁️</div><b>Cloudflare Tunnel</b><span>Public HTTPS without opening a port.</span><code>tunnel</code></div>
+      <div class="mod"><div class="ic">🛰️</div><b>Tailscale</b><span>Private access from anywhere, no VPN slot.</span><code>tailnet</code></div>
+      <div class="mod"><div class="ic">📱</div><b>Cluster</b><span>Several phones, one dashboard.</span><code>:8801 mTLS</code></div>
+      <div class="mod"><div class="ic">🧩</div><b>Your app?</b><span>Apps are just JSON. <a href="https://github.com/sudiptacmd/homedroid/blob/main/CONTRIBUTING.md">Add one.</a></span><code>apps.json</code></div>
+    </div>
+  </section>
+
+  <section id="tour" class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Video tour</span>
+      <h2>See the whole thing in <span class="grad">4½ minutes.</span></h2>
+      <p class="lead">The phone app, the dashboard, an SD card, Linux in the browser, Jellyfin, on-phone AI, a GitHub deployment and two phones working as one. No cuts and no mock-ups, just the app running.</p>
+    </div>
+    <div class="player reveal">
+      <video id="walkthrough" controls preload="none" poster="media/overview.jpg" playsinline>
+        <source src="media/homedroid-walkthrough.mp4" type="video/mp4">
+      </video>
+    </div>
+    <p style="color:var(--muted);font-size:14px;margin-top:12px">Can't play it here? <a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.3-beta/homedroid-walkthrough.mp4">Download the MP4 (13 MB)</a>. Demo films: Blender Foundation open movies, CC BY.</p>
+  </section>
+
+  <section id="how" class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">How it works</span>
+      <h2>Android said no. <span class="grad">We found a way.</span></h2>
+      <p class="lead">Android apps can't run servers the usual way: no root, no Docker, no access to the video hardware from Linux. Here's how Homedroid gets around all three.</p>
+    </div>
+    <div class="tech">
+      <div class="card reveal">
+        <span class="n">01 / LINUX WITHOUT ROOT</span>
+        <h3>Servers disguised as libraries</h3>
+        <p>Since Android 10, an app may only run programs that shipped inside its APK. So SSH, Caddy, Tailscale and FFmpeg are compiled for Android and packed in as <code>lib*.so</code> files, which Android happily unpacks and runs.</p>
+        <p>Everything else lives in Alpine Linux under <b>proot</b>, which translates system calls so Linux software believes it has a normal machine, while it's really inside the app's private folder.</p>
+        <pre><i># what Android sees</i>
+lib/arm64/libsshd.so
+lib/arm64/libcaddy.so
+<i># what you see</i>
+$ alpine
+localhost:~# apk add htop</pre>
+      </div>
+      <div class="card reveal">
+        <span class="n">02 / DOCKER WITHOUT DOCKER</span>
+        <h3>Container images, unpacked by hand</h3>
+        <p>Docker needs kernel features no app can touch. But an image is just layers of tarballs. Homedroid pulls them from Docker Hub or ghcr.io itself, checks every layer's checksum and stacks them the way Docker would.</p>
+        <p>Hard links (forbidden in app storage) become copies; absolute symlinks get rewritten. That's how <b>Immich and PostgreSQL</b> run from their official images, on a phone.</p>
+        <pre><i># ghcr.io/immich-app/immich-server</i>
+manifest → linux/arm64
+layers   → sha256 checked
+rootfs   → runs under proot</pre>
+      </div>
+      <div class="card reveal">
+        <span class="n">03 / A VIDEO CHIP FOR JELLYFIN</span>
+        <h3>A little shim with a big job</h3>
+        <p>The phone's encoder is only reachable through Android's MediaCodec, which a Linux FFmpeg can't use. So Homedroid builds an <b>Android FFmpeg</b> with MediaCodec and quietly swaps it in.</p>
+        <p>Jellyfin asks for V4L2 hardware encoding; a tiny shim hands that job to MediaCodec and everything else to Jellyfin's own FFmpeg. Jellyfin never knows it's on a phone.</p>
+        <pre>jellyfin → h264_v4l2m2m
+   shim  → h264_mediacodec
+<i># encoded by the phone's video chip</i></pre>
+      </div>
+    </div>
+    <p class="reveal" style="color:var(--text-2);margin-top:22px">And a handful of small, documented patches to proot and FFmpeg make the rest of Linux feel at home on Android. <a href="https://github.com/sudiptacmd/homedroid#how-it-works-the-clever-bits">Read the details →</a></p>
+  </section>
+
+  <section id="start" class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Get started</span>
+      <h2>Up and running in <span class="grad">five minutes.</span></h2>
+    </div>
+    <div class="steps reveal">
+      <div class="step"><b>Install the APK</b><p>Grab it from <a href="https://github.com/sudiptacmd/homedroid/releases">GitHub Releases</a> (arm64 fits almost every phone) and open it.</p></div>
+      <div class="step"><b>Start the server</b><p>One tap. The app shows the dashboard address and its password.</p></div>
+      <div class="step"><b>Let it run</b><p>Allow background running in Battery settings; the app shows you how.</p></div>
+      <div class="step"><b>Add apps</b><p>Open the dashboard from your laptop and install Jellyfin, Immich and more.</p></div>
+    </div>
+<div class="term reveal"><span class="c"># from your computer</span>
+<span class="p">$</span> open http://&lt;phone-ip&gt;:8800                <span class="c"># the dashboard</span>
+<span class="p">$</span> ssh -p 8022 &lt;phone-ip&gt;                      <span class="c"># a shell; `alpine` for Linux</span>
+<span class="p">$</span> ssh -p 8022 &lt;phone-ip&gt; torrent 'magnet:?…'   <span class="c"># straight into Jellyfin</span></div>
+  </section>
+
+  <section id="contribute" class="wrap">
+    <div class="contrib reveal">
+      <div>
+        <span class="eyebrow">Built in the open</span>
+        <h2 style="margin:16px 0 16px">Help give old phones a <span class="grad">second life.</span></h2>
+        <p class="lead">Homedroid is free, GPL-licensed and young. The best thing you can do is try it on your phone and tell us how it went. Every phone report, bug and idea makes it better for the next person.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:26px">
+          <a class="btn primary" href="https://github.com/sudiptacmd/homedroid">⭐ Star on GitHub</a>
+          <a class="btn" href="https://github.com/sudiptacmd/homedroid/issues/new/choose">Send feedback</a>
+        </div>
+      </div>
+      <div class="ways">
+        <a class="way" href="https://github.com/sudiptacmd/homedroid/issues/new?template=phone_report.yml"><span class="e">📱</span><div><b>Report your phone</b><span>"Works on my Pixel 4a" helps everyone pick a phone.</span></div></a>
+        <a class="way" href="https://github.com/sudiptacmd/homedroid/issues/new?template=bug_report.yml"><span class="e">🐛</span><div><b>Report a bug</b><span>Phone model, Android version and the service's log.</span></div></a>
+        <a class="way" href="https://github.com/sudiptacmd/homedroid/issues/new?template=feature_request.yml"><span class="e">💡</span><div><b>Request an app or feature</b><span>Vaultwarden? Syncthing? Pi-hole? Tell us.</span></div></a>
+        <a class="way" href="https://github.com/sudiptacmd/homedroid/blob/main/CONTRIBUTING.md"><span class="e">🛠️</span><div><b>Open a pull request</b><span>Apps are JSON, the dashboard is one HTML file. Dive in.</span></div></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© Homedroid contributors · <a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0</a></span>
+    <span><a href="https://github.com/sudiptacmd/homedroid">GitHub</a> · <a href="https://github.com/sudiptacmd/homedroid/releases">Releases</a> · <a href="https://github.com/sudiptacmd/homedroid#readme">Documentation</a> · <a href="https://github.com/sudiptacmd/homedroid/issues">Issues</a></span>
+    <span>Demo films © Blender Foundation, <a href="https://creativecommons.org/licenses/by/3.0/">CC BY</a></span>
+  </div>
+</footer>
+
+<script>
+// Feature clips load and play only while on screen.
+const vids = document.querySelectorAll('video[data-src]');
+const seen = new IntersectionObserver(entries => {
+  for (const e of entries) {
+    const v = e.target;
+    if (e.isIntersecting) {
+      if (!v.src) v.src = v.dataset.src;
+      v.play().catch(() => {});
+    } else v.pause();
+  }
+}, { threshold: .35 });
+vids.forEach(v => seen.observe(v));
+
+const reveal = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); reveal.unobserve(e.target); } }), { threshold: .12 });
+document.querySelectorAll('.reveal').forEach(el => reveal.observe(el));
+
+// The full walkthrough is fetched from the release at deploy time; fall back to the release link.
+const wt = document.getElementById('walkthrough');
+wt.querySelector('source').addEventListener('error', () => {
+  wt.querySelector('source').src = 'https://github.com/sudiptacmd/homedroid/releases/download/v0.9.3-beta/homedroid-walkthrough.mp4';
+  wt.load();
+});
+
+fetch('https://api.github.com/repos/sudiptacmd/homedroid').then(r => r.ok ? r.json() : null).then(r => {
+  if (!r || typeof r.stargazers_count !== 'number') return;
+  const s = document.getElementById('stars');
+  s.textContent = r.stargazers_count.toLocaleString();
+  s.hidden = false;
+}).catch(() => {});
+</script>
+</body>
+</html>

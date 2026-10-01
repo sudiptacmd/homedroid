@@ -16,3 +16,4 @@ keystore.properties
 # Built by native/build-llama.sh: release assets and their hashes for the app.
 native/out/
 app/src/main/assets/llama-runtime.json
+site/media/homedroid-walkthrough.mp4
