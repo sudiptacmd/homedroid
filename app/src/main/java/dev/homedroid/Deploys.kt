@@ -229,6 +229,6 @@ class Deploys(private val ctx: Context, private val paths: Paths) {
         private val ENV_NAME = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
         /** Ports used by Homedroid and the catalog apps. */
-        private val RESERVED_PORTS = setOf(2019, 2283, 5432, 6379, 8022, 8080, 8081, 8096, 8123, 8800)
+        private val RESERVED_PORTS = setOf(2019, 2283, 5432, 6379, 8022, 8080, 8081, 8090, 8091, 8096, 8123, 8800, 8801)
     }
 }

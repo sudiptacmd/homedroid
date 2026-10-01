@@ -24,9 +24,11 @@ class Dashboard(private val ctx: Context) {
     // Room for live views and downloads forwarded to other phones, which hold a thread each.
     private val http = Http(cfg.dashboardPort, threads = 32, handler = ::handle)
     private val cluster = Cluster(ctx) { r, peer -> route(r, peer) }
+    private val ai = Ai(ctx)
 
     fun start() {
         http.start()
+        ai.start()
         try {
             cluster.start()
         } catch (e: java.io.IOException) {
@@ -35,6 +37,7 @@ class Dashboard(private val ctx: Context) {
     }
 
     fun stop() {
+        ai.stop()
         cluster.stop()
         http.stop()
     }
@@ -152,6 +155,7 @@ class Dashboard(private val ctx: Context) {
                 Response.json(JSONObject().put("ok", true), headers = mapOf("Set-Cookie" to "$COOKIE=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict"))
             }
             seg.firstOrNull() == "camera" -> cameraRoute(r, seg.drop(1))
+            seg.firstOrNull() == "ai" -> ai.handle(r, seg.drop(1))
             r.method == "GET" && seg == listOf("status") -> Response.json(status())
             // Everything the overview shows, in one request instead of four.
             r.method == "GET" && seg == listOf("overview") -> Response.json(
@@ -318,6 +322,10 @@ class Dashboard(private val ctx: Context) {
             .put("description", "Remote photos, video, flash, microphone and speaker announcements. Enable access in the phone app.")
             .put("port", 0).put("kind", "core").put("installed", true).put("enabled", cfg.cameraEnabled)
             .put("state", if (CameraService.instance != null) "ready" else "needs phone setup"))
+        core.put(JSONObject().put("id", "ai").put("name", "AI")
+            .put("description", "Chat and an OpenAI-compatible API for your other apps, with models on this phone or cloud services you connect.")
+            .put("port", AiCore.PORT).put("kind", "core").put("installed", true).put("enabled", ai.cfg.enabled)
+            .put("state", if (ai.running) "running" else "stopped"))
         return JSONObject().put("core", core).put("apps", catalog).put("job", job())
     }
 
@@ -345,6 +353,14 @@ class Dashboard(private val ctx: Context) {
             if (action !in setOf("enable", "disable")) return Response.error(400, "IPCam can only be enabled or disabled")
             cfg.cameraEnabled = action == "enable"
             if (!cfg.cameraEnabled) CameraService.stop(ctx)
+            return Response.ok()
+        }
+        if (id == "ai") {
+            if (action !in setOf("enable", "disable")) return Response.error(400, "AI can only be turned on or off")
+            ai.cfg.enabled = action == "enable"
+            if (ai.cfg.enabled) ai.start() else ai.stop()
+            // Starts or stops the on-phone model with the other services.
+            ServerService.restart(ctx)
             return Response.ok()
         }
         CORE.firstOrNull { it.id == id }?.let { m ->

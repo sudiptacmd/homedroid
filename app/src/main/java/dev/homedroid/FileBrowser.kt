@@ -66,6 +66,8 @@ class FileBrowser(private val ctx: Context, private val paths: Paths) {
             add(FileRoot(key.lowercase(), "${app.storageLabel} (${group.joinToString { it.name }})", dir))
         }
         add(FileRoot("home", "Home (SSH, web hosting in www)", paths.home))
+        // Upload a .gguf model from the computer here, then pick it in AI.
+        if (AiConfig(ctx).enabled) add(FileRoot("aimodels", "AI models", Ai.dir(ctx).apply { mkdirs() }))
         if (Storage.hasAccess(ctx)) {
             @Suppress("DEPRECATION")
             val primary = Environment.getExternalStorageDirectory()

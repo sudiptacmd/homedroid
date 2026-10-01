@@ -380,7 +380,8 @@ class Cluster(context: Context, private val route: (Request, Peer) -> Response) 
 
         private val FORWARD = listOf("content-type", "range", "upgrade", "connection", "sec-websocket-key", "sec-websocket-version")
         private val RETURN = listOf("content-range", "accept-ranges", "content-disposition", "content-security-policy", "cache-control",
-            "x-frame", "retry-after", "upgrade", "connection", "sec-websocket-accept")
+            "x-frame", "retry-after", "upgrade", "connection", "sec-websocket-accept",
+            "x-homedroid-model", "x-homedroid-where", "x-homedroid-note")
 
         private fun canonical(h: String) = h.split('-').joinToString("-") { it.replaceFirstChar(Char::uppercase) }
 

@@ -330,6 +330,19 @@ dialog[open] { animation: pop .14s var(--ease); }
 .found { display: flex; flex-direction: column; gap: 6px; }
 .found button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); cursor: pointer; }
 .found button:hover { background: var(--surface-2); }
+/* AI */
+.ai-chat { overflow: hidden; display: flex; flex-direction: column; }
+.ai-log { min-height: 180px; max-height: min(60vh, 560px); overflow-y: auto; padding: 4px 16px 12px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); }
+.ai-msg { max-width: min(760px, 92%); padding: 9px 12px; border-radius: 12px; line-height: 1.55; overflow-wrap: anywhere; }
+.ai-msg.user { align-self: flex-end; background: var(--accent-soft); }
+.ai-msg.assistant { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--line); }
+.ai-msg pre { margin: 6px 0; }
+.ai-msg code { font: 12.5px "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; background: var(--code); padding: 1px 4px; border-radius: 4px; }
+.ai-msg .meta { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+.ai-msg.error { border-color: var(--bad); color: var(--bad); }
+.ai-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); align-items: flex-end; }
+.ai-input textarea { resize: vertical; min-height: 42px; max-height: 40vh; }
+.ai-row { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); align-items: start; }
 .wall { grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); }
 .wall .vf { aspect-ratio: 4 / 3; }
 .wall .job-head select { width: auto; min-height: 30px; padding: 3px 8px; }
@@ -412,6 +425,7 @@ dialog[open] { animation: pop .14s var(--ease); }
       <a href="#deploys" data-tab="deploys"><svg class="i"><use href="#i-deploy"/></svg>Deployments</a>
       <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
       <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal &amp; SSH</a>
+      <a href="#ai" data-tab="ai"><svg class="i"><use href="#i-sparkle"/></svg>AI</a>
       <a href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg>IPCam</a>
       <a href="#cameras" data-tab="cameras" data-wall-nav class="hidden"><svg class="i"><use href="#i-eye"/></svg>All cameras</a>
       <a href="#cluster" data-tab="cluster"><svg class="i"><use href="#i-cluster"/></svg>Cluster<span class="count hidden" data-pairdot title="A phone asks to join"></span></a>
@@ -455,6 +469,63 @@ dialog[open] { animation: pop .14s var(--ease); }
       </div>
       <div class="row" style="margin-top:20px"><div class="grow hint">Phones find each other on the same Wi-Fi network. Traffic between them is encrypted, and each phone only trusts the others it was paired with.</div>
         <button class="btn ghost sm danger hidden" data-act="leaveCluster" id="clLeave">Leave the cluster</button></div>
+    </section>
+
+    <section data-view="ai" class="hidden">
+      <div class="page-head"><div class="grow"><h1>AI</h1><div class="sub">Chat with a model on this phone or a cloud service you connect, and use them from your other apps.</div></div></div>
+      <div id="aiOff"></div>
+      <div class="card ai-chat">
+        <div class="job-head" style="flex-wrap:wrap">
+          <select id="aiModel" aria-label="Model" style="width:auto;max-width:100%"></select>
+          <span class="hint grow" id="aiWhere"></span>
+          <button class="btn ghost sm" data-act="aiNew">New chat</button>
+        </div>
+        <div class="ai-log" id="aiLog" aria-live="polite"></div>
+        <form class="ai-input" id="aiForm">
+          <textarea id="aiText" rows="2" placeholder="Ask anything…" aria-label="Message"></textarea>
+          <button class="btn primary" id="aiSend" type="submit">Send</button>
+        </form>
+      </div>
+
+      <h2>On this phone</h2>
+      <div class="card pad ipcam-stack">
+        <div id="aiLocalStatus"></div>
+        <form id="aiRunForm" class="ai-row">
+          <label class="field">Model to run<select name="localModel"></select></label>
+          <label class="field">Context<select name="contextSize"><option value="2048">2k tokens</option><option value="4096">4k tokens</option><option value="8192">8k tokens</option><option value="16384">16k tokens</option></select></label>
+          <label class="field">CPU threads<select name="threads"></select></label>
+          <label class="field">Models are kept<select name="modelsDir"></select></label>
+          <div style="align-self:end"><button class="btn" type="submit">Save</button></div>
+        </form>
+        <div id="aiDownload"></div>
+        <div id="aiCatalog"></div>
+        <form id="aiUrlForm" class="row" style="flex-wrap:wrap">
+          <input name="url" placeholder="Or paste a Hugging Face link to a .gguf file" spellcheck="false" autocomplete="off" style="flex:1 1 260px">
+          <button class="btn" type="submit">Download</button>
+        </form>
+        <div class="hint">Models run on the phone's CPU with llama.cpp. Bigger models answer better but slower, use more memory and make the phone warm. You can also upload a .gguf file to <b>AI models</b> in Files.</div>
+      </div>
+
+      <h2>Cloud services</h2>
+      <div class="card">
+        <div id="aiProviders"></div>
+        <form id="aiAddForm" class="pad ipcam-stack" style="border-top:1px solid var(--line)">
+          <div class="ai-row">
+            <label class="field">Service<select name="type"><option value="openai">OpenAI</option><option value="gemini">Google Gemini</option><option value="compatible">OpenAI-compatible (OpenRouter, Groq, Ollama, LM Studio…)</option></select></label>
+            <label class="field" data-compat>Name<input name="name" placeholder="My PC" autocomplete="off"></label>
+            <label class="field" data-compat>API address<input name="baseUrl" placeholder="http://192.168.1.10:11434/v1" spellcheck="false" autocomplete="off"></label>
+            <label class="field">API key<input name="apiKey" type="password" placeholder="sk-…" autocomplete="off" spellcheck="false"></label>
+          </div>
+          <div class="row"><button class="btn primary" type="submit">Connect</button><span class="hint" id="aiAddMsg"></span></div>
+          <div class="hint">The key is checked, then stored only on this phone; the dashboard never shows it again. <b>Cloud models send your messages to that company.</b></div>
+        </form>
+        <div class="pad" style="border-top:1px solid var(--line)">
+          <label class="field">When the model on this phone can't answer (not running, or the phone is too hot)<select id="aiFallback"></select></label>
+        </div>
+      </div>
+
+      <h2>Use from other apps</h2>
+      <div class="card pad ipcam-stack" id="aiConnect"></div>
     </section>
 
     <section data-view="cameras" class="hidden">
@@ -644,6 +715,7 @@ dialog[open] { animation: pop .14s var(--ease); }
     <a href="#deploys" data-tab="deploys"><svg class="i"><use href="#i-deploy"/></svg>Deploy</a>
     <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
     <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal</a>
+    <a href="#ai" data-tab="ai"><svg class="i"><use href="#i-sparkle"/></svg>AI</a>
       <a href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg>IPCam</a>
       <a href="#cameras" data-tab="cameras" data-wall-nav class="hidden"><svg class="i"><use href="#i-eye"/></svg>Cameras</a>
       <a href="#cluster" data-tab="cluster"><svg class="i"><use href="#i-cluster"/></svg>Cluster<span class="count hidden" data-pairdot></span></a>
@@ -788,7 +860,7 @@ applyTheme();
 // ---- Routing and polling ---------------------------------------------------------------
 // The tab (and the open folder) live in the URL hash, so reloads and the back button work.
 // Only the visible tab polls, never while the page is hidden, faster only while a job runs.
-const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000, camera: 3000, settings: 0, cluster: 4000, cameras: 5000};
+const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000, camera: 3000, settings: 0, cluster: 4000, cameras: 5000, ai: 4000};
 let tab = 'overview', authed = false, pollTimer = 0, seq = 0, busyJob = false;
 function route() {
   const [t, ...rest] = location.hash.slice(1).split('/').map(s => { try { return decodeURIComponent(s); } catch (e) { return s; } });
@@ -811,6 +883,7 @@ async function refresh() {
   try {
     if (tab === 'cluster') await renderCluster();
     else if (tab === 'cameras') await renderWall();
+    else if (tab === 'ai') await renderAi();
     else if (!syncCameraNavigation(await api('settings'))) return;
     else if (tab === 'camera') await renderCamera();
     else if (tab === 'settings') await renderSettings();
@@ -923,6 +996,7 @@ async function renderOverview() {
   m.apps.forEach(x => (x.services || [x.id]).forEach((svc, i, all) =>
     owner[svc] = {name: all.length > 1 ? `${x.name} · ${svc.slice(x.id.length + 1)}` : x.name, port: i === all.length - 1 ? x.port : 0}));
   d.forEach(x => owner['deploy-' + x.id] = {name: x.name, port: x.port});
+  owner['ai-llama'] = {name: 'AI · model on this phone', port: 0};
   setHTML($('#ovServices'), services.map(v => {
     const o = owner[v.name] || {name: v.name, port: 0};
     return `<div class="item">
@@ -938,7 +1012,7 @@ async function renderOverview() {
 }
 
 // ---- Modules ---------------------------------------------------------------------------
-const COLORS = {camera: '#0f766e', ssh: '#475569', web: '#0f766e', tunnel: '#ea580c', tailscale: '#1f2937', jellyfin: '#7c3aed', qbittorrent: '#2563eb', homeassistant: '#0891b2', immich: '#db2777'};
+const COLORS = {ai: '#9333ea', camera: '#0f766e', ssh: '#475569', web: '#0f766e', tunnel: '#ea580c', tailscale: '#1f2937', jellyfin: '#7c3aed', qbittorrent: '#2563eb', homeassistant: '#0891b2', immich: '#db2777'};
 let modules = null;
 function modCard(x) {
   const busy = modules.job.running;
@@ -947,7 +1021,7 @@ function modCard(x) {
   if (x.port) chips.push(`<span class="chip">${icon('port')}Port ${x.port}</span>`);
   if (x.size) chips.push(`<span class="chip">${icon('download')}${esc(x.size)}</span>`);
   if (x.storageLabel) chips.push(`<span class="chip" title="${esc(x.storageDir || 'Inside the app')}">${icon('disk')}<span class="ellipsis">${esc(x.storageLabel)}: ${esc(x.storageDir || 'inside the app')}</span></span>`);
-  const openable = x.installed && x.enabled && x.state === 'running' && x.port && x.id !== 'ssh';
+  const openable = x.installed && x.enabled && x.state === 'running' && x.port && x.id !== 'ssh' && x.id !== 'ai';
   return `<div class="card mod">
     <div class="mod-head">
       <div class="avatar" style="background:${COLORS[x.id] || '#64748b'}">${esc(x.name[0])}</div>
@@ -961,6 +1035,7 @@ function modCard(x) {
     <div class="mod-foot">
       ${!x.installed ? `<button class="btn primary sm" data-act="install" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('download')}Install</button>` : ''}
       ${x.id === 'camera' && x.enabled ? `<a class="btn sm" href="#camera">${icon('camera')}Open IPCam</a>` : ''}
+      ${x.id === 'ai' && x.enabled ? `<a class="btn sm" href="#ai">${icon('sparkle')}Open AI</a>` : ''}
       ${openable ? `<a class="btn sm" href="${appUrl(x.port)}" target="_blank" rel="noopener">${icon('external')}Open</a>` : ''}
       ${x.id === 'tailscale' && x.enabled ? `<button class="btn sm" data-act="tsSettings">${icon('settings')}Settings</button>` : ''}
       ${x.id === 'tailscale' && x.tailscale?.status?.state === 'Running' ? `<button class="btn ghost sm" data-act="tsLogout">Log out</button>` : ''}
@@ -1768,6 +1843,178 @@ function addPhone() {
   dlg.returnValue = ''; dlg.showModal(); form.elements.value.focus();
 }
 
+// ---- AI --------------------------------------------------------------------------------
+// The conversation lives in this browser only, per phone; the phone keeps no chat history.
+const aiState = {s: null, ctrl: null, phone: undefined, msgs: []};
+const aiKey = () => 'aiChat:' + (node || '');
+function aiLoad() {
+  if (aiState.phone === node) return;
+  aiState.phone = node;
+  try { aiState.msgs = JSON.parse(stored(aiKey()) || '[]'); } catch (e) { aiState.msgs = []; }
+  drawChat();
+}
+const aiSave = () => store(aiKey(), JSON.stringify(aiState.msgs.slice(-40)));
+/** Just enough formatting for answers: code blocks, inline code, bold, line breaks. */
+function md(s) {
+  return String(s).split(/```[^\n]*\n?/).map((p, i) => i % 2 ? `<pre>${esc(p.replace(/\n$/, ''))}</pre>`
+    : esc(p).replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')).join('');
+}
+function msgHtml(m) {
+  const meta = m.role === 'assistant' && (m.where || m.note) ? `<div class="meta">${m.where === 'local' ? 'On this phone' : m.where === 'cloud' ? 'Cloud' : ''}${m.model ? ' · ' + esc(m.model) : ''}${m.note ? ' · ' + esc(m.note) : ''}</div>` : '';
+  return `<div class="ai-msg ${m.role}${m.error ? ' error' : ''}">${m.error ? esc(m.error) : m.content ? md(m.content) : '<span class="spinner"></span>'}${meta}</div>`;
+}
+function drawChat() {
+  const log = $('#aiLog'), atEnd = log.scrollTop + log.clientHeight >= log.scrollHeight - 30;
+  log.innerHTML = aiState.msgs.map(msgHtml).join('') || `<div class="empty">${icon('sparkle')}<div>Pick a model and ask something. Answers stream in as they're written.</div></div>`;
+  if (atEnd) log.scrollTop = log.scrollHeight;
+}
+async function aiSend(text) {
+  const model = $('#aiModel').value;
+  if (!model) return toast('Download a model or connect a cloud service first', true);
+  aiState.msgs.push({role: 'user', content: text});
+  const reply = {role: 'assistant', content: '', model};
+  aiState.msgs.push(reply); drawChat();
+  const history = aiState.msgs.filter(m => m !== reply && !m.error).slice(-20).map(({role, content}) => ({role, content}));
+  const ctrl = aiState.ctrl = new AbortController();
+  $('#aiSend').textContent = 'Stop';
+  let shown = 0;
+  try {
+    const res = await fetch(apiBase() + 'ai/chat', {method: 'POST', signal: ctrl.signal,
+      headers: {'X-Homedroid-Request': '1', 'Content-Type': 'application/json'}, body: JSON.stringify({model, messages: history})});
+    if (res.status === 401) return showLogin();
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+    reply.where = res.headers.get('X-Homedroid-Where'); reply.note = res.headers.get('X-Homedroid-Note');
+    reply.model = res.headers.get('X-Homedroid-Model') || model;
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    let buf = '';
+    for (;;) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, {stream: true});
+      const lines = buf.split('\n'); buf = lines.pop();
+      for (const line of lines) {
+        const data = line.startsWith('data:') ? line.slice(5).trim() : '';
+        if (!data || data === '[DONE]') continue;
+        try { const o = JSON.parse(data); reply.content += o.choices?.[0]?.delta?.content || o.choices?.[0]?.message?.content || ''; } catch (e) {}
+      }
+      // Redraw at most about 10 times a second.
+      if (Date.now() - shown > 100) { shown = Date.now(); drawChat(); }
+    }
+    if (!reply.content) reply.error = 'The model returned no text.';
+  } catch (e) {
+    if (ctrl.signal.aborted) reply.content += reply.content ? ' …' : '(stopped)';
+    else reply.error = e.message;
+  } finally {
+    aiState.ctrl = null; $('#aiSend').textContent = 'Send';
+    aiSave(); drawChat();
+  }
+}
+$('#aiForm').onsubmit = e => {
+  e.preventDefault();
+  if (aiState.ctrl) return aiState.ctrl.abort();
+  const text = $('#aiText').value.trim(); if (!text) return;
+  $('#aiText').value = ''; aiSend(text);
+};
+$('#aiText').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('#aiForm').requestSubmit(); } };
+$('#aiModel').onchange = e => { store('aiModel', e.target.value); aiWhere(); };
+function aiWhere() {
+  const m = aiState.s?.models.find(x => x.id === $('#aiModel').value);
+  $('#aiWhere').innerHTML = !m ? '' : m.local ? `${icon('check')} On this phone: nothing leaves it` : `${icon('alert')} Cloud: messages go to ${esc(m.label)}`;
+}
+
+const fits = (ramMb, total) => ramMb < total * 0.55 ? ['running', 'Fits this phone'] : ramMb < total * 0.75 ? ['starting', 'Tight on memory'] : ['backoff', 'Too big for this phone'];
+async function renderAi() {
+  aiLoad();
+  const s = aiState.s = await api('ai');
+  setHTML($('#aiOff'), s.enabled ? '' : `<div class="notice info wrap" style="margin-bottom:16px">${icon('sparkle')}<span>AI is off on this phone. Turn it on to chat and to open the API for your other apps.</span><button class="btn primary sm" data-act="aiEnable">Turn on AI</button></div>`);
+  // Model picker: rebuilt only when the list changes, so a pick isn't lost while polling.
+  const groups = {};
+  s.models.forEach(m => (groups[m.local ? 'On this phone' : 'Cloud · ' + m.label] ||= []).push(m));
+  const picker = Object.entries(groups).map(([g, ms]) => `<optgroup label="${esc(g)}">${ms.map(m => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('')}</optgroup>`).join('')
+    || '<option value="">No models yet: download one or connect a service below</option>';
+  if (setHTML($('#aiModel'), picker)) { const want = stored('aiModel'); $('#aiModel').value = s.models.some(m => m.id === want) ? want : s.models[0]?.id || ''; }
+  aiWhere();
+
+  const st = {ready: ['running', 'Ready'], loading: ['starting', 'Loading the model…'], starting: ['starting', 'Starting…'], backoff: ['backoff', 'Keeps crashing: see its logs in Overview'], stopped: ['', 'Not running'], none: ['', 'No model chosen']}[s.localState] || ['', s.localState];
+  setHTML($('#aiLocalStatus'), !s.localSupported
+    ? `<div class="notice">${icon('alert')}<span>This phone's CPU (32-bit) can't run models. Connect a cloud service below; everything else works.</span></div>`
+    : !s.runtimeInstalled
+      ? `<div class="notice info wrap">${icon('download')}<span>Install llama.cpp to run models on this phone (about 30 MB, in Alpine Linux).</span><button class="btn primary sm" data-act="aiRuntime">Install</button></div>`
+      : `<div class="row" style="flex-wrap:wrap"><span class="badge ${st[0]}">${esc(st[1])}</span><span class="hint grow">${s.localModel ? esc(s.localModel) : ''} · ${s.effectiveThreads} threads · ${Math.round(s.ramTotalMb / 1024)} GB RAM</span>
+        <button class="btn ghost sm" data-act="logs" data-svc="ai-llama" data-name="AI model">${icon('logs')}Logs</button></div>`);
+  const f = $('#aiRunForm').elements;
+  $('#aiRunForm').classList.toggle('hidden', !s.localSupported || !s.runtimeInstalled);
+  setHTML(f.localModel, `<option value="">None</option>` + s.files.map(x => `<option value="${esc(x.file)}">${esc(x.file)} (${bytes(x.bytes)})</option>`).join(''));
+  setHTML(f.threads, `<option value="0">Auto (${s.effectiveThreads})</option>` + Array.from({length: s.cores}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join(''));
+  setHTML(f.modelsDir, s.modelsDirs.map(d => `<option value="${esc(d.path || '')}">${esc(d.label)}</option>`).join(''));
+  f.modelsDir.closest('label').classList.toggle('hidden', s.modelsDirs.length < 2);
+  if (!$('#aiRunForm').dataset.dirty) {
+    f.localModel.value = s.localModel || ''; f.contextSize.value = s.contextSize; f.threads.value = s.threads;
+    f.modelsDir.value = s.modelsDirs.find(d => d.path === s.modelsDir)?.path || '';
+  }
+  const d = s.download;
+  setHTML($('#aiDownload'), !d ? '' : d.state === 'running' || d.state === 'checking'
+    ? `<div><div class="row hint" style="margin-bottom:6px"><span class="grow">${d.state === 'checking' ? 'Checking' : 'Downloading'} ${esc(d.name)}: ${bytes(d.done)}${d.total ? ' of ' + bytes(d.total) : ''}</span><button class="btn ghost sm" data-act="aiCancel">Cancel</button></div>
+        <div class="meter"><i style="width:${d.total ? Math.max(2, 100 * d.done / d.total) : 2}%"></i></div></div>`
+    : d.state === 'failed' ? `<div class="notice">${icon('alert')}<span>Downloading ${esc(d.name)} failed: ${esc(d.error)}. Downloading it again resumes where it stopped.</span></div>` : '');
+  if (!s.localSupported) return setHTML($('#aiCatalog'), ''), renderAiCloud(s);
+  const busy = d && (d.state === 'running' || d.state === 'checking');
+  const extra = s.files.filter(x => !s.catalog.some(c => c.file === x.file));
+  setHTML($('#aiCatalog'), `<div class="card" style="box-shadow:none">${s.catalog.map(c => {
+    const [cls, fit] = fits(c.ramMb, s.ramTotalMb);
+    return `<div class="item"><div class="grow"><div class="name">${esc(c.name)}</div><div class="hint">${bytes(c.bytes)} · ${esc(c.note)}</div></div>
+      <span class="badge ${cls}" title="Needs about ${(c.ramMb / 1024).toFixed(1)} GB of RAM">${fit}</span>
+      ${c.downloaded ? `<button class="btn ghost sm icon danger" data-act="aiDelete" data-file="${esc(c.file)}" title="Delete" aria-label="Delete">${icon('trash')}</button>`
+        : `<button class="btn sm" data-act="aiDownload" data-id="${esc(c.id)}" ${busy ? 'disabled' : ''}>${icon('download')}Download</button>`}</div>`;
+  }).join('')}${extra.map(x => `<div class="item"><div class="grow"><div class="name">${esc(x.file)}</div><div class="hint">${bytes(x.bytes)} · added by you</div></div>
+      <button class="btn ghost sm icon danger" data-act="aiDelete" data-file="${esc(x.file)}" title="Delete" aria-label="Delete">${icon('trash')}</button></div>`).join('')}</div>`);
+  renderAiCloud(s);
+}
+function renderAiCloud(s) {
+  setHTML($('#aiProviders'), s.providers.map(p => `<div class="item"><span class="ficon">${icon('sparkle')}</span>
+      <div class="grow"><div class="name">${esc(p.name)}</div><div class="hint ellipsis">${p.models.length} model${p.models.length === 1 ? '' : 's'} · <span class="mono">${esc(p.baseUrl)}</span></div></div>
+      <div class="acts"><button class="btn ghost sm" data-act="aiRefresh" data-id="${esc(p.id)}">${icon('sync')}Refresh</button>
+      <button class="btn ghost sm icon danger" data-act="aiRemoveProvider" data-id="${esc(p.id)}" data-name="${esc(p.name)}" title="Remove" aria-label="Remove">${icon('trash')}</button></div></div>`).join('')
+    || `<div class="empty">${icon('sparkle')}<div>No cloud services connected.</div></div>`);
+  const cloud = s.models.filter(m => !m.local);
+  if (setHTML($('#aiFallback'), `<option value="">Don't use the cloud: show an error</option>` + cloud.map(m => `<option value="${esc(m.id)}">${esc(m.label)} · ${esc(m.name)}</option>`).join('')) || document.activeElement !== $('#aiFallback')) $('#aiFallback').value = s.fallback;
+  const host = hostFor(), base = `http://${host.includes(':') ? `[${host}]` : host}:${s.port}/v1`;
+  setHTML($('#aiConnect'), !s.enabled ? '<div class="hint">Turn on AI to open the API.</div>' : `
+    <div class="hint">Any app that speaks the OpenAI API can use these models: Home Assistant, Open WebUI, scripts. They use this phone's key; your cloud keys stay on the phone.</div>
+    <div class="ai-row"><label class="field">Base URL<input readonly value="${esc(base)}" class="mono"></label>
+      <label class="field">API key<input readonly type="password" value="${esc(s.key)}" class="mono" id="aiKeyField"></label></div>
+    <div class="row" style="flex-wrap:wrap"><button class="btn sm" data-act="aiShowKey">${icon('eye')}Show key</button><button class="btn sm" data-act="aiCopyKey">Copy key</button>
+      <button class="btn ghost sm danger" data-act="aiNewKey">New key</button></div>
+    <pre>curl ${esc(base)}/chat/completions \\
+  -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \\
+  -d '{"model": "${esc(s.models[0]?.id || 'local/…')}", "messages": [{"role": "user", "content": "Hello"}]}'</pre>`);
+}
+$('#aiRunForm').onchange = () => { $('#aiRunForm').dataset.dirty = '1'; };
+$('#aiRunForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target.elements;
+  const ok = await run(api('ai/settings', {method: 'POST', body: {localModel: f.localModel.value, contextSize: +f.contextSize.value, threads: +f.threads.value,
+    ...(f.modelsDir.closest('label').classList.contains('hidden') ? {} : {modelsDir: f.modelsDir.value})}}), 'Saved; the model restarts');
+  if (ok) delete e.target.dataset.dirty;
+};
+$('#aiUrlForm').onsubmit = async e => {
+  e.preventDefault();
+  if (await run(api('ai/download', {method: 'POST', body: {url: e.target.elements.url.value.trim()}}), 'Downloading')) e.target.reset();
+};
+const aiCompat = () => $$('[data-compat]').forEach(l => l.classList.toggle('hidden', $('#aiAddForm').elements.type.value !== 'compatible'));
+$('#aiAddForm').elements.type.onchange = aiCompat; aiCompat();
+$('#aiAddForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target.elements, b = e.submitter; b.disabled = true; $('#aiAddMsg').textContent = 'Checking the key…';
+  try {
+    const p = await api('ai/providers', {method: 'POST', body: {type: f.type.value, name: f.name.value, baseUrl: f.baseUrl.value, apiKey: f.apiKey.value}});
+    e.target.reset(); aiCompat(); $('#aiAddMsg').textContent = `Connected ${p.name}: ${p.models.length} models`;
+    refresh();
+  } catch (err) { $('#aiAddMsg').textContent = err.message; }
+  finally { b.disabled = false; }
+};
+$('#aiFallback').onchange = e => run(api('ai/settings', {method: 'POST', body: {fallback: e.target.value}}), 'Saved');
+
 // ---- Actions: one delegated listener for every button ------------------------------------
 const ACT = {
   theme() { theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]; store('theme', theme === 'auto' ? null : theme); applyTheme(); },
@@ -1843,6 +2090,26 @@ const ACT = {
     b.dataset.answer === 'approve' ? 'Phone added to the cluster' : 'Request rejected'),
   manageNode(b) { setNode(b.dataset.id); location.hash = '#overview'; },
   placeApp: b => placeApp(b.dataset.kind, b.dataset.id),
+  aiNew() { aiState.ctrl?.abort(); aiState.msgs = []; aiSave(); drawChat(); $('#aiText').focus(); },
+  aiEnable: () => run(api('modules/ai/enable', {method: 'POST'}), 'Turning on AI'),
+  aiRuntime: () => run(api('ai/runtime/install', {method: 'POST'}), 'Installing llama.cpp: follow it in Modules'),
+  aiDownload: b => run(api('ai/download', {method: 'POST', body: {id: b.dataset.id}}), 'Downloading'),
+  aiCancel: () => run(api('ai/download/cancel', {method: 'POST'})),
+  async aiDelete(b) {
+    if (await ask({title: `Delete ${b.dataset.file}?`, text: 'You can download it again later.', confirm: 'Delete', danger: true}))
+      run(api(`ai/files/${encodeURIComponent(b.dataset.file)}`, {method: 'DELETE'}), 'Deleted');
+  },
+  aiRefresh: b => run(api(`ai/providers/${encodeURIComponent(b.dataset.id)}/refresh`, {method: 'POST'}), 'Model list updated'),
+  async aiRemoveProvider(b) {
+    if (await ask({title: `Disconnect ${b.dataset.name}?`, text: 'Its key is deleted from the phone. Routines using its models stop working.', confirm: 'Disconnect', danger: true}))
+      run(api(`ai/providers/${encodeURIComponent(b.dataset.id)}`, {method: 'DELETE'}), 'Disconnected');
+  },
+  aiShowKey: () => { const k = $('#aiKeyField'); k.type = k.type === 'password' ? 'text' : 'password'; },
+  async aiCopyKey() { try { await navigator.clipboard.writeText(aiState.s.key); toast('Key copied'); } catch (e) { $('#aiKeyField').type = 'text'; $('#aiKeyField').select(); toast('Select and copy the key', true); } },
+  async aiNewKey() {
+    if (await ask({title: 'Make a new key?', text: 'Apps using the current key stop working until you give them the new one.', confirm: 'New key', danger: true}))
+      run(api('ai/key', {method: 'POST'}), 'New key made');
+  },
   async wallPhoto(b) {
     const key = b.closest('[data-tile]').dataset.tile, t = wall.tiles.get(key);
     if (!t) return;

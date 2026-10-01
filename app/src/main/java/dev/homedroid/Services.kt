@@ -80,6 +80,7 @@ object Services {
             val deploys = Deploys(ctx, p)
             for (d in deploys.all()) deploys.spec(d, alpine)?.let(::add)
             val procEnv = alpine.processEnv()
+            Ai.spec(ctx, alpine, procEnv)?.let(::add)
             val apps = Apps(ctx, p)
             for (app in apps.installed().filterNot { c.isDisabled(it.id) }) {
                 val dir = app.storagePath?.let { c.storageDir(app) }
