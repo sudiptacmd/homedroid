@@ -24,6 +24,7 @@ class Dashboard(private val ctx: Context) {
     // Room for live views and downloads forwarded to other phones, which hold a thread each.
     private val http = Http(cfg.dashboardPort, threads = 32, handler = ::handle)
     private val cluster = Cluster(ctx) { r, peer -> route(r, peer) }
+    private val network = NetworkTools(ctx, paths)
     private val ai = Ai(ctx)
     private val routines = Routines(ctx, ai)
 
@@ -43,6 +44,7 @@ class Dashboard(private val ctx: Context) {
         if (phoneInstance === this) phoneInstance = null
         routines.stop()
         ai.stop()
+        network.stop()
         cluster.stop()
         http.stop()
     }
@@ -162,6 +164,7 @@ class Dashboard(private val ctx: Context) {
             seg.firstOrNull() == "camera" -> cameraRoute(r, seg.drop(1))
             seg.firstOrNull() == "ai" && seg.getOrNull(1) in setOf("routines", "briefs", "speak") -> routines.handle(r, seg.drop(1))
             seg.firstOrNull() == "ai" -> ai.handle(r, seg.drop(1))
+            seg.firstOrNull() == "network" -> network.handle(r, seg.drop(1))
             r.method == "GET" && seg == listOf("status") -> Response.json(status())
             // Everything the overview shows, in one request instead of four.
             r.method == "GET" && seg == listOf("overview") -> Response.json(
@@ -332,6 +335,7 @@ class Dashboard(private val ctx: Context) {
             .put("description", "Chat and an OpenAI-compatible API for your other apps, with models on this phone or cloud services you connect.")
             .put("port", AiCore.PORT).put("kind", "core").put("installed", true).put("enabled", ai.cfg.enabled)
             .put("state", if (ai.running) "running" else "stopped"))
+        core.put(network.module())
         return JSONObject().put("core", core).put("apps", catalog).put("job", job())
     }
 
@@ -355,6 +359,10 @@ class Dashboard(private val ctx: Context) {
     }
 
     private fun moduleAction(id: String, action: String, r: Request): Response {
+        if (id == "network") {
+            if (action !in setOf("enable", "disable")) return Response.error(400, "Network tools can only be turned on or off")
+            return network.enable(action == "enable")
+        }
         if (id == "camera") {
             if (action !in setOf("enable", "disable")) return Response.error(400, "IPCam can only be enabled or disabled")
             cfg.cameraEnabled = action == "enable"
