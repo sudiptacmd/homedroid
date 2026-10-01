@@ -104,7 +104,7 @@ class Supervisor(private val paths: Paths, specs: List<Spec>) {
         }
 
         private fun runOnce(): Int {
-            val pb = ProcessBuilder(listOf(SETSID) + spec.command).directory(paths.home).redirectErrorStream(true)
+            val pb = ProcessBuilder(listOf(SETSID) + spec.command).directory(spec.workdir ?: paths.home).redirectErrorStream(true)
             pb.environment().putAll(paths.env())
             pb.environment().putAll(spec.env)
             val p = pb.start()

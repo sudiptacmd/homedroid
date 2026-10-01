@@ -67,14 +67,14 @@ class AiConfig(ctx: Context) {
 /**
  * The AI module: an OpenAI-compatible API on [AiCore.PORT] for other apps (with its own key),
  * the dashboard's chat, model downloads, and the cloud services the user connected. Models
- * on the phone run in llama.cpp's server inside Alpine (see [spec]); the API forwards to it or
+ * on the phone run in llama.cpp built for Android (see [LlamaRuntime], [spec]); the API forwards to it or
  * to a cloud service by the model's id.
  */
 class Ai(context: Context) {
     private val ctx: Context = context.applicationContext
     val cfg = AiConfig(ctx)
     private val paths = Paths(ctx)
-    private val alpine = Alpine(ctx, paths)
+    private val llama = LlamaRuntime(ctx)
     private var router: Http? = null
     // Wrong keys on the API count like wrong dashboard passwords: a cooldown per address.
     private val guard = AuthSecurity()
@@ -103,8 +103,8 @@ class Ai(context: Context) {
     val running get() = router != null
 
     val modelsDir get() = dir(ctx)
-    val localSupported get() = Oci.archFor(paths.libDir) in setOf("arm64", "amd64")
-    val runtimeInstalled get() = File(alpine.root, "usr/bin/llama-server").exists()
+    val localSupported get() = llama.supported
+    val runtimeInstalled get() = llama.installed
     private val localAlias get() = cfg.localModel?.takeIf { File(modelsDir, it).isFile }?.let(::alias)
 
     /** The local server answers /health once the model is loaded. */
@@ -215,7 +215,7 @@ class Ai(context: Context) {
     fun json(): JSONObject {
         val dev = Device(ctx)
         val files = modelsDir.listFiles { f -> f.isFile && f.name.endsWith(".gguf") }.orEmpty().sortedBy { it.name }
-        val llama = ServerService.supervisor?.daemons?.firstOrNull { it.spec.name == SERVICE }
+        val daemon = ServerService.supervisor?.daemons?.firstOrNull { it.spec.name == SERVICE }
         return JSONObject()
             .put("enabled", cfg.enabled)
             .put("running", running)
@@ -226,11 +226,19 @@ class Ai(context: Context) {
             .put("cores", Runtime.getRuntime().availableProcessors())
             .put("localSupported", localSupported)
             .put("runtimeInstalled", runtimeInstalled)
+            .put("runtimeOutdated", llama.outdated)
+            .put("runtimeBytes", llama.bundle?.optLong("bytes") ?: 0)
+            .put("runtimeAbi", llama.abi)
+            .put("device", llama.device)
+            // Only once installed: listing devices runs the runtime.
+            .put("devices", JSONArray().apply { if (llama.installed) llama.devices().forEach { put(JSONObject().put("id", it.first).put("name", it.second)) } })
+            .put("benchmark", llama.benchmark ?: JSONObject.NULL)
             .put("localModel", cfg.localModel ?: JSONObject.NULL)
             .put("localState", when {
                 cfg.localModel == null -> "none"
-                llama == null -> "stopped"
-                llama.state != Supervisor.State.RUNNING -> llama.state.name.lowercase()
+                benchmarking -> "benchmarking"
+                daemon == null -> "stopped"
+                daemon.state != Supervisor.State.RUNNING -> daemon.state.name.lowercase()
                 localUp() -> "ready"
                 else -> "loading"
             })
@@ -276,8 +284,10 @@ class Ai(context: Context) {
             r.method == "POST" && seg == listOf("download") -> startDownload(body)
             r.method == "POST" && seg == listOf("download", "cancel") -> { download?.cancelled = true; Response.ok() }
             r.method == "DELETE" && seg.size == 2 && seg[0] == "files" -> deleteModel(seg[1])
-            r.method == "POST" && seg == listOf("runtime", "install") -> runtime(true)
-            r.method == "POST" && seg == listOf("runtime", "remove") -> runtime(false)
+            r.method == "POST" && seg == listOf("runtime", "install") -> installRuntime()
+            r.method == "POST" && seg == listOf("runtime", "upload") -> llama.upload(r)?.let { Response.error(400, it) } ?: Response.ok().also { if (cfg.enabled) ServerService.restart(ctx) }
+            r.method == "POST" && seg == listOf("benchmark") -> benchmark()
+            r.method == "POST" && seg == listOf("runtime", "remove") -> { llama.remove(); if (cfg.enabled) ServerService.restart(ctx); Response.ok() }
             else -> Response.error(404, "No such AI endpoint")
         }
     }
@@ -298,6 +308,11 @@ class Ai(context: Context) {
             val t = body.getInt("threads")
             if (t !in 0..64) return Response.error(400, "Invalid thread count")
             if (t != cfg.threads) { cfg.threads = t; restart = true }
+        }
+        if (body.has("device")) {
+            val d = body.optString("device")
+            if (d !in setOf("auto", "cpu", "gpu")) return Response.error(400, "Pick Auto, CPU or GPU")
+            if (d != llama.device) { llama.device = d; restart = true }
         }
         if (body.has("fallback")) {
             val f = body.optString("fallback")
@@ -431,26 +446,56 @@ class Ai(context: Context) {
         return Response.ok()
     }
 
-    /** Installs or removes llama.cpp's server in Alpine, as a job. */
-    private fun runtime(install: Boolean): Response {
-        if (install && !localSupported) return Response.error(409, "llama.cpp isn't available for this phone's CPU")
+    /** Runs [work] as the dashboard's job (one at a time with installs), then restarts the model. */
+    private fun job(title: String, work: () -> String?): Response {
         if (Jobs.running) return Response.error(409, "Another job is running; wait for it to finish")
-        Jobs.begin(if (install) "Installing the on-phone AI runtime" else "Removing the on-phone AI runtime")
+        Jobs.begin(title)
         Thread({
-            val error = try {
-                if (install) alpine.ensure(Jobs::line)
-                // The CPU backend (builds for each ARM/x86 level, picked at runtime) is a separate package.
-                val rc = alpine.run(if (install) "apk add --no-cache llama-server llama.cpp-cpu" else "apk del llama-server llama.cpp-cpu", Jobs::line)
-                if (rc == 0) null else "apk exited with $rc"
-            } catch (e: Exception) { e.message ?: e.toString() }
+            val error = try { work() } catch (e: Exception) { e.message ?: e.toString() }
             Jobs.finish(error)
             if (cfg.enabled) ServerService.restart(ctx)
         }, "ai-runtime").apply { isDaemon = true; start() }
         return Response.ok()
     }
 
+    /** Downloads llama.cpp for this phone from this version's release. */
+    private fun installRuntime(): Response {
+        if (!llama.supported) return Response.error(409, "llama.cpp isn't available for this phone's CPU in this build")
+        return job("Installing llama.cpp for this phone") {
+            Jobs.line("Downloading ${llama.bundle?.optString("file")} (${(llama.bundle?.optLong("bytes") ?: 0) shr 20} MB)")
+            llama.download()?.also { Jobs.line(it) } ?: run {
+                val devices = llama.devices()
+                Jobs.line(if (devices.isEmpty()) "Installed. No GPU that llama.cpp can use was found; models run on the CPU."
+                    else "Installed. GPU: " + devices.joinToString { "${it.second} (${it.first})" })
+                null
+            }
+        }
+    }
+
+    /**
+     * Measures the chosen model on the CPU and the GPU and keeps the result; "Auto" then uses
+     * the faster. The model server is stopped meanwhile: the phone has memory for one copy.
+     */
+    private fun benchmark(): Response {
+        val file = cfg.localModel?.let { File(modelsDir, it) }?.takeIf { it.isFile } ?: return Response.error(409, "Pick a model to run first")
+        if (!llama.installed) return Response.error(409, "Install llama.cpp first")
+        return job("Benchmarking ${file.name}") {
+            benchmarking = true
+            try {
+                ServerService.restart(ctx)
+                val deadline = System.currentTimeMillis() + 30_000
+                while (ServerService.supervisor?.daemons?.any { it.spec.name == SERVICE } != false && System.currentTimeMillis() < deadline) Thread.sleep(500)
+                llama.benchmark = llama.bench(file, Jobs::line)
+                null
+            } finally { benchmarking = false }
+        }
+    }
+
     companion object {
         const val SERVICE = "ai-llama"
+
+        /** Set while a benchmark runs, so the model server stays stopped. */
+        @Volatile var benchmarking = false
 
         fun dir(ctx: Context) = AiConfig(ctx).modelsDir?.let(::File) ?: File(ctx.filesDir, "ai/models")
 
@@ -458,17 +503,18 @@ class Ai(context: Context) {
         fun alias(file: String) = file.removeSuffix(".gguf").lowercase()
 
         /** The llama.cpp server for the chosen model, if the module is on and everything is in place. */
-        fun spec(ctx: Context, alpine: Alpine, procEnv: Map<String, String>): Spec? {
+        fun spec(ctx: Context): Spec? {
             val c = AiConfig(ctx)
             val file = c.localModel ?: return null
-            val dir = dir(ctx)
-            if (!c.enabled || !File(dir, file).isFile || !File(alpine.root, "usr/bin/llama-server").exists()) return null
-            val argv = listOf(
-                "/usr/bin/llama-server", "-m", "/models/$file", "--alias", alias(file),
+            val model = File(dir(ctx), file)
+            val llama = LlamaRuntime(ctx)
+            if (!c.enabled || benchmarking || !model.isFile || !llama.installed) return null
+            val args = listOf(
+                "-m", model.path, "--alias", alias(file),
                 "--host", "127.0.0.1", "--port", AiCore.LOCAL_PORT.toString(),
                 "-c", c.contextSize.toString(), "-t", c.effectiveThreads.toString(),
-            )
-            return Spec(SERVICE, alpine.command(argv, binds = listOf(dir.path to "/models")), procEnv)
+            ) + llama.deviceArgs()
+            return Spec(SERVICE, llama.command("llama-server", args), llama.env(), workdir = llama.dir)
         }
     }
 }

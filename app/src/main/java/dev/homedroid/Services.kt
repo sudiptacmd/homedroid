@@ -3,8 +3,8 @@ package dev.homedroid
 import android.content.Context
 import java.io.File
 
-/** A daemon to supervise: its argv plus extra environment. */
-class Spec(val name: String, val command: List<String>, val env: Map<String, String> = emptyMap())
+/** A daemon to supervise: its argv, extra environment and, if not the home folder, its working directory. */
+class Spec(val name: String, val command: List<String>, val env: Map<String, String> = emptyMap(), val workdir: File? = null)
 
 object Services {
     private const val WAIT_FOR_DIR =
@@ -75,12 +75,13 @@ object Services {
             )
         )
         if (c.tailscaleEnabled) add(Tailscale(p, c).spec())
+        // llama.cpp is built for Android itself (LlamaRuntime), so it needs no Alpine.
+        Ai.spec(ctx)?.let(::add)
         val alpine = Alpine(ctx, p)
         if (alpine.installed) {
             val deploys = Deploys(ctx, p)
             for (d in deploys.all()) deploys.spec(d, alpine)?.let(::add)
             val procEnv = alpine.processEnv()
-            Ai.spec(ctx, alpine, procEnv)?.let(::add)
             val apps = Apps(ctx, p)
             for (app in apps.installed().filterNot { c.isDisabled(it.id) }) {
                 val dir = app.storagePath?.let { c.storageDir(app) }
