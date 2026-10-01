@@ -36,7 +36,7 @@ A 6-minute tour of every module on an Android 10 emulator, including Tailscale, 
 
 ## Download
 
-Homedroid is in **beta (0.9.0)**. Get the APK from the
+Homedroid is in **beta (0.9.1)**. Get the APK from the
 [latest release](https://github.com/sudiptacmd/homedroid/releases):
 
 | Your phone | APK |
@@ -219,9 +219,13 @@ failover: if a phone is off, so are its apps until you move them.
 
 Turn on **AI** in Modules, then open the AI page:
 
-- **On this phone:** install llama.cpp and download a model (Qwen2.5, Llama 3.2 or Gemma 3;
-  the page says which fit your phone's memory), paste any Hugging Face `.gguf` link, or
-  upload a model to *AI models* in Files. 64-bit phones only; a 1–2B model is a good start.
+- **On this phone:** install llama.cpp (built for Android by this project, about 17 MB) and
+  download a model (Qwen2.5, Llama 3.2 or Gemma 3), paste any Hugging Face `.gguf` link, or
+  upload a model to *AI models* in Files. The page **recommends** the best model your phone
+  runs well, from its memory, free space and measured speed. 64-bit phones only.
+- **GPU or CPU:** *Run on: Auto / CPU / GPU*. The **Benchmark** measures both and Auto uses the
+  faster: Vulkan on most phone GPUs, OpenCL on Qualcomm Adreno. A GPU whose driver crashes
+  llama.cpp (older Mali GPUs do) is detected and never used.
 - **Cloud services:** connect OpenAI, Google Gemini or any OpenAI-compatible API (OpenRouter,
   Groq, Ollama or LM Studio on your computer). Keys stay on the phone. A cloud model can
   stand in when the phone is too hot or its model isn't running.
@@ -233,6 +237,12 @@ Turn on **AI** in Modules, then open the AI page:
   health and unread email (IMAP with an app password; nothing is marked read), and write
   a brief that is read aloud on any phone, kept under *Briefs*, or pushed to your phone with
   ntfy or Telegram. Email only goes to a cloud model in routines where you allow it.
+
+### Home-screen widget
+
+Add **Homedroid status** from your launcher's widgets: every phone in the cluster (online,
+battery, temperature) and the services running on this one, refreshed every minute while the
+server runs. Tap it to open the dashboard; tap its title to open the app.
 
 ### Storage
 
@@ -381,8 +391,9 @@ dedicated video hardware, which is the point: it keeps the CPU free and cool.
 - **No TLS on the LAN.** The dashboard, the AI API and apps speak plain HTTP on your network
   (traffic between cluster phones is encrypted); use Tailscale, the Cloudflare tunnel or
   `ssh -L` from outside it.
-- **AI on the phone is slow and warm.** Small models (0.5–4B) run on the CPU only; expect a
-  few words a second and a warm phone. llama.cpp is available for 64-bit phones only.
+- **AI on the phone is slow and warm.** Expect a few to a dozen words a second with small
+  (0.5–3B) models and a warm phone. GPU support depends on the phone's drivers; on older GPUs
+  models run on the CPU. llama.cpp is available for 64-bit phones only.
 - **Updates.** Apps are installed from Alpine and container registries at install time;
   update them with `apk upgrade` over SSH or by reinstalling from the Apps screen.
 
@@ -409,7 +420,6 @@ dedicated video hardware, which is the point: it keeps the CPU free and cool.
 ## Roadmap
 
 - Cluster failover: restart an app on another phone when its phone goes away
-- GPU inference for on-phone models (OpenCL/Vulkan)
 - Root mode: chroot at native speed, ports below 1024, charge limiting
 - More apps: Vaultwarden, Syncthing, Pi-hole/AdGuard; Tailscale
 - Hostname routing for deployments through Caddy
