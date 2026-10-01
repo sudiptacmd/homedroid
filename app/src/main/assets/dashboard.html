@@ -66,7 +66,7 @@ svg.i { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none;
 .side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
 .side-foot .row { justify-content: space-between; }
 .top { display: none; }
-.side-close, .nav-backdrop { display: none; }
+.btn.side-close, .nav-backdrop { display: none; }
 main { min-width: 0; padding: 28px clamp(16px, 4vw, 40px) 48px; max-width: 1180px; width: 100%; }
 .page-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
 .page-head h1 { font-size: 22px; line-height: 1.2; margin: 0; letter-spacing: -.02em; font-weight: 650; }
@@ -78,7 +78,7 @@ h2 { font-size: 12px; font-weight: 650; color: var(--muted); text-transform: upp
   .nav-open .side { visibility: visible; transform: translateX(0); }
   body.nav-open { overflow: hidden; }
   .side .brand { padding-bottom: 12px; }
-  .side-close { display: inline-flex; margin-left: auto; }
+  .btn.side-close { display: inline-flex; margin-left: auto; }
   .side .nav a { min-height: 44px; }
   .side .nav, .side-foot { flex-shrink: 0; }
   .nav-backdrop:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 39; border: 0; border-radius: 0; background: rgba(8,10,14,.48); padding: 0; cursor: pointer; }
