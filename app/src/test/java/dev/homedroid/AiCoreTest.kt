@@ -80,10 +80,11 @@ class AiCoreTest {
         AiCore.advise(AiCore.CATALOG, ramMb, free, cores, tg, benchBytes).filterValues { it.recommended }.keys.singleOrNull()
 
     @Test fun recommendsTheBestModelThatFitsMemory() {
-        // 12 GB flagship: Gemma 3 4B (~3.4 GB to run) fits comfortably.
-        assertEquals("gemma3-4b", pick(11_500))
-        // ~6 GB phone: a 3B model; Gemma 4B would take too much of it.
-        assertEquals("qwen2.5-3b", pick(5_600))
+        // 12 GB flagship: Gemma 4 E2B, the most capable model here, fits comfortably.
+        assertEquals("gemma4-e2b", pick(11_500))
+        // ~6 GB phone: Gemma 4 E2B still runs in ~2.2 GB; Gemma 3 4B would take too much.
+        assertEquals("gemma4-e2b", pick(5_600))
+        assertEquals("tight", AiCore.advise(AiCore.CATALOG, 5_600, 50L shl 30, 8, null, null).getValue("gemma3-4b").fit)
         // 3 GB phone: a 1B model (~1.4 GB to run) still fits comfortably.
         assertEquals("llama3.2-1b", pick(3_000))
         // 2 GB phone: nothing fits comfortably.
@@ -100,8 +101,8 @@ class AiCoreTest {
 
     @Test fun aBenchmarkDecidesBySpeed() {
         val half = 491_400_032L // measured with the 0.5B model
-        // 0.5B writes 30 tokens/s: 4B (5x larger) would manage ~6 → still usable, recommended.
-        assertEquals("gemma3-4b", pick(11_500, tg = 30.0, benchBytes = half))
+        // 0.5B writes 30 tokens/s: Gemma 4 E2B runs ~3x more weights per token → ~10, recommended.
+        assertEquals("gemma4-e2b", pick(11_500, tg = 30.0, benchBytes = half))
         // 0.5B writes only 12 tokens/s: 1.5B ~5.3 is the largest usable one.
         assertEquals("qwen2.5-1.5b", pick(11_500, tg = 12.0, benchBytes = half))
         val advice = AiCore.advise(AiCore.CATALOG, 11_500, 50L shl 30, 8, 12.0, half)
@@ -109,6 +110,14 @@ class AiCoreTest {
         assertEquals(12.0, advice.getValue("qwen2.5-0.5b").wordsPerSecond!!, 0.01)
         // Even a slow benchmark never leaves the user without advice for the smallest model.
         assertTrue(advice.getValue("qwen2.5-0.5b").reason.isNotEmpty())
+    }
+
+    @Test fun gemma4EModelsAreJudgedByTheWeightsTheyRun() {
+        val e2b = AiCore.CATALOG.single { it.id == "gemma4-e2b" }
+        assertTrue(e2b.activeBytes < e2b.bytes)
+        assertTrue(e2b.ramMb < 2_500)
+        // A 4-core phone without a benchmark only gets models that run under 1.2 GB per token.
+        assertNotEquals("gemma4-e2b", pick(11_500, cores = 4))
     }
 
     @Test fun catalogFilesAreGgufWithPinnedHashes() {

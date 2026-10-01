@@ -31,11 +31,17 @@ class Provider(
 }
 
 /** A model the dashboard offers to download and run on the phone. */
-class LocalModel(val id: String, val name: String, val url: String, val bytes: Long, val sha256: String, val note: String) {
+/**
+ * [activeBytes] is the part of the weights each token actually runs through. It is all of them
+ * for most models; Gemma 4's per-layer embeddings are only looked up, so its E models write
+ * and use memory like a model a fraction of their file size.
+ */
+class LocalModel(val id: String, val name: String, val url: String, val bytes: Long, val sha256: String, val note: String,
+                 val activeBytes: Long = bytes) {
     val file get() = url.substringAfterLast('/')
 
     /** Rough memory needed to run it with a 4k context: weights plus cache and runtime. */
-    val ramMb get() = bytes / 1048576 * 13 / 10 + 400
+    val ramMb get() = activeBytes / 1048576 * 13 / 10 + 400
 }
 
 /**
@@ -61,6 +67,10 @@ object AiCore {
             2019377696, "6c1a2b41161032677be168d354123594c0e6e67d2b9227c84f296ad037c728ff", "Good writing; needs 6 GB of RAM or more"),
         LocalModel("gemma3-1b", "Gemma 3 1B", "$HF/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf",
             806058240, "8ccc5cd1f1b3602548715ae25a66ed73fd5dc68a210412eea643eb20eb75a135", "Small, multilingual"),
+        // Google's quantization-aware 4-bit build: close to full quality at a quarter of the size.
+        LocalModel("gemma4-e2b", "Gemma 4 E2B", "$HF/google/gemma-4-E2B-it-qat-q4_0-gguf/resolve/main/gemma-4-E2B_q4_0-it.gguf",
+            3349516256, "fa401b55b07ee70a54c6dae3903c783a6e65064312529ea57175cb5f8dec6634",
+            "Newest Gemma: smart for its speed, multilingual; runs like a 2B model", activeBytes = 1_450_000_000),
         LocalModel("gemma3-4b", "Gemma 3 4B", "$HF/ggml-org/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf",
             2489757856, "882e8d2db44dc554fb0ea5077cb7e4bc49e7342a1f0da57901c0802ea21a0863", "Best quality here; needs 8 GB of RAM"),
     )
@@ -82,7 +92,7 @@ object AiCore {
      * benchmark, phones with fewer than 8 cores aren't recommended models over 1.2 GB.
      */
     fun advise(catalog: List<LocalModel>, ramTotalMb: Long, freeBytes: Long, cores: Int, benchTg: Double?, benchBytes: Long?): Map<String, Advice> {
-        fun speed(m: LocalModel) = if (benchTg != null && benchTg > 0 && benchBytes != null && benchBytes > 0) benchTg * benchBytes / m.bytes else null
+        fun speed(m: LocalModel) = if (benchTg != null && benchTg > 0 && benchBytes != null && benchBytes > 0) benchTg * benchBytes / m.activeBytes else null
         fun fit(m: LocalModel) = when {
             m.bytes > freeBytes - (512L shl 20) -> "no-space"
             m.ramMb < ramTotalMb * 0.55 -> "fits"
@@ -90,7 +100,7 @@ object AiCore {
             else -> "too-big"
         }
         val usable = catalog.filter { m ->
-            fit(m) == "fits" && (speed(m)?.let { it >= USABLE_SPEED } ?: (cores >= 8 || m.bytes <= 1_200_000_000L))
+            fit(m) == "fits" && (speed(m)?.let { it >= USABLE_SPEED } ?: (cores >= 8 || m.activeBytes <= 1_200_000_000L))
         }
         val best = usable.maxByOrNull { it.bytes }
         return catalog.associate { m ->
