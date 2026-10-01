@@ -15,6 +15,10 @@ class Config(ctx: Context) {
         get() = prefs.getBoolean("camera", false)
         set(v) = prefs.edit().putBoolean("camera", v).apply()
 
+    var wolEnabled: Boolean
+        get() = prefs.getBoolean("wol", false)
+        set(v) = prefs.edit().putBoolean("wol", v).apply()
+
     /** Set while an update from the dashboard installs, so the server comes back afterwards. */
     var resumeAfterUpdate: Boolean
         get() = prefs.getBoolean("resume_after_update", false)

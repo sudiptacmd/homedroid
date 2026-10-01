@@ -406,6 +406,7 @@ dialog[open] { animation: pop .14s var(--ease); }
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7h8M8 11h6"/></symbol>
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
   <symbol id="i-cluster" viewBox="0 0 24 24"><rect x="2.5" y="3" width="8" height="13" rx="1.8"/><rect x="13.5" y="8" width="8" height="13" rx="1.8"/><path d="M10.5 9.5h3M6.5 13h.01M17.5 18h.01"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M4 10a8 8 0 0 1 14-4l2 2"/><path d="M20 4v4h-4"/><path d="M20 14a8 8 0 0 1-14 4l-2-2"/><path d="M4 20v-4h4"/></symbol>
 </svg>
 
@@ -433,6 +434,7 @@ dialog[open] { animation: pop .14s var(--ease); }
       <a href="#ai" data-tab="ai"><svg class="i"><use href="#i-sparkle"/></svg>AI</a>
       <a href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg>IPCam</a>
       <a href="#cameras" data-tab="cameras" data-wall-nav class="hidden"><svg class="i"><use href="#i-eye"/></svg>All cameras</a>
+      <a href="#wol" data-tab="wol" data-wol-nav class="hidden"><svg class="i"><use href="#i-power"/></svg>Wake on LAN</a>
       <a href="#cluster" data-tab="cluster"><svg class="i"><use href="#i-cluster"/></svg>Cluster<span class="count hidden" data-pairdot title="A phone asks to join"></span></a>
       <a href="#settings" data-tab="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</a>
     </nav>
@@ -473,6 +475,23 @@ dialog[open] { animation: pop .14s var(--ease); }
       </div>
       <div class="row" style="margin-top:20px"><div class="grow hint">Phones find each other on the same Wi-Fi network. Traffic between them is encrypted, and each phone only trusts the others it was paired with.</div>
         <button class="btn ghost sm danger hidden" data-act="leaveCluster" id="clLeave">Leave the cluster</button></div>
+    </section>
+
+    <section data-view="wol" class="hidden">
+      <div class="page-head">
+        <div class="grow"><h1>Wake on LAN</h1><div class="sub">Wake computers at home from anywhere: the phone sends the magic packet on your network.</div></div>
+        <button class="btn primary" data-act="wolEdit"><svg class="i"><use href="#i-plus"/></svg>Add a device</button>
+      </div>
+      <div class="grid" id="wolList"></div>
+      <details class="card pad" style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">Getting a computer ready for Wake on LAN</summary>
+        <ul class="hint" style="margin:10px 0 0;padding-left:18px;display:grid;gap:6px">
+          <li>Turn on <b>Wake on LAN</b> (sometimes <i>Power on by PCI-E</i>) in the computer's BIOS or UEFI settings.</li>
+          <li>Windows: in Device Manager, open the network adapter's <b>Power Management</b> and <b>Advanced</b> tabs and allow <i>Wake on Magic Packet</i>. Turning off <i>Fast startup</i> helps a shut-down PC wake.</li>
+          <li>Linux: <span class="mono">ethtool -s &lt;interface&gt; wol g</span>. Mac: <i>Wake for network access</i> in Energy settings.</li>
+          <li>Use a network cable if you can; few computers wake over Wi-Fi. The MAC address is the wired adapter's (<span class="mono">ipconfig /all</span>, <span class="mono">ip link</span>).</li>
+          <li>From scripts and phone shortcuts: <span class="mono">POST /api/wol/wake</span> with <span class="mono">{"id": "…"}</span> or <span class="mono">{"mac": "…"}</span> and the dashboard password as a Bearer token.</li>
+        </ul>
+      </details>
     </section>
 
     <section data-view="ai" class="hidden">
@@ -918,7 +937,7 @@ setSidebar(false, false);
 // ---- Routing and polling ---------------------------------------------------------------
 // The tab (and the open folder) live in the URL hash, so reloads and the back button work.
 // Only the visible tab polls, never while the page is hidden, faster only while a job runs.
-const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000, camera: 3000, settings: 0, cluster: 4000, cameras: 5000, ai: 4000};
+const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000, camera: 3000, settings: 0, cluster: 4000, cameras: 5000, ai: 4000, wol: 5000};
 let tab = 'overview', authed = false, pollTimer = 0, seq = 0, busyJob = false;
 function route() {
   setSidebar(false);
@@ -945,6 +964,7 @@ async function refresh() {
     else if (tab === 'ai') await renderAi();
     else if (!syncCameraNavigation(await api('settings'))) return;
     else if (tab === 'camera') await renderCamera();
+    else if (tab === 'wol') await renderWol();
     else if (tab === 'settings') await renderSettings();
     else if (tab === 'overview') await renderOverview();
     else if (tab === 'modules') await renderModules();
@@ -1096,6 +1116,7 @@ function modCard(x) {
       ${!x.installed ? `<button class="btn primary sm" data-act="install" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('download')}Install</button>` : ''}
       ${x.id === 'camera' && x.enabled ? `<a class="btn sm" href="#camera">${icon('camera')}Open IPCam</a>` : ''}
       ${x.id === 'ai' && x.enabled ? `<a class="btn sm" href="#ai">${icon('sparkle')}Open AI</a>` : ''}
+      ${x.id === 'wol' && x.enabled ? `<a class="btn sm" href="#wol">${icon('power')}Open</a>` : ''}
       ${openable ? `<a class="btn sm" href="${appUrl(x.port)}" target="_blank" rel="noopener">${icon('external')}Open</a>` : ''}
       ${x.id === 'tailscale' && x.enabled ? `<button class="btn sm" data-act="tsSettings">${icon('settings')}Settings</button>` : ''}
       ${x.id === 'tailscale' && x.tailscale?.status?.state === 'Running' ? `<button class="btn ghost sm" data-act="tsLogout">Log out</button>` : ''}
@@ -1295,7 +1316,36 @@ const GUIDES = {
       <li><b>Exit node</b> and <b>subnet routes</b> need approving under the phone's <b>Edit route settings</b> in Machines.</li>
       <li><b>Local proxy</b> lets programs on the phone (in Alpine, for example) reach your other devices through <span class="mono">127.0.0.1:1055</span>.</li></ul>`},
   ]},
+  adguard: {title: 'Block ads with AdGuard Home', steps: [
+    {title: 'How it works', html: () => `
+      <p>AdGuard Home answers your devices' DNS lookups and refuses the ones for ad and tracker servers, so ads disappear from every app and browser that uses it.</p>
+      <p>Devices normally ask for DNS on port 53, and Android doesn't let an app use ports below 1024 without root. So AdGuard Home listens on <span class="mono">1053</span>, and you point your devices at it in one of the ways on the next pages. Through Tailscale, it's two clicks.</p>`},
+    {title: 'Sign in and test it', html: () => `
+      <p>Click <b>Open</b> on the AdGuard Home card (port 3000). The login is shown on the card. There you choose blocklists, see what was blocked and add your own rules.</p>
+      <p>From a computer on the same network, a blocked name should come back as <span class="mono">0.0.0.0</span>:</p>
+      <pre class="mono">dig @${esc(lanIp())} -p 1053 doubleclick.net</pre>`},
+    {title: 'Every device on Tailscale', html: () => `
+      <p>The easiest way, and it works on mobile data too:</p>
+      <ol><li>Turn on the <b>Tailscale</b> module and connect the phone.</li>
+      <li>In the ${ext('https://login.tailscale.com/admin/dns', 'Tailscale admin console, DNS')}, under <b>Nameservers</b> choose <b>Add nameserver → Custom</b> and enter the phone's Tailscale address${tsIp() ? `: <span class="mono">${esc(tsIp())}</span>` : ' (100.x.y.z, shown on the Tailscale card)'}.</li>
+      <li>Turn on <b>Override DNS servers</b>.</li></ol>
+      <p>Every device with Tailscale on now blocks ads. Homedroid's Tailscale passes port 53 on to AdGuard Home's 1053, so nothing else needs a port. The query log shows these devices as <span class="mono">127.0.0.1</span>.</p>`},
+    {title: 'Your whole home network', html: () => `
+      <p>This needs a router that can send DNS to another server <b>and port</b>. Most ISP routers only take an address, which always means port 53 and won't work.</p>
+      <ul><li><b>OpenWrt</b> or anything with dnsmasq: <span class="mono">server=${esc(lanIp())}#1053</span> and <span class="mono">no-resolv</span>.</li>
+      <li><b>pfSense / OPNsense</b> (Unbound forwarding): <span class="mono">${esc(lanIp())}@1053</span>.</li>
+      <li><b>A Linux computer</b> with systemd-resolved: <span class="mono">DNS=${esc(lanIp())}:1053</span> in <span class="mono">/etc/systemd/resolved.conf</span>.</li></ul>
+      <p>Give the phone a fixed address in your router (a DHCP reservation) so it doesn't move.</p>`},
+    {title: 'Good to know', html: () => `
+      <ul><li>If the phone is off, devices pointed at it can't look up names. Turn off <b>Override DNS servers</b> in Tailscale (or the router setting) while it's away.</li>
+      <li>Ads served from the same servers as the content (YouTube, for example) can't be blocked by DNS.</li>
+      <li>Some apps and browsers use their own encrypted DNS and skip AdGuard Home. Turn that off in the browser's settings if you want it filtered too.</li>
+      <li>Encrypted DNS from AdGuard Home (DNS-over-HTTPS on 8443, DNS-over-TLS on 8853) needs a certificate for a domain, under <b>Settings → Encryption</b> in its web UI.</li></ul>`},
+  ]},
 };
+/** The address this dashboard was opened on, if it's an IPv4 address; the guides show it. */
+const lanIp = () => /^\d+\.\d+\.\d+\.\d+$/.test(location.hostname) && location.hostname !== '127.0.0.1' ? location.hostname : '<phone-ip>';
+const tsIp = () => (modules?.core.find(x => x.id === 'tailscale')?.tailscale?.status?.ips || []).find(ip => !ip.includes(':'));
 const guide = {id: null, i: 0};
 function showGuide(id, i = 0) {
   const g = GUIDES[id]; guide.id = id; guide.i = Math.max(0, Math.min(i, g.steps.length - 1));
@@ -1308,6 +1358,47 @@ function showGuide(id, i = 0) {
   $('#guideNext').textContent = guide.i === g.steps.length - 1 ? 'Done' : 'Next';
   if (!dlg.open) dlg.showModal();
   $('#guideBody').scrollTop = 0;
+}
+
+// ---- Wake on LAN -----------------------------------------------------------------------
+let wolDevices = [];
+async function renderWol() {
+  const w = await api('wol');
+  wolDevices = w.devices;
+  setHTML($('#wolList'), w.devices.map(d => {
+    const state = d.online === true ? '<span class="badge running">On</span>'
+      : d.online === false ? '<span class="badge">Not answering</span>' : '<span class="badge plain">Status unknown</span>';
+    const chips = [`<span class="chip mono">${esc(d.mac)}</span>`];
+    if (d.host) chips.push(`<span class="chip">${icon('net')}<span class="mono">${esc(d.host)}</span></span>`);
+    if (d.broadcast) chips.push(`<span class="chip">Broadcast <span class="mono">${esc(d.broadcast)}</span></span>`);
+    return `<div class="card mod">
+      <div class="mod-head"><div class="avatar" style="background:#1f6f4a">${icon('power')}</div>
+        <div class="grow"><div class="title ellipsis">${esc(d.name)}</div>${state}</div></div>
+      <div class="chips">${chips.join('')}</div>
+      <div class="mod-foot">
+        <button class="btn primary sm" data-act="wolWake" data-id="${esc(d.id)}" data-name="${esc(d.name)}">${icon('power')}Wake</button>
+        <div class="grow"></div>
+        <button class="btn ghost sm icon" data-act="wolEdit" data-id="${esc(d.id)}" title="Edit" aria-label="Edit">${icon('edit')}</button>
+        <button class="btn ghost sm icon danger" data-act="wolDelete" data-id="${esc(d.id)}" data-name="${esc(d.name)}" title="Remove" aria-label="Remove">${icon('trash')}</button>
+      </div></div>`;
+  }).join('') || `<div class="card empty" style="grid-column:1/-1">${icon('power')}<div>No devices yet. Add a computer with its MAC address to wake it from anywhere.</div>
+      <div style="margin-top:12px"><button class="btn primary" data-act="wolEdit">${icon('plus')}Add a device</button></div></div>`);
+}
+function wolForm(d = {}) {
+  const dlg = $('#modal'), form = $('#modalForm');
+  form.innerHTML = `<div class="dlg-head"><h3>${d.id ? 'Edit device' : 'Add a device'}</h3></div><div class="dlg-body">
+    <label class="field">Name<input name="name" required maxlength="40" placeholder="Gaming PC" autocomplete="off"></label>
+    <label class="field">MAC address<input name="mac" required placeholder="3c:7c:3f:12:34:56" autocomplete="off" spellcheck="false" class="mono"></label>
+    <label class="field">Address <span class="hint">(optional, shows whether it's on)</span><input name="host" placeholder="192.168.1.20" autocomplete="off" spellcheck="false"></label>
+    <label class="field">Broadcast address <span class="hint">(optional; the phone uses all its networks otherwise)</span><input name="broadcast" placeholder="192.168.1.255" autocomplete="off" spellcheck="false"></label>
+  </div><div class="dlg-foot"><button class="btn primary" value="ok">Save</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>`;
+  for (const k of ['name', 'mac', 'host', 'broadcast']) form.elements[k].value = d[k] || '';
+  dlg.onclose = async () => {
+    if (dlg.returnValue !== 'ok') return;
+    const body = {...Object.fromEntries(new FormData(form)), id: d.id || ''};
+    if (!await run(api('wol/devices', {method: 'POST', body}), 'Saved ' + body.name)) wolForm({...d, ...body});
+  };
+  dlg.showModal();
 }
 
 // ---- Deployments -----------------------------------------------------------------------
@@ -2276,6 +2367,11 @@ const ACT = {
   removeMod: b => removeMod(findMod(b.dataset.id)),
   newDeploy: () => newDeploy(),
   redeploy: b => run(api(`deploys/${b.dataset.id}/redeploy`, {method: 'POST'}), 'Redeploying ' + b.dataset.name),
+  wolEdit: b => wolForm(wolDevices.find(d => d.id === b.dataset.id)),
+  wolWake: b => run(api('wol/wake', {method: 'POST', body: {id: b.dataset.id}}), `Magic packet sent to ${b.dataset.name}`),
+  async wolDelete(b) {
+    if (await ask({title: `Remove ${b.dataset.name}?`, confirm: 'Remove', danger: true})) run(api(`wol/devices/${b.dataset.id}`, {method: 'DELETE'}), 'Removed ' + b.dataset.name);
+  },
   async undeploy(b) {
     const r = await ask({title: `Delete ${b.dataset.name}?`, text: 'The deployment is stopped and its files are deleted.', confirm: 'Delete', danger: true});
     if (r) run(api(`deploys/${b.dataset.id}`, {method: 'DELETE'}), 'Deleting ' + b.dataset.name);
@@ -2392,7 +2488,9 @@ document.addEventListener('click', e => {
 // ---- IPCam and settings ----------------------------------------------------------------
 function syncCameraNavigation(settings) {
   const enabled = !!settings.cameraEnabled;
-  $$('[data-camera-nav]').forEach(a => a.classList.toggle('hidden', !enabled));
+  $('[data-camera-nav]').forEach(a => a.classList.toggle('hidden', !enabled));
+  $('[data-wol-nav]').forEach(a => a.classList.toggle('hidden', !settings.wolEnabled));
+  if (!settings.wolEnabled && tab === 'wol') { location.hash = '#modules'; return false; }
   if (!enabled && tab === 'camera') { stopListening(); location.hash = '#overview'; return false; }
   return true;
 }
