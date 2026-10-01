@@ -2488,8 +2488,8 @@ document.addEventListener('click', e => {
 // ---- IPCam and settings ----------------------------------------------------------------
 function syncCameraNavigation(settings) {
   const enabled = !!settings.cameraEnabled;
-  $('[data-camera-nav]').forEach(a => a.classList.toggle('hidden', !enabled));
-  $('[data-wol-nav]').forEach(a => a.classList.toggle('hidden', !settings.wolEnabled));
+  $$('[data-camera-nav]').forEach(a => a.classList.toggle('hidden', !enabled));
+  $$('[data-wol-nav]').forEach(a => a.classList.toggle('hidden', !settings.wolEnabled));
   if (!settings.wolEnabled && tab === 'wol') { location.hash = '#modules'; return false; }
   if (!enabled && tab === 'camera') { stopListening(); location.hash = '#overview'; return false; }
   return true;
