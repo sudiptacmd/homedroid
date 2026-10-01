@@ -330,6 +330,9 @@ dialog[open] { animation: pop .14s var(--ease); }
 .found { display: flex; flex-direction: column; gap: 6px; }
 .found button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); cursor: pointer; }
 .found button:hover { background: var(--surface-2); }
+.wall { grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); }
+.wall .vf { aspect-ratio: 4 / 3; }
+.wall .job-head select { width: auto; min-height: 30px; padding: 3px 8px; }
 .placement { table-layout: auto; min-width: 560px; }
 .placement th:not(:first-child), .placement td:not(:first-child) { text-align: center; }
 .placement td:last-child { text-align: right; white-space: nowrap; }
@@ -410,6 +413,7 @@ dialog[open] { animation: pop .14s var(--ease); }
       <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
       <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal &amp; SSH</a>
       <a href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg>IPCam</a>
+      <a href="#cameras" data-tab="cameras" data-wall-nav class="hidden"><svg class="i"><use href="#i-eye"/></svg>All cameras</a>
       <a href="#cluster" data-tab="cluster"><svg class="i"><use href="#i-cluster"/></svg>Cluster<span class="count hidden" data-pairdot title="A phone asks to join"></span></a>
       <a href="#settings" data-tab="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</a>
     </nav>
@@ -451,6 +455,14 @@ dialog[open] { animation: pop .14s var(--ease); }
       </div>
       <div class="row" style="margin-top:20px"><div class="grow hint">Phones find each other on the same Wi-Fi network. Traffic between them is encrypted, and each phone only trusts the others it was paired with.</div>
         <button class="btn ghost sm danger hidden" data-act="leaveCluster" id="clLeave">Leave the cluster</button></div>
+    </section>
+
+    <section data-view="cameras" class="hidden">
+      <div class="page-head"><div><h1>All cameras</h1><div class="sub">A live view from every phone in the cluster. Each phone streams one camera at a time.</div></div></div>
+      <div class="grid wall" id="wallTiles"></div>
+      <h2>Latest captures</h2>
+      <div class="card pad ipcam-stack" id="wallFiles"></div>
+      <p class="hint">The newest photos, videos and recordings from every phone. Open a phone's IPCam page for recording, monitoring and its settings.</p>
     </section>
 
     <section data-view="overview">
@@ -632,6 +644,7 @@ dialog[open] { animation: pop .14s var(--ease); }
     <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
     <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal</a>
       <a href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg>IPCam</a>
+      <a href="#cameras" data-tab="cameras" data-wall-nav class="hidden"><svg class="i"><use href="#i-eye"/></svg>Cameras</a>
       <a href="#cluster" data-tab="cluster"><svg class="i"><use href="#i-cluster"/></svg>Cluster<span class="count hidden" data-pairdot></span></a>
       <a href="#settings" data-tab="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</a>
   </nav>
@@ -774,11 +787,12 @@ applyTheme();
 // ---- Routing and polling ---------------------------------------------------------------
 // The tab (and the open folder) live in the URL hash, so reloads and the back button work.
 // Only the visible tab polls, never while the page is hidden, faster only while a job runs.
-const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000, camera: 3000, settings: 0, cluster: 4000};
+const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000, camera: 3000, settings: 0, cluster: 4000, cameras: 5000};
 let tab = 'overview', authed = false, pollTimer = 0, seq = 0, busyJob = false;
 function route() {
   const [t, ...rest] = location.hash.slice(1).split('/').map(s => { try { return decodeURIComponent(s); } catch (e) { return s; } });
   if (tab === 'camera' && t !== 'camera') { stopListening(); closeLive(); }
+  if (tab === 'cameras' && t !== 'cameras') stopWall();
   tab = t in POLL ? t : 'overview';
   if (tab === 'settings') settingsLoaded = false;
   $$('[data-tab]').forEach(a => a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
@@ -795,6 +809,7 @@ async function refresh() {
   const my = ++seq;
   try {
     if (tab === 'cluster') await renderCluster();
+    else if (tab === 'cameras') await renderWall();
     else if (!syncCameraNavigation(await api('settings'))) return;
     else if (tab === 'camera') await renderCamera();
     else if (tab === 'settings') await renderSettings();
@@ -1493,6 +1508,7 @@ function drawNodes() {
     sel.value = node || '';
   });
   $$('[data-pairdot]').forEach(d => d.classList.toggle('hidden', !cluster?.pending.length));
+  $$('[data-wall-nav]').forEach(a => a.classList.toggle('hidden', !ms.length));
   noteNodeError(nodeError);
 }
 let nodeError = null;
@@ -1695,7 +1711,7 @@ const ACT = {
   },
   closeGuide: () => $('#guide').close(),
   liveClose: () => closeLive(),
-  previewCapture: b => previewCapture(b.dataset.name),
+  previewCapture: b => previewCapture(b.dataset.name, b.dataset.base),
   closePreview: () => $('#preview').close(),
   dismissCapture: () => setHTML($('#captureNotice'), ''),
   updCheck: () => renderUpdate(true),
@@ -1751,6 +1767,14 @@ const ACT = {
     b.dataset.answer === 'approve' ? 'Phone added to the cluster' : 'Request rejected'),
   manageNode(b) { setNode(b.dataset.id); location.hash = '#overview'; },
   placeApp: b => placeApp(b.dataset.kind, b.dataset.id),
+  async wallPhoto(b) {
+    const key = b.closest('[data-tile]').dataset.tile, t = wall.tiles.get(key);
+    if (!t) return;
+    b.disabled = true;
+    await run(api('camera/photo', {method: 'POST', at: t.id, body: {id: t.cam, flash: false}}), 'Taking photo…');
+    b.disabled = false;
+  },
+  wallOpen(b) { setNode(b.closest('[data-tile]').dataset.tile || null); location.hash = '#camera'; },
   showJob(b) { setNode(b.dataset.id); $('#jobBox')._open = true; location.hash = '#modules'; },
   nodeHome: () => setNode(null),
   async renameNode() {
@@ -1963,7 +1987,7 @@ async function renderCamera() {
     $('#recordMic').disabled = !state.armed || mic.running;
     $('#stopMic').disabled = !state.armed || !mic.running;
     $('#announceButton').disabled = !state.armed;
-    setHTML($('#cameraFiles'), state.files.map(captureRow).join('') || '<div class="hint">No captures yet.</div>');
+    setHTML($('#cameraFiles'), state.files.map(f => captureRow(f)).join('') || '<div class="hint">No captures yet.</div>');
     noteNewCapture(state.files);
     renderLive(state);
     renderCameraSettings(state);
@@ -2071,26 +2095,135 @@ function renderLive(state) {
   fitLive();
 }
 
+// ---- All cameras -----------------------------------------------------------------------
+// One tile per phone, each running its own frame loop like the live view above, but slower:
+// a wall of phones over Wi-Fi shouldn't saturate it. Leaving the page stops every camera.
+const apiAt = id => id ? `/api/nodes/${encodeURIComponent(id)}/` : '/api/';
+const wall = {tiles: new Map(), shape: ''};
+async function renderWall() {
+  const c = cluster || await loadCluster();
+  if (!c) return;
+  const phones = [{id: null, name: c.self.name}, ...c.members.filter(m => m.online).map(m => ({id: m.id, name: m.name}))];
+  const states = await Promise.all(phones.map(p => api('camera', {at: p.id}).then(s => ({...p, s}), e => ({...p, error: e.message}))));
+  // Rebuild the tiles only when phones or their cameras changed, so the canvases keep their frames.
+  const shape = JSON.stringify(states.map(x => [x.id, x.error ? 'x' : x.s.armed, (x.s?.cameras || []).map(cam => cam.id)]));
+  if (shape !== wall.shape) {
+    stopWall(false);
+    wall.shape = shape;
+    $('#wallTiles').innerHTML = states.map(x => {
+      const key = x.id || '';
+      const cams = x.s?.cameras || [];
+      const why = x.error ? (/enable/i.test(x.error) ? 'IPCam is off on this phone. Turn it on in its Modules.' : x.error)
+        : !x.s.armed ? 'Enable IPCam access in the Homedroid app on this phone.' : !cams.length ? 'No cameras on this phone.' : '';
+      return `<div class="card live" data-tile="${esc(key)}">
+        <div class="job-head"><div class="grow ellipsis" style="font-weight:600">${esc(x.name)}</div>
+          ${why ? '' : `<select data-wallcam aria-label="Camera">${cams.map(cam => `<option value="${esc(cam.id)}">${esc(cam.name)}</option>`).join('')}</select>`}</div>
+        <div class="vf"><div class="vf-wait">${esc(why || 'Starting the camera…')}</div><canvas role="img" aria-label="Live view from ${esc(x.name)}"></canvas></div>
+        <div class="row ipcam-actions pad">
+          ${why ? '' : `<button class="btn sm" data-act="wallPhoto">${icon('camera')}Take photo</button>`}
+          <button class="btn ghost sm" data-act="wallOpen">${icon('external')}IPCam page</button>
+          <span class="hint grow" data-wallnote style="text-align:right"></span></div></div>`;
+    }).join('');
+    for (const x of states) {
+      if (x.error || !x.s.armed || !x.s.cameras.length) continue;
+      const el = $(`[data-tile="${CSS.escape(x.id || '')}"]`);
+      // Start on the camera it is already showing or watching, if any.
+      const cam = x.s.monitor?.id || x.s.live || x.s.cameras[0].id;
+      el.querySelector('[data-wallcam]').value = cam;
+      el.querySelector('[data-wallcam]').onchange = e => startTile(x.id, e.target.value);
+      startTile(x.id, cam, x.s.cameras);
+    }
+  }
+  for (const x of states) {
+    const t = wall.tiles.get(x.id || '');
+    if (t && x.s) t.cameras = x.s.cameras;
+    const note = $(`[data-tile="${CSS.escape(x.id || '')}"] [data-wallnote]`);
+    if (note && x.s) note.textContent = x.s.monitor?.recording ? 'Motion · recording' : x.s.recording ? 'Recording' : x.s.monitor?.id ? 'Monitoring' : '';
+  }
+  const files = states.flatMap(x => (x.s?.files || []).map(f => ({...f, phone: x.name, base: apiAt(x.id)})))
+    .sort((a, b) => b.name.localeCompare(a.name)).slice(0, 24);
+  setHTML($('#wallFiles'), files.map(f => captureRow(f, f.base)).join('') || '<div class="hint">No captures yet.</div>');
+}
+function startTile(id, cam, cameras) {
+  const key = id || '', old = wall.tiles.get(key);
+  old?.controller?.abort();
+  const t = {id, cam, gen: (old?.gen || 0) + 1, controller: new AbortController(), cameras: cameras || old?.cameras || []};
+  wall.tiles.set(key, t);
+  const el = $(`[data-tile="${CSS.escape(key)}"]`), wait = el.querySelector('.vf-wait');
+  wait.textContent = 'Starting the camera…'; wait.classList.remove('hidden');
+  api('camera/live/start', {method: 'POST', at: id, body: {id: cam}})
+    .then(() => tileLoop(t, el))
+    .catch(e => { if (wall.tiles.get(key) === t) wait.textContent = e.message; });
+}
+async function tileLoop(t, el) {
+  const canvas = el.querySelector('canvas'), wait = el.querySelector('.vf-wait'), key = t.id || '';
+  let after = -1;
+  while (wall.tiles.get(key) === t && !t.controller.signal.aborted) {
+    if (document.hidden) { await sleep(500); continue; }
+    try {
+      const res = await fetch(`${apiAt(t.id)}camera/live/frame?after=${after}`, {signal: t.controller.signal, cache: 'no-store'});
+      if (res.status === 401) return showLogin();
+      if (res.status !== 200) { await sleep(res.status === 204 ? 0 : 1500); continue; }
+      after = +res.headers.get('X-Frame');
+      const bitmap = await createImageBitmap(await res.blob());
+      try {
+        if (wall.tiles.get(key) !== t) return;
+        if (canvas.width !== bitmap.width || canvas.height !== bitmap.height) { canvas.width = bitmap.width; canvas.height = bitmap.height; }
+        canvas.getContext('2d').drawImage(bitmap, 0, 0);
+      } finally { bitmap.close(); }
+      wait.classList.add('hidden');
+      const cam = t.cameras.find(c => c.id === t.cam) || {};
+      fitCanvas(canvas, el.querySelector('.vf'), ((cam.rotation || 0) + (cam.settings?.rotation || 0)) % 360);
+      await sleep(350);
+    } catch (e) { if (t.controller.signal.aborted) return; await sleep(1500); }
+  }
+}
+/** Shows a sensor-oriented frame upright and whole in a fixed-shape box. */
+function fitCanvas(canvas, box, r) {
+  const w = canvas.width, h = canvas.height, bw = box.clientWidth, bh = box.clientHeight;
+  if (!w || !h || !bw || !bh) return;
+  // The upright frame's shape, fitted inside the box; the canvas is sized before rotating.
+  const side = r % 180 !== 0, a = side ? h / w : w / h;
+  const [fw, fh] = a > bw / bh ? [bw, bw / a] : [bh * a, bh];
+  canvas.style.width = `${side ? fh : fw}px`;
+  canvas.style.height = `${side ? fw : fh}px`;
+  canvas.style.transform = `translate(-50%, -50%) rotate(${r}deg)`;
+}
+/** Stops every tile; [tell] also turns the cameras off on the phones. */
+function stopWall(tell = true) {
+  for (const t of wall.tiles.values()) {
+    t.controller.abort();
+    if (tell) api('camera/live/stop', {method: 'POST', at: t.id}).catch(() => {});
+  }
+  wall.tiles.clear();
+  if (tell) wall.shape = '';
+}
+document.addEventListener('visibilitychange', () => {
+  // The phones stop a camera nobody watches; start them again on return.
+  if (!document.hidden && tab === 'cameras') for (const t of [...wall.tiles.values()]) startTile(t.id, t.cam);
+});
+
 // Captures: preview in the page, or download.
-const captureUrl = (name, inline) => `${apiBase()}camera/files/${encodeURIComponent(name)}${inline ? '?inline=1' : ''}`;
+const captureUrl = (name, inline, base = apiBase()) => `${base}camera/files/${encodeURIComponent(name)}${inline ? '?inline=1' : ''}`;
 const captureKind = name => name.endsWith('.jpg') ? 'Photo' : name.endsWith('.mp4') ? 'Video' : 'Audio';
 function captureTime(name) {
   const t = +name.split('-')[0];
   return t ? new Date(t).toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'}) : name;
 }
-function captureRow(f) {
+/** One capture; [base] is the API of the phone it is on (default: the managed one). */
+function captureRow(f, base) {
   const kind = captureKind(f.name);
-  const thumb = kind === 'Photo' ? `<img class="thumb" src="${captureUrl(f.name, true)}" alt="" loading="lazy">`
+  const thumb = kind === 'Photo' ? `<img class="thumb" src="${captureUrl(f.name, true, base)}" alt="" loading="lazy">`
     : `<span class="thumb">${icon(kind === 'Video' ? 'video' : 'audio')}</span>`;
   return `<div class="capture">${thumb}
-    <div class="grow"><div class="ellipsis" style="font-weight:550">${kind} · ${esc(captureTime(f.name))}</div><div class="hint ellipsis">${bytes(f.bytes)} · ${esc(f.name)}</div></div>
-    <button class="btn sm" data-act="previewCapture" data-name="${esc(f.name)}">${icon('eye')}<span class="lbl">Preview</span></button>
-    <a class="btn ghost sm icon" href="${captureUrl(f.name)}" download title="Download" aria-label="Download">${icon('download')}</a></div>`;
+    <div class="grow"><div class="ellipsis" style="font-weight:550">${kind} · ${esc(captureTime(f.name))}${f.phone ? ` · ${esc(f.phone)}` : ''}</div><div class="hint ellipsis">${bytes(f.bytes)} · ${esc(f.name)}</div></div>
+    <button class="btn sm" data-act="previewCapture" data-name="${esc(f.name)}"${base ? ` data-base="${esc(base)}"` : ''}>${icon('eye')}<span class="lbl">Preview</span></button>
+    <a class="btn ghost sm icon" href="${captureUrl(f.name, false, base)}" download title="Download" aria-label="Download">${icon('download')}</a></div>`;
 }
-function previewCapture(name) {
-  const kind = captureKind(name), url = captureUrl(name, true);
+function previewCapture(name, base) {
+  const kind = captureKind(name), url = captureUrl(name, true, base);
   $('#previewTitle').textContent = `${kind} · ${captureTime(name)}`;
-  $('#previewDownload').href = captureUrl(name);
+  $('#previewDownload').href = captureUrl(name, false, base);
   $('#previewBody').innerHTML = kind === 'Photo' ? `<img src="${url}" alt="${esc(kind)}">`
     : kind === 'Video' ? `<video src="${url}" controls autoplay playsinline></video>` : `<audio src="${url}" controls autoplay></audio>`;
   $('#preview').showModal();
