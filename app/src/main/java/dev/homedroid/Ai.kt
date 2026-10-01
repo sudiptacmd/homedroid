@@ -526,6 +526,10 @@ class Ai(context: Context) {
                 "-m", model.path, "--alias", alias(file),
                 "--host", "127.0.0.1", "--port", AiCore.LOCAL_PORT.toString(),
                 "-c", c.contextSize.toString(), "-t", c.effectiveThreads.toString(),
+                // llama.cpp's threads busy-wait for work by default (poll 50): on a phone that kept
+                // ~7 cores spinning while idle and drained the battery (0.9.0). Sleep instead, and
+                // let go of the model after 10 idle minutes (it reloads in seconds when asked).
+                "--poll", "0", "--sleep-idle-seconds", "600",
             ) + llama.deviceArgs()
             return Spec(SERVICE, llama.command("llama-server", args), llama.env(), workdir = llama.dir)
         }
