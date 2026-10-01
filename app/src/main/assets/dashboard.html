@@ -521,6 +521,7 @@ dialog[open] { animation: pop .14s var(--ease); }
         <form id="aiRunForm" class="ai-row">
           <label class="field">Model to run<select name="localModel"></select></label>
           <label class="field">Context<select name="contextSize"><option value="2048">2k tokens</option><option value="4096">4k tokens</option><option value="8192">8k tokens</option><option value="16384">16k tokens</option></select></label>
+          <label class="field">Run on<select name="device"><option value="auto">Auto (fastest)</option><option value="cpu">CPU</option><option value="gpu">GPU</option></select></label>
           <label class="field">CPU threads<select name="threads"></select></label>
           <label class="field">Models are kept<select name="modelsDir"></select></label>
           <div style="align-self:end"><button class="btn" type="submit">Save</button></div>
@@ -604,6 +605,7 @@ dialog[open] { animation: pop .14s var(--ease); }
       </form>
       <h2>App updates</h2>
       <div class="card pad ipcam-stack" id="updateBox"><div class="skeleton" style="width:40%"></div></div>
+      <input type="file" id="aiRuntimePick" accept=".gz,application/gzip" class="hidden">
       <input type="file" id="apkPick" accept=".apk,application/vnd.android.package-archive" class="hidden">
       <h2>Connections</h2>
       <div class="card pad hint" id="settingsConnections"></div>
@@ -1964,13 +1966,19 @@ async function renderAi() {
   if (setHTML($('#aiModel'), picker)) { const want = stored('aiModel'); $('#aiModel').value = s.models.some(m => m.id === want) ? want : s.models[0]?.id || ''; }
   aiWhere();
 
-  const st = {ready: ['running', 'Ready'], loading: ['starting', 'Loading the model…'], starting: ['starting', 'Starting…'], backoff: ['backoff', 'Keeps crashing: see its logs in Overview'], stopped: ['', 'Not running'], none: ['', 'No model chosen']}[s.localState] || ['', s.localState];
+  const st = {ready: ['running', 'Ready'], loading: ['starting', 'Loading the model…'], starting: ['starting', 'Starting…'], benchmarking: ['starting', 'Benchmarking…'], backoff: ['backoff', 'Keeps crashing: see its logs'], stopped: ['', 'Not running'], none: ['', 'No model chosen']}[s.localState] || ['', s.localState];
+  const bm = s.benchmark, speed = x => x ? `${x.tg.toFixed(1)} words/s (reads ${Math.round(x.pp)}/s)` : 'not measured';
+  const where = s.device === 'cpu' ? 'CPU' : s.device === 'gpu' ? (s.devices[0]?.name || 'GPU') : bm ? ((bm.gpu?.tg || 0) > (bm.cpu?.tg || 0) ? bm.gpu.name : 'CPU') + ' (fastest)' : 'CPU (run the benchmark to compare)';
+  const fromFile = `<button class="btn ghost sm" data-act="aiRuntimeFile" title="For testing a build before its release">Install from a file…</button>`;
   setHTML($('#aiLocalStatus'), !s.localSupported
-    ? `<div class="notice">${icon('alert')}<span>This phone's CPU (32-bit) can't run models. Connect a cloud service below; everything else works.</span></div>`
+    ? `<div class="notice">${icon('alert')}<span>Models can't run on this phone's CPU in this build. Connect a cloud service below; everything else works.</span></div>`
     : !s.runtimeInstalled
-      ? `<div class="notice info wrap">${icon('download')}<span>Install llama.cpp to run models on this phone (a download of a few tens of MB, into Alpine Linux).</span><button class="btn primary sm" data-act="aiRuntime">Install</button></div>`
-      : `<div class="row" style="flex-wrap:wrap"><span class="badge ${st[0]}">${esc(st[1])}</span><span class="hint grow">${s.localModel ? esc(s.localModel) : ''} · ${s.effectiveThreads} threads · ${Math.round(s.ramTotalMb / 1024)} GB RAM</span>
-        <button class="btn ghost sm" data-act="logs" data-svc="ai-llama" data-name="AI model">${icon('logs')}Logs</button></div>`);
+      ? `<div class="notice info wrap">${icon('download')}<span>Install llama.cpp to run models on this phone, on its GPU where it can (a ${bytes(s.runtimeBytes)} download).</span><button class="btn primary sm" data-act="aiRuntime">Install</button>${fromFile}</div>`
+      : `${s.runtimeOutdated ? `<div class="notice info wrap" style="margin-bottom:10px">${icon('sparkle')}<span>This Homedroid version comes with a newer llama.cpp.</span><button class="btn primary sm" data-act="aiRuntime">Update</button>${fromFile}</div>` : ''}
+        <div class="row" style="flex-wrap:wrap"><span class="badge ${st[0]}">${esc(st[1])}</span><span class="hint grow">${s.localModel ? esc(s.localModel) : ''} · runs on ${esc(where)} · ${s.effectiveThreads} threads · ${Math.round(s.ramTotalMb / 1024)} GB RAM</span>
+        <button class="btn ghost sm" data-act="aiBenchmark" ${s.localModel ? '' : 'disabled'}>${icon('pulse')}Benchmark</button>
+        <button class="btn ghost sm" data-act="logs" data-svc="ai-llama" data-name="AI model">${icon('logs')}Logs</button></div>
+        <div class="hint">GPU: ${s.devices.length ? s.devices.map(d => esc(d.name)).join(', ') : 'none that llama.cpp can use'}${bm ? ` · Benchmark of ${esc(bm.model)}: CPU ${speed(bm.cpu)}${bm.gpu ? `, ${esc(bm.gpu.name)} ${speed(bm.gpu)}` : ''}` : ''}</div>`);
   const f = $('#aiRunForm').elements;
   $('#aiRunForm').classList.toggle('hidden', !s.localSupported || !s.runtimeInstalled);
   setHTML(f.localModel, `<option value="">None</option>` + s.files.map(x => `<option value="${esc(x.file)}">${esc(x.file)} (${bytes(x.bytes)})</option>`).join(''));
@@ -1978,7 +1986,7 @@ async function renderAi() {
   setHTML(f.modelsDir, s.modelsDirs.map(d => `<option value="${esc(d.path || '')}">${esc(d.label)}</option>`).join(''));
   f.modelsDir.closest('label').classList.toggle('hidden', s.modelsDirs.length < 2);
   if (!$('#aiRunForm').dataset.dirty) {
-    f.localModel.value = s.localModel || ''; f.contextSize.value = s.contextSize; f.threads.value = s.threads;
+    f.localModel.value = s.localModel || ''; f.contextSize.value = s.contextSize; f.threads.value = s.threads; f.device.value = s.device;
     f.modelsDir.value = s.modelsDirs.find(d => d.path === s.modelsDir)?.path || '';
   }
   const d = s.download;
@@ -2022,7 +2030,7 @@ $('#aiRunForm').onchange = () => { $('#aiRunForm').dataset.dirty = '1'; };
 $('#aiRunForm').onsubmit = async e => {
   e.preventDefault();
   const f = e.target.elements;
-  const ok = await run(api('ai/settings', {method: 'POST', body: {localModel: f.localModel.value, contextSize: +f.contextSize.value, threads: +f.threads.value,
+  const ok = await run(api('ai/settings', {method: 'POST', body: {localModel: f.localModel.value, contextSize: +f.contextSize.value, threads: +f.threads.value, device: f.device.value,
     ...(f.modelsDir.closest('label').classList.contains('hidden') ? {} : {modelsDir: f.modelsDir.value})}}), 'Saved; the model restarts');
   if (ok) delete e.target.dataset.dirty;
 };
@@ -2041,6 +2049,15 @@ $('#aiAddForm').onsubmit = async e => {
     refresh();
   } catch (err) { $('#aiAddMsg').textContent = err.message; }
   finally { b.disabled = false; }
+};
+$('#aiRuntimePick').onchange = async e => {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  toast('Uploading ' + file.name + '…');
+  const res = await fetch(apiBase() + 'ai/runtime/upload', {method: 'POST', headers: {'X-Homedroid-Request': '1'}, body: file});
+  const data = await res.json().catch(() => ({}));
+  if (res.ok) toast('llama.cpp installed'); else toast(data.error || res.statusText, true);
+  refresh();
 };
 $('#aiFallback').onchange = e => run(api('ai/settings', {method: 'POST', body: {fallback: e.target.value}}), 'Saved');
 
@@ -2284,6 +2301,8 @@ const ACT = {
   aiNew() { aiState.ctrl?.abort(); aiState.msgs = []; aiSave(); drawChat(); $('#aiText').focus(); },
   aiEnable: () => run(api('modules/ai/enable', {method: 'POST'}), 'Turning on AI'),
   aiRuntime: () => run(api('ai/runtime/install', {method: 'POST'}), 'Installing llama.cpp: follow it in Modules'),
+  aiBenchmark: () => run(api('ai/benchmark', {method: 'POST'}), 'Benchmarking: the model pauses for a minute or two; follow it in Modules'),
+  aiRuntimeFile: () => $('#aiRuntimePick').click(),
   aiDownload: b => run(api('ai/download', {method: 'POST', body: {id: b.dataset.id}}), 'Downloading'),
   aiCancel: () => run(api('ai/download/cancel', {method: 'POST'})),
   async aiDelete(b) {
