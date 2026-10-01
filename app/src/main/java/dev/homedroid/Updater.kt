@@ -11,6 +11,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.os.Build
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
@@ -64,12 +65,14 @@ object Updater {
                 ctx.packageManager.getInstallSourceInfo(ctx.packageName).installingPackageName == ctx.packageName)
     }
 
-    /** Reads the latest release from GitHub and picks the APK for this phone. */
+    /** Reads the newest release from GitHub and picks the APK for this phone. */
     private fun check(ctx: Context) {
         checkedAt = System.currentTimeMillis()
         try {
-            val conn = open("https://api.github.com/repos/$REPO/releases/latest", ctx)
-            val rel = JSONObject(conn.inputStream.use { it.readBytes().toString(Charsets.UTF_8) })
+            // Not /releases/latest: GitHub leaves pre-releases out of it, and every beta is one.
+            val conn = open("https://api.github.com/repos/$REPO/releases?per_page=20", ctx)
+            val rel = newest(JSONArray(conn.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }))
+                ?: throw IOException("no release with an APK yet")
             val assets = rel.getJSONArray("assets")
             val apks = (0 until assets.length()).map { assets.getJSONObject(it) }.filter { it.getString("name").endsWith(".apk") }
             val abi = when (Oci.archFor(Paths(ctx).libDir)) { "arm64" -> "arm64-v8a"; "arm" -> "armeabi-v7a"; else -> "x86_64" }
@@ -197,6 +200,17 @@ object Updater {
         if (conn.responseCode != 200) throw IOException("${conn.responseCode} from ${URL(url).host}")
         return conn
     }
+
+    /** The release with the highest version that isn't a draft and has an APK, pre-releases included. */
+    fun newest(releases: JSONArray): JSONObject? =
+        (0 until releases.length()).map { releases.getJSONObject(it) }
+            .filter { r ->
+                !r.optBoolean("draft") && r.optString("tag_name").isNotEmpty() &&
+                    r.optJSONArray("assets")?.let { a -> (0 until a.length()).any { a.getJSONObject(it).optString("name").endsWith(".apk") } } == true
+            }
+            .fold(null as JSONObject?) { best, r ->
+                if (best == null || newer(r.getString("tag_name").removePrefix("v"), best.getString("tag_name").removePrefix("v"))) r else best
+            }
 
     /** "0.8.10" > "0.8.9"; a pre-release suffix only breaks ties. */
     fun newer(a: String, b: String): Boolean {
