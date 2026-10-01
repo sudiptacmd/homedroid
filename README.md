@@ -264,7 +264,7 @@ back in the dashboard.
 ## How it works
 
 <p align="center">
-  <img src="docs/architecture.svg" width="900" alt="Architecture: your devices reach the phone; inside the Homedroid app a foreground service runs the dashboard and a supervisor, which starts native daemons and apps under proot (Alpine Linux and container images); Jellyfin transcodes through an Android-native FFmpeg to the phone's MediaCodec encoder">
+  <img src="docs/architecture.svg" width="900" alt="Homedroid architecture: clients reach the phone through the dashboard, SSH, apps, the AI API, Cloudflare Tunnel or Tailscale; paired phones connect over mutual TLS; routines and the AI router use cloud services or llama.cpp running natively on the phone's GPU or CPU; supervised native daemons and apps under proot use Android storage and MediaCodec transcoding">
 </p>
 
 **Running Linux software without root.** Apps targeting Android 10+ may only execute files
