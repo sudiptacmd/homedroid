@@ -1969,7 +1969,9 @@ async function renderAi() {
 
   const st = {ready: ['running', 'Ready'], loading: ['starting', 'Loading the model…'], starting: ['starting', 'Starting…'], benchmarking: ['starting', 'Benchmarking…'], backoff: ['backoff', 'Keeps crashing: see its logs'], stopped: ['', 'Not running'], none: ['', 'No model chosen']}[s.localState] || ['', s.localState];
   const bm = s.benchmark, speed = x => x ? `${x.tg.toFixed(1)} words/s (reads ${Math.round(x.pp)}/s)` : 'not measured';
-  const where = s.device === 'cpu' ? 'CPU' : s.device === 'gpu' ? (s.devices[0]?.name || 'GPU') : bm ? ((bm.gpu?.tg || 0) > (bm.cpu?.tg || 0) ? bm.gpu.name : 'CPU') + ' (fastest)' : 'CPU (run the benchmark to compare)';
+  const failed = (bm?.failed || []).map(x => x.device), gpus = s.devices.filter(d => !failed.includes(d.id));
+  // A GPU that crashed in the benchmark is never used; the server falls back to the CPU.
+  const where = s.device === 'cpu' ? 'CPU' : s.device === 'gpu' ? (gpus[0]?.name || 'CPU (no working GPU)') : bm ? ((bm.gpu?.tg || 0) > (bm.cpu?.tg || 0) ? bm.gpu.name : 'CPU') + ' (fastest)' : 'CPU (run the benchmark to compare)';
   const fromFile = `<button class="btn ghost sm" data-act="aiRuntimeFile" title="For testing a build before its release">Install from a file…</button>`;
   setHTML($('#aiLocalStatus'), !s.localSupported
     ? `<div class="notice">${icon('alert')}<span>Models can't run on this phone's CPU in this build. Connect a cloud service below; everything else works.</span></div>`
@@ -1980,7 +1982,7 @@ async function renderAi() {
         <button class="btn ghost sm" data-act="aiBenchmark" ${s.localModel ? '' : 'disabled'}>${icon('pulse')}Benchmark</button>
         <button class="btn ghost sm" data-act="logs" data-svc="ai-llama" data-name="AI model">${icon('logs')}Logs</button></div>
         ${s.localState === 'loading' && s.localError ? `<div class="hint">Waiting for the model: ${esc(s.localError)}</div>` : ''}
-        <div class="hint">GPU: ${s.devices.length ?s.devices.map(d => esc(d.name)).join(', ') : 'none that llama.cpp can use'}${bm ? ` · Benchmark of ${esc(bm.model)}: CPU ${speed(bm.cpu)}${bm.gpu ? `, ${esc(bm.gpu.name)} ${speed(bm.gpu)}` : ''}` : ''}</div>`);
+        <div class="hint">GPU: ${s.devices.length ?s.devices.map(d => esc(d.name)).join(', ') : 'none that llama.cpp can use'}${bm?.failed?.length ? ` · <span style="color:var(--bad)">${bm.failed.map(x => esc(x.name)).join(', ')} crashed llama.cpp in the benchmark, so models run on the CPU</span>` : ''}${bm ? ` · Benchmark of ${esc(bm.model)}: CPU ${speed(bm.cpu)}${bm.gpu ? `, ${esc(bm.gpu.name)} ${speed(bm.gpu)}` : ''}` : ''}</div>`);
   const f = $('#aiRunForm').elements;
   $('#aiRunForm').classList.toggle('hidden', !s.localSupported || !s.runtimeInstalled);
   setHTML(f.localModel, `<option value="">None</option>` + s.files.map(x => `<option value="${esc(x.file)}">${esc(x.file)} (${bytes(x.bytes)})</option>`).join(''));

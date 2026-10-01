@@ -164,7 +164,12 @@ class LlamaRuntime(context: Context) {
         set(v) = prefs.edit().putString("benchmark", v?.toString()).apply()
 
     /** The GPU to use if the GPU is chosen: the benchmarked one, else the first found. */
-    private fun gpu(): String? = benchmark?.optJSONObject("gpu")?.optString("device")?.takeIf { it.isNotEmpty() } ?: devices().firstOrNull()?.first
+    private fun gpu(): String? {
+        benchmark?.optJSONObject("gpu")?.optString("device")?.takeIf { it.isNotEmpty() }?.let { return it }
+        // Not one the benchmark saw crash.
+        val failed = benchmark?.optJSONArray("failed")?.let { a -> (0 until a.length()).map { a.getJSONObject(it).optString("device") } }.orEmpty()
+        return devices().firstOrNull { it.first !in failed }?.first
+    }
 
     /** The benchmark's writing speed (tokens/s) where the model runs with the current choice, if measured. */
     fun measuredSpeed(): Double? {
@@ -194,7 +199,12 @@ class LlamaRuntime(context: Context) {
         fun one(label: String, args: List<String>): JSONObject? {
             log("Benchmarking on $label…")
             val (rc, out) = run("llama-bench", listOf("-m", model.path, "-p", "128", "-n", "48", "-r", "2", "-o", "json") + args, 900)
-            if (rc != 0) { log("  $label failed: ${out.lines().lastOrNull { it.isNotBlank() }.orEmpty()}"); return null }
+            if (rc != 0) {
+                // The cause is rarely on the last line (backend loading is logged after it).
+                log("  $label failed (exit $rc):")
+                out.lines().filter { it.isNotBlank() && !it.startsWith("load_backend:") }.takeLast(8).forEach { log("    $it") }
+                return null
+            }
             val rows = try { JSONArray(out.substring(out.indexOf('['))) } catch (_: Exception) { log("  couldn't read the results"); return null }
             var pp = 0.0; var tg = 0.0
             for (i in 0 until rows.length()) {
@@ -207,7 +217,12 @@ class LlamaRuntime(context: Context) {
         one("the CPU", listOf("-ngl", "0", "-dev", "none"))?.let { result.put("cpu", it) }
         var best: JSONObject? = null
         for ((id, name) in devices()) {
-            val r = one("$name ($id)", listOf("-ngl", "999", "-dev", id)) ?: continue
+            val r = one("$name ($id)", listOf("-ngl", "999", "-dev", id))
+            if (r == null) {
+                // Old GPU drivers can crash llama.cpp (a Mali-G72 does): never run the model there.
+                result.put("failed", (result.optJSONArray("failed") ?: JSONArray()).put(JSONObject().put("device", id).put("name", name)))
+                continue
+            }
             r.put("device", id).put("name", name)
             if (best == null || r.optDouble("tg") > best.optDouble("tg")) best = r
         }

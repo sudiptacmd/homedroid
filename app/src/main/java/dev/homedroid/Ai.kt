@@ -278,7 +278,8 @@ class Ai(context: Context) {
     }
 
     fun handle(r: Request, seg: List<String>): Response {
-        val body = if (r.method == "POST") r.json() else JSONObject()
+        // Read only by routes that take JSON: the runtime upload streams a 17 MB body instead.
+        val body by lazy { if (r.method == "POST") r.json() else JSONObject() }
         return when {
             r.method == "GET" && seg.isEmpty() -> Response.json(json())
             r.method == "POST" && seg == listOf("chat") -> proxyChat(body.put("stream", true))
