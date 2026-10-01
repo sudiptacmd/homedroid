@@ -1968,7 +1968,7 @@ async function renderAi() {
   setHTML($('#aiLocalStatus'), !s.localSupported
     ? `<div class="notice">${icon('alert')}<span>This phone's CPU (32-bit) can't run models. Connect a cloud service below; everything else works.</span></div>`
     : !s.runtimeInstalled
-      ? `<div class="notice info wrap">${icon('download')}<span>Install llama.cpp to run models on this phone (about 30 MB, in Alpine Linux).</span><button class="btn primary sm" data-act="aiRuntime">Install</button></div>`
+      ? `<div class="notice info wrap">${icon('download')}<span>Install llama.cpp to run models on this phone (a download of a few tens of MB, into Alpine Linux).</span><button class="btn primary sm" data-act="aiRuntime">Install</button></div>`
       : `<div class="row" style="flex-wrap:wrap"><span class="badge ${st[0]}">${esc(st[1])}</span><span class="hint grow">${s.localModel ? esc(s.localModel) : ''} · ${s.effectiveThreads} threads · ${Math.round(s.ramTotalMb / 1024)} GB RAM</span>
         <button class="btn ghost sm" data-act="logs" data-svc="ai-llama" data-name="AI model">${icon('logs')}Logs</button></div>`);
   const f = $('#aiRunForm').elements;

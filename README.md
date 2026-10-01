@@ -36,7 +36,7 @@ A 6-minute tour of every module on an Android 10 emulator, including Tailscale, 
 
 ## Download
 
-Homedroid is in **beta (0.8.4)**. Get the APK from the
+Homedroid is in **beta (0.9.0)**. Get the APK from the
 [latest release](https://github.com/sudiptacmd/homedroid/releases):
 
 | Your phone | APK |
@@ -70,6 +70,8 @@ from the browser there. The server comes back on the new version by itself.
 | **qBittorrent** | Downloads in order into the media library (shown in Jellyfin as *Downloads*) and keeps seeding; `torrent <magnet>` over SSH | 8081 |
 | **Home Assistant** | Home automation (network and cloud integrations) | 8123 |
 | **IPCam** | Live view of any camera, remote photos and video (previewed in the browser), flash, microphone listening/recording and spoken announcements | 8800 |
+| **AI** | Chat and an OpenAI-compatible API with models **on the phone** (llama.cpp) or cloud services you connect (OpenAI, Gemini, any compatible API); scheduled **routines** that brief you by voice, in the dashboard or as a push | 8090 |
+| **Cluster** | Several phones, one dashboard: pick which phone runs each app (and move apps with their data), every camera on one page, every phone's storage in Files | 8801 |
 | **Dashboard** | Manage everything from a browser: live load, files, a terminal, SSH access, deployments from Git | 8800 |
 
 - **Everything is a module.** Add, remove, turn on or off at any time, from the phone or the
@@ -78,7 +80,7 @@ from the browser there. The server comes back on the new version by itself.
   and photos on internal storage, a microSD card or a USB drive, per app.
 - **Built to stay up.** Foreground service, wakelocks, start on boot, automatic restarts
   with backoff, per-service logs. Crash loops show their reason in the UI.
-- **Light.** A single APK under 40 MB per ABI; apps are downloaded only when you install them.
+- **Light.** A single APK under 50 MB per ABI; apps are downloaded only when you install them.
 
 ## Requirements
 
@@ -188,6 +190,49 @@ and microphone recordings. Oldest completed captures are removed automatically t
 active recordings and files outside the capture library are protected. Lowering the allocation
 also removes old captures. Download clips you want to keep. A free-space reserve protects the
 phone from filling its disk; recording stops if no room can be freed.
+
+### Cluster
+
+Run Homedroid on several phones and manage them together. In the dashboard, open **Cluster
+→ Add a phone**: phones on the same network show up by themselves (or enter an address, for
+example over Tailscale). Both phones show the same 6-digit code; approve the request on the
+phone being added, in its notification or its own dashboard. A phone added anywhere is
+known to every phone in the cluster.
+
+- **One dashboard.** Pick a phone at the top of the sidebar and every page shows that phone.
+  The Cluster page shows the health of each one.
+- **Where apps run.** The table on the Cluster page lists every app and deployment on every
+  phone. **Move** an app and its settings and database go with it (its library too, if you
+  choose); deployments are rebuilt from Git on the new phone. An app is turned off on the
+  old phone while it moves, and back on if the move fails.
+- **All cameras** shows a live view from every phone that has IPCam on, plus the latest
+  captures from all of them.
+- **Files** lists every phone's locations; **Copy/Move to another phone** sends files and
+  folders straight between the phones.
+
+Phones talk over mutual TLS on port 8801 and trust only the phones they were paired with.
+A phone in the cluster can fully control the others: give each one a strong dashboard
+password. Apps can't use another phone's storage directly, and there is no automatic
+failover: if a phone is off, so are its apps until you move them.
+
+### AI
+
+Turn on **AI** in Modules, then open the AI page:
+
+- **On this phone:** install llama.cpp and download a model (Qwen2.5, Llama 3.2 or Gemma 3;
+  the page says which fit your phone's memory), paste any Hugging Face `.gguf` link, or
+  upload a model to *AI models* in Files. 64-bit phones only; a 1–2B model is a good start.
+- **Cloud services:** connect OpenAI, Google Gemini or any OpenAI-compatible API (OpenRouter,
+  Groq, Ollama or LM Studio on your computer). Keys stay on the phone. A cloud model can
+  stand in when the phone is too hot or its model isn't running.
+- **Chat** streams answers and labels each one *on this phone* or *cloud*.
+- **For other apps:** `http://<phone-ip>:8090/v1` is an OpenAI-compatible API (models and
+  chat completions) with its own key, shown on the AI page. Use `local/<model>` or
+  `<service>/<model>` as the model name.
+- **Routines** run on a schedule: they read news feeds, web pages, the weather, the phones'
+  health and unread email (IMAP with an app password; nothing is marked read), and write
+  a brief that is read aloud on any phone, kept under *Briefs*, or pushed to your phone with
+  ntfy or Telegram. Email only goes to a cloud model in routines where you allow it.
 
 ### Storage
 
@@ -333,8 +378,11 @@ dedicated video hardware, which is the point: it keeps the CPU free and cool.
   sensors, so the dashboard shows the load of Homedroid's own processes (which are all the
   servers), the battery temperature and Android's thermal status, plus the CPU temperature on
   phones that expose it.
-- **No TLS on the LAN.** The dashboard and apps speak plain HTTP on your network; use the
-  Cloudflare tunnel or `ssh -L` from outside it.
+- **No TLS on the LAN.** The dashboard, the AI API and apps speak plain HTTP on your network
+  (traffic between cluster phones is encrypted); use Tailscale, the Cloudflare tunnel or
+  `ssh -L` from outside it.
+- **AI on the phone is slow and warm.** Small models (0.5–4B) run on the CPU only; expect a
+  few words a second and a warm phone. llama.cpp is available for 64-bit phones only.
 - **Updates.** Apps are installed from Alpine and container registries at install time;
   update them with `apk upgrade` over SSH or by reinstalling from the Apps screen.
 
@@ -348,6 +396,10 @@ dedicated video hardware, which is the point: it keeps the CPU free and cool.
   with a shared 50-failure budget across peers. Login, Bearer requests and password changes
   share the persisted limits. Sessions expire after 24 hours; upgrading requires a fresh
   login. See the [security review](docs/SECURITY-REVIEW-0.8.5.md).
+- From 0.9.0 beta, cluster phones pair with a code checked on both phones, talk over mutual
+  TLS, and can fully control each other, so the weakest dashboard password protects the
+  whole cluster. The AI API has its own key; cloud keys and the email password never leave
+  the phone. See the [0.9.0 security review](docs/SECURITY-REVIEW-0.9.0.md).
 - Everything listens on the phone's network, so keep the phone on a network you trust, and
   expose services to the internet through the Cloudflare tunnel rather than port forwarding.
 - Other apps on the same phone can reach `localhost`. Homedroid binds databases to localhost and
@@ -356,6 +408,8 @@ dedicated video hardware, which is the point: it keeps the CPU free and cool.
 
 ## Roadmap
 
+- Cluster failover: restart an app on another phone when its phone goes away
+- GPU inference for on-phone models (OpenCL/Vulkan)
 - Root mode: chroot at native speed, ports below 1024, charge limiting
 - More apps: Vaultwarden, Syncthing, Pi-hole/AdGuard; Tailscale
 - Hostname routing for deployments through Caddy

@@ -133,9 +133,10 @@ class Cluster(context: Context, private val route: (Request, Peer) -> Response) 
     /** Asks the phone at [host] to join; the user then approves it there. */
     fun pair(host: String, port: Int): Response {
         if (!Peer.validHost(host) || port !in 1..65535) return Response.error(400, "Enter the other phone's address, like 192.168.1.20")
+        val hello = self().toString().toByteArray()
         val (status, reply, fp) = try {
             PeerHttp.request(identity, host, port, null, "POST", "/cluster/pair", mapOf("Content-Type" to "application/json"),
-                self().toString().toByteArray().size.toLong(), { it.write(self().toString().toByteArray()) }).use { res ->
+                hello.size.toLong(), { it.write(hello) }).use { res ->
                 Triple(res.status, try { JSONObject(res.text()) } catch (_: Exception) { JSONObject() }, res.fingerprint)
             }
         } catch (e: Exception) {
@@ -317,8 +318,9 @@ class Cluster(context: Context, private val route: (Request, Peer) -> Response) 
             return Response(101, ByteArray(0), "", back, upgrade = { input, output -> pipe(input, output, res) }, upgradeAuthorized = authorized)
         }
         val length = res.headers["content-length"]?.toLongOrNull()
+        // Streams without a length (AI answers as they're written) are passed on piece by piece.
         return Response(res.status, ByteArray(0), res.headers["content-type"] ?: "application/octet-stream", back,
-            stream = { out -> res.use { copy(it.body, out) } }, length = length)
+            stream = { out -> res.use { copy(it.body, out, flush = length == null) } }, length = length)
     }
 
     /** Relays a WebSocket between the browser and the other phone until either side closes. */

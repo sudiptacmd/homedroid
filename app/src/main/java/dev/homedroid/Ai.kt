@@ -439,7 +439,8 @@ class Ai(context: Context) {
         Thread({
             val error = try {
                 if (install) alpine.ensure(Jobs::line)
-                val rc = alpine.run(if (install) "apk add --no-cache llama-server" else "apk del llama-server", Jobs::line)
+                // The CPU backend (builds for each ARM/x86 level, picked at runtime) is a separate package.
+                val rc = alpine.run(if (install) "apk add --no-cache llama-server llama.cpp-cpu" else "apk del llama-server llama.cpp-cpu", Jobs::line)
                 if (rc == 0) null else "apk exited with $rc"
             } catch (e: Exception) { e.message ?: e.toString() }
             Jobs.finish(error)
