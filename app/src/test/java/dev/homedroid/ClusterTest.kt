@@ -132,4 +132,33 @@ class ClusterTest {
         assertFalse(Peer.validHost("a\r\nHost: x"))
         assertEquals("", Peer.from(peer('a').toJson().put("address", "x/y"))!!.address)
     }
+
+    @Test fun requestsThroughALocalForwardKeepTheMembersRealAddress() {
+        for (local in listOf("127.0.0.1", "127.1.2.3", "::1", "0:0:0:0:0:0:0:1", "::ffff:127.0.0.1", "0.0.0.0", "::", "localhost")) {
+            assertTrue(local, Peer.isLocal(local))
+        }
+        for (remote in listOf("192.168.1.20", "10.0.2.2", "1::", "fe80::1%wlan0", "phone.lan", "cafe", "100")) {
+            assertFalse(remote, Peer.isLocal(remote))
+        }
+        var saves = 0
+        val state = ClusterState("{}", "f".repeat(64), persist = { saves++ })
+        val p = peer('a').apply { address = "192.168.1.20" }
+        state.add(p)
+        saves = 0
+        state.seen(p, "127.0.0.1")
+        assertEquals("192.168.1.20", p.address)
+        assertEquals(0, saves)
+        state.seen(p, "192.168.1.30")
+        assertEquals("192.168.1.30", p.address)
+        assertEquals(1, saves)
+    }
+
+    @Test fun durableWritesReplaceTheFileAndLeaveNoTemporary() {
+        val dir = tmp.newFolder("durable")
+        val f = java.io.File(dir, "state.json")
+        assertTrue(writeDurably(f, "one".toByteArray()))
+        assertTrue(writeDurably(f, "two".toByteArray()))
+        assertEquals("two", f.readText())
+        assertEquals(listOf("state.json"), dir.list()!!.toList())
+    }
 }

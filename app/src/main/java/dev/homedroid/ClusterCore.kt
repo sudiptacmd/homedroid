@@ -8,8 +8,12 @@ import java.io.FilterInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.io.FileOutputStream
 import java.math.BigInteger
+import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.net.Socket
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
@@ -30,6 +34,22 @@ import javax.net.ssl.X509ExtendedKeyManager
 import javax.net.ssl.X509TrustManager
 
 /**
+ * Replaces [file] with [bytes] through a temporary file that reaches the disk before the
+ * rename, so losing power right after leaves either the old contents or the new, never an
+ * empty file.
+ */
+fun writeDurably(file: File, bytes: ByteArray): Boolean {
+    val tmp = File(file.path + ".tmp")
+    return try {
+        FileOutputStream(tmp).use { it.write(bytes); it.fd.sync() }
+        Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        true
+    } catch (_: IOException) {
+        false
+    }
+}
+
+/**
  * A phone's identity in a cluster: an EC P-256 key and a self-signed certificate, made on
  * first use. Phones know each other by the SHA-256 fingerprint of that certificate, learned
  * during pairing, so no certificate authority is involved.
@@ -45,9 +65,9 @@ class ClusterIdentity private constructor(val key: PrivateKey, val cert: X509Cer
             if (!keyFile.exists() || !certFile.exists()) {
                 val pair = KeyPairGenerator.getInstance("EC").apply { initialize(ECGenParameterSpec("secp256r1")) }.generateKeyPair()
                 val der = selfSigned(pair.public.encoded, pair.private)
-                // Written to temporary files first, so a crash never leaves a key without its certificate.
-                File(dir, "cert.der.tmp").apply { writeBytes(der) }.renameTo(certFile)
-                File(dir, "key.pk8.tmp").apply { writeBytes(pair.private.encoded) }.renameTo(keyFile)
+                // Certificate first, so a crash never leaves a key without its certificate.
+                writeDurably(certFile, der)
+                writeDurably(keyFile, pair.private.encoded)
             }
             val key = KeyFactory.getInstance("EC").generatePrivate(PKCS8EncodedKeySpec(keyFile.readBytes()))
             return ClusterIdentity(key, parse(certFile.readBytes()))
@@ -300,6 +320,20 @@ class Peer(
 
         /** An IPv4/IPv6 literal or a plain hostname: nothing that could smuggle a path or header. */
         fun validHost(s: String) = s.length in 1..253 && Regex("[0-9A-Za-z.:%-]+").matches(s)
+
+        /**
+         * This device itself: what a connection seems to come from when it arrives through a
+         * local port forward or relay. Never another phone's address.
+         */
+        fun isLocal(s: String): Boolean {
+            val h = s.lowercase()
+            if (h == "localhost") return true
+            // Only IP literals are parsed, so this never looks a name up.
+            val literal = Regex("[0-9.]+").matches(h) || (':' in h && Regex("[0-9a-f:.]+").matches(h))
+            if (!literal) return false
+            val a = try { InetAddress.getByName(h) } catch (_: Exception) { return false }
+            return a.isLoopbackAddress || a.isAnyLocalAddress
+        }
     }
 }
 
@@ -417,10 +451,14 @@ class ClusterState(
 
     @Synchronized fun clear() { peers.clear(); save() }
 
-    /** Records where a member was last heard from; only saved when it changed. */
+    /**
+     * Records where a member was last heard from; only saved when it changed. A loopback source
+     * means the request came through a forward on this device, so it says nothing about where
+     * the member is.
+     */
     @Synchronized fun seen(p: Peer, address: String, info: JSONObject? = null) {
         var changed = false
-        if (Peer.validHost(address) && address != p.address) { p.address = address; changed = true }
+        if (Peer.validHost(address) && !Peer.isLocal(address) && address != p.address) { p.address = address; changed = true }
         info?.optString("name")?.let(Peer::cleanName)?.takeIf { it.isNotEmpty() && it != p.name }?.let { p.name = it; changed = true }
         info?.optString("model")?.let(Peer::cleanName)?.takeIf { it.isNotEmpty() && it != p.model }?.let { p.model = it; changed = true }
         if (changed) save()
