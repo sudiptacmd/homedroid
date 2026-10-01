@@ -96,3 +96,24 @@ penetration test; the 0.8.5 review still describes everything else.
 - Not yet verified on hardware: TLS between real phones (Conscrypt), mDNS on real
   networks, llama.cpp under proot on a phone, text-to-speech delivery and live IMAP
   servers. See `tests/CLUSTER-AI.md`.
+
+## 0.9.1 changes
+
+- **On-phone AI runtime.** llama.cpp is no longer installed from Alpine; it is built by this
+  repository's release workflow (`native/build-llama.sh`, sources pinned to exact commits) and
+  attached to the GitHub release. The phone downloads it over HTTPS and installs it only if its
+  SHA-256 matches the hash compiled into the APK (`assets/llama-runtime.json`), so the runtime
+  can't be swapped without the app's signing key. An upload through the dashboard ("install
+  from a file", for testing) is held to the same hash. It is unpacked with the same extractor as
+  Alpine (paths confined to its folder) and run through `/system/bin/linker64`, because Android
+  forbids executing files from app storage directly; it gets no more access than the app.
+- **Vendor libraries.** The runtime's library path includes `/vendor/lib64` so the OpenCL driver
+  on Qualcomm phones can load; the runtime's own folder comes first.
+- **Cleartext HTTP.** The app now allows plain-HTTP connections (`usesCleartextTraffic`).
+  Android's default blocked Homedroid from reaching its own llama.cpp server on 127.0.0.1 and
+  LAN services the user configures (Ollama, feeds, ntfy). Built-in cloud providers, model and
+  runtime downloads, GitHub and IMAP still use HTTPS/TLS; a user-entered `http://` address is
+  sent in the clear, as the user chose.
+- **Home-screen widget.** Its receiver is exported (launchers require that); another app can
+  only make it refresh. It shows phone names, battery, temperature and service names on the
+  home screen, so anyone holding the unlocked phone can read them.
