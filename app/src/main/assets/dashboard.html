@@ -2507,9 +2507,9 @@ const networkTools = [
   ['whois', 'Whois', 'host'], ['iperf', 'LAN speed test', 'host', 'port'], ['speed', 'Internet speed test']
 ];
 const networkDefaults = {host: '', server: '', port: '443', type: 'A', ports: '', url: 'https://example.com'};
-const networkLabels = {host: 'Host / IP (scan also accepts /24 or smaller)', server: 'DNS server (optional)', port: 'Port', type: 'Record type', ports: 'Ports / ranges (empty: top 100)', url: 'HTTP / HTTPS URL'};
+const networkLabels = {host: 'Host or IP address', scanHost: 'Host, IP or subnet (/24 or smaller)', server: 'DNS server (optional)', port: 'Port', type: 'Record type', ports: 'Ports / ranges (empty: top 100)', url: 'HTTP / HTTPS URL'};
 $('#netTools').innerHTML = networkTools.map(([kind, title, ...fields]) => `<div class="card pad" data-network-tool="${kind}">
-  <h3>${title}</h3><form class="ipcam-stack" data-network-form="${kind}">${fields.map(key => `<label class="field">${networkLabels[key]}<input name="${key}" maxlength="${key === 'url' ? 2048 : 256}" value="${esc(key === 'port' ? (kind === 'dns' ? '53' : kind === 'iperf' ? '5201' : '443') : networkDefaults[key])}" ${['host', 'url', 'port', 'type'].includes(key) ? 'required' : ''}></label>`).join('')}
+  <h3>${title}</h3><form class="ipcam-stack" data-network-form="${kind}">${fields.map(key => `<label class="field">${networkLabels[kind === 'scan' && key === 'host' ? 'scanHost' : key]}<input name="${key}" maxlength="${key === 'url' ? 2048 : 256}" value="${esc(key === 'port' ? (kind === 'dns' ? '53' : kind === 'iperf' ? '5201' : '443') : networkDefaults[key])}" ${['host', 'url', 'port', 'type'].includes(key) ? 'required' : ''}></label>`).join('')}
   ${kind === 'speed' ? '<p class="hint">Downloads 10 MB and uploads 2 MB to Cloudflare. Connection latency includes DNS and TCP setup.</p>' : ''}
   <div class="row"><button class="btn primary sm" type="submit">Run</button><button class="btn sm" type="button" data-act="netCancel" data-kind="${kind}" disabled>Cancel</button></div></form>
   <div class="notice hidden" data-network-fallback>This phone doesn't allow ping from apps; use the TCP check instead. <button class="btn sm" data-act="netTcpOffer" data-kind="${kind}">Use TCP check</button></div>

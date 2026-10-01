@@ -97,7 +97,11 @@ class NetworkTools(private val ctx: Context, private val paths: Paths) {
                                 "scan" -> job.result = jsonArray(NetworkCore.nmap(job.text()).map { (ip, ports) -> JSONObject().put("ip", ip).put("ports", jsonArray(ports)) })
                                 "dns" -> job.result = jsonArray(NetworkCore.dig(job.text()))
                                 "iperf" -> job.result = NetworkCore.iperf(job.text())
-                                "http" -> job.result = NetworkCore.curl(job.text())
+                                "http" -> {
+                                    job.result = NetworkCore.curl(job.text())
+                                    // The chain is only there for its expiry date; nobody reads base64.
+                                    job.scrub(Regex("-----BEGIN CERTIFICATE-----[\\s\\S]*?-----END CERTIFICATE-----"), "(certificate)")
+                                }
                                 "speed" -> {
                                     val down = NetworkCore.curl(job.text())
                                     check(down.optInt("Status") in 200..299) { "Cloudflare download returned HTTP ${down.optInt("Status")}" }
@@ -109,7 +113,8 @@ class NetworkTools(private val ctx: Context, private val paths: Paths) {
                                     job.result = JSONObject().put("downloadMbps", down.optDouble("Download", 0.0) * 8 / 1e6)
                                         .put("uploadMbps", up.optDouble("Upload", 0.0) * 8 / 1e6)
                                         .put("latencyMs", down.optDouble("Connect", 0.0) * 1000)
-                                    job.add("Download ${down.optDouble("Download", 0.0) * 8 / 1e6} Mbps; upload ${up.optDouble("Upload", 0.0) * 8 / 1e6} Mbps; connection latency ${down.optDouble("Connect", 0.0) * 1000} ms")
+                                    job.add("Download %.1f Mbps; upload %.1f Mbps; connection latency %.0f ms".format(
+                                        down.optDouble("Download", 0.0) * 8 / 1e6, up.optDouble("Upload", 0.0) * 8 / 1e6, down.optDouble("Connect", 0.0) * 1000))
                                 }
                             }
                         }
@@ -191,7 +196,7 @@ class NetworkTools(private val ctx: Context, private val paths: Paths) {
                     job.socket = s
                     if (job.cancelled) return
                     s.connect(InetSocketAddress(address, port), 2000)
-                    job.add("$host:$port connected in ${(System.nanoTime() - at) / 1e6} ms")
+                    job.add("$host:$port connected in %.1f ms".format((System.nanoTime() - at) / 1e6))
                 }
             } catch (e: Exception) { if (!job.cancelled) job.add("$host:$port not found: ${e.message}") }
             finally { job.socket = null }
@@ -211,6 +216,11 @@ class NetworkTools(private val ctx: Context, private val paths: Paths) {
         private var capped = false
 
         @Synchronized fun text() = output.toString()
+        @Synchronized fun scrub(pattern: Regex, with: String) {
+            val cleaned = pattern.replace(output, with)
+            output.setLength(0)
+            output.append(cleaned)
+        }
         @Synchronized fun add(s: String) {
             if (capped) return
             val remaining = 128 * 1024 - output.length

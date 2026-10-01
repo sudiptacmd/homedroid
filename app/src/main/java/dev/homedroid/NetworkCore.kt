@@ -72,7 +72,7 @@ object NetworkCore {
         return s
     }
 
-    val curlFormat = "\nDNS=%{time_namelookup}\nConnect=%{time_connect}\nTLS=%{time_appconnect}\nFirstByte=%{time_starttransfer}\nTotal=%{time_total}\nStatus=%{response_code}\nDownload=%{speed_download}\nUpload=%{speed_upload}\n%{certs}\n"
+    val curlFormat = "\nDNS=%{time_namelookup}\nConnect=%{time_connect}\nTLS=%{time_appconnect}\nFirstByte=%{time_starttransfer}\nTotal=%{time_total}\nStatus=%{response_code}\nDownload=%{speed_download}\nUpload=%{speed_upload}\n"
     private val curl = listOf("curl", "--silent", "--show-error", "--connect-timeout", "10", "--max-time", "50", "--proto", "=http,https", "--output", "/dev/null", "--write-out", curlFormat)
 
     fun command(kind: String, b: JSONObject): List<String> {
@@ -91,7 +91,8 @@ object NetworkCore {
             "scan" -> listOf("nmap", "--unprivileged", "-sT", "-Pn", "-n", "--disable-arp-ping", "--host-timeout", "15s", "--max-retries", "1", "--max-parallelism", "16") +
                 (if (b.optString("ports").isBlank()) listOf("--top-ports", "100") else listOf("-p", ports(b.optString("ports")))) +
                 (if (':' in b.optString("host")) listOf("-6") else emptyList()) + listOf(target(b.optString("host").trim()))
-            "http" -> curl + listOf("--head", url(b.optString("url").trim()))
+            // Only the HTTP check needs the certificate chain; its expiry date is read from it.
+            "http" -> curl + listOf("--write-out", curlFormat + "%{certs}\n", "--head", url(b.optString("url").trim()))
             "whois" -> listOf("whois", h)
             "iperf" -> listOf("iperf3", "-c", h, "-p", port(b.optString("port", "5201")).toString(), "-t", "10", "-J")
             "speed" -> curl + listOf("https://speed.cloudflare.com/__down?bytes=10000000")
