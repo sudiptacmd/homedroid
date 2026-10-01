@@ -6,6 +6,18 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 $env:GOPATH = "$projectRoot/.tools/go-cache"
 $env:GOCACHE = "$projectRoot/.tools/go-build-cache"
 $work = "$projectRoot/native/.work"
+# Applies a patch unless it already is. The reverse check reports on stderr when it isn't,
+# which Windows PowerShell would otherwise turn into a terminating error.
+function Apply-Patch([string]$file, [string]$what) {
+    $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    try {
+        git apply --reverse --check $file 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            git apply $file
+            if ($LASTEXITCODE -ne 0) { throw "$what patch failed" }
+        }
+    } finally { $ErrorActionPreference = $old }
+}
 New-Item -ItemType Directory -Force -Path $work | Out-Null
 $sources = @(
     @{ Name='sshd'; Dir="$projectRoot/native/sshd"; Package='.'; Tags=''; Flags='' },
@@ -25,22 +37,8 @@ foreach ($src in $sources) {
     }
     Push-Location $src.Dir
     try {
-        if ($src.Name -eq 'caddy') {
-            $patchFile = "$projectRoot/native/patches/caddy-cel-v2.patch"
-            git apply --reverse --check $patchFile 2>$null
-            if ($LASTEXITCODE -ne 0) {
-                git apply $patchFile
-                if ($LASTEXITCODE -ne 0) { throw 'Caddy CEL compatibility patch failed' }
-            }
-        }
-        if ($src.Name -eq 'tailscaled') {
-            $patchFile = "$projectRoot/native/patches/tailscale-local-port-map.patch"
-            git apply --reverse --check $patchFile 2>$null
-            if ($LASTEXITCODE -ne 0) {
-                git apply $patchFile
-                if ($LASTEXITCODE -ne 0) { throw 'Tailscale local port map patch failed' }
-            }
-        }
+        if ($src.Name -eq 'caddy') { Apply-Patch "$projectRoot/native/patches/caddy-cel-v2.patch" 'Caddy CEL compatibility' }
+        if ($src.Name -eq 'tailscaled') { Apply-Patch "$projectRoot/native/patches/tailscale-local-port-map.patch" 'Tailscale local port map' }
         $env:GOOS = 'linux'; $env:GOARCH = 'amd64'; $env:CGO_ENABLED = '0'; $env:GOARM = ''
         $pins = @(Get-Content "$projectRoot/native/go-security-deps.txt" | Where-Object { $_ -match "^$($src.Name) " } | ForEach-Object { ($_ -split ' ')[1] })
         if ($pins.Count) {

@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# Patches and shell scripts are applied and run on Linux, also from Windows checkouts.
+*.patch text eol=lf
+*.sh text eol=lf
