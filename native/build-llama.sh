@@ -87,6 +87,7 @@ for abi in "${abis[@]}"; do
     -DGGML_VULKAN=ON -DVulkan_INCLUDE_DIR="$work/vulkan-headers/include" \
     -DVulkan_LIBRARY="$sysroot/usr/lib/$(case $abi in arm64-v8a) echo aarch64-linux-android;; x86_64) echo x86_64-linux-android;; esac)/$API/libvulkan.so" \
     -DVulkan_GLSLC_EXECUTABLE="$glslc" -DSPIRV-Headers_DIR="$work/host/share/cmake/SPIRV-Headers" \
+    -DCMAKE_CXX_FLAGS="-I$work/host/include" \
     -DGGML_OPENCL=ON -DGGML_OPENCL_EMBED_KERNELS=ON -DGGML_OPENCL_USE_ADRENO_KERNELS=ON \
     -DOpenCL_INCLUDE_DIR="$work/opencl-headers" -DOpenCL_LIBRARY="$work/build-opencl-$abi/libOpenCL.so" \
     -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TOOLS=ON -DLLAMA_BUILD_SERVER=ON
