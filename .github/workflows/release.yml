@@ -41,6 +41,12 @@ jobs:
       - name: Build native binaries
         run: native/build-all.sh arm64-v8a armeabi-v7a x86_64
 
+      # Before the APK: the app carries the hashes of the runtime it may download.
+      - name: Build the on-phone AI runtime (llama.cpp)
+        run: |
+          sudo apt-get install -y ninja-build glslc > /dev/null
+          native/build-llama.sh arm64-v8a x86_64
+
       - name: Build signed APKs
         env:
           HOMEDROID_KEYSTORE_B64: ${{ secrets.HOMEDROID_KEYSTORE_B64 }}
@@ -73,7 +79,8 @@ jobs:
             abi=$(basename "$apk" | sed -E 's/^app-(.*)-release\.apk$/\1/')
             cp "$apk" "dist/homedroid-$version-$abi.apk"
           done
-          (cd dist && sha256sum *.apk > SHA256SUMS)
+          cp native/out/llama-runtime-*.tar.gz dist/
+          (cd dist && sha256sum *.apk *.tar.gz > SHA256SUMS)
           ls -l dist
 
       - name: Publish release
