@@ -169,6 +169,26 @@ Announcements use the current audio output and media volume.
 - **Stop listening** mutes the browser. **Stop microphone** ends microphone capture and
   saves any audio recording. Use headphones when listening to avoid feedback.
 
+**Continuous monitoring:** each camera has its own saved settings: 240p/480p/720p/1080p,
+2/5/10/15/30 FPS, rotation in 90-degree steps (added to sensor orientation), motion threshold,
+quiet period, and maximum clip length (5 seconds–30 minutes). Hardware may use a different
+supported size or capture frame rate; the dashboard reports the actual preview configuration.
+The motion encoder limits its output to the requested FPS.
+
+Choose **Save video only when motion occurs**, then **Start continuous monitoring**. The
+camera stays open with the browser closed; idle encoded frames are discarded without writing
+to disk. Motion starts a silent MP4 at the next keyframe, and the quiet period ends it.
+Continued motion starts another clip when the maximum length is reached. **Always running**
+keeps the camera ready without automatically saving video. Only one camera monitors at a time;
+stop monitoring before manual photos or video. Re-enable IPCam on the phone after a restart
+to resume the saved monitoring selection.
+
+**Capture storage:** set a shared allocation of 128–102400 MB for all camera videos, photos
+and microphone recordings. Oldest completed captures are removed automatically to make room;
+active recordings and files outside the capture library are protected. Lowering the allocation
+also removes old captures. Download clips you want to keep. A free-space reserve protects the
+phone from filling its disk; recording stops if no room can be freed.
+
 ### Storage
 
 App data stays inside the app by default. To use an SD card or USB drive, choose
@@ -324,6 +344,10 @@ dedicated video hardware, which is the point: it keeps the CPU free and cool.
   HttpOnly/SameSite cookies, and scripts can send the password as a Bearer token. The
   dashboard password also opens the web terminal, so treat it like an SSH key. SSH and terminal
   sessions, including rejected logins, are logged in the dashboard.
+- From 0.8.5 beta, five failed password checks from a peer trigger a 15-minute cooldown,
+  with a shared 50-failure budget across peers. Login, Bearer requests and password changes
+  share the persisted limits. Sessions expire after 24 hours; upgrading requires a fresh
+  login. See the [security review](docs/SECURITY-REVIEW-0.8.5.md).
 - Everything listens on the phone's network, so keep the phone on a network you trust, and
   expose services to the internet through the Cloudflare tunnel rather than port forwarding.
 - Other apps on the same phone can reach `localhost`. Homedroid binds databases to localhost and

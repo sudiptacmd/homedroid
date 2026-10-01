@@ -4,6 +4,7 @@ local.properties
 .idea/
 *.iml
 .kotlin/
+.tools/
 # Built by native/build.sh
 app/src/main/jniLibs/
 native/.work/

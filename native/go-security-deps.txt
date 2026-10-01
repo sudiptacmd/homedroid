@@ -1,0 +1,15 @@
+# Security fixes applied to the pinned upstream releases before compiling.
+caddy golang.org/x/crypto@v0.57.0
+caddy golang.org/x/net@v0.59.0
+caddy golang.org/x/text@v0.42.0
+caddy google.golang.org/grpc@v1.83.2
+caddy github.com/google/cel-go@v0.30.0
+caddy github.com/klauspost/compress@v1.19.1
+caddy github.com/go-chi/chi/v5@v5.3.1
+caddy go.opentelemetry.io/otel@v1.45.0
+caddy go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc@v0.21.0
+caddy go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp@v0.21.0
+caddy go.opentelemetry.io/otel/exporters/stdout/stdoutlog@v0.21.0
+cloudflared golang.org/x/crypto@v0.57.0
+cloudflared github.com/klauspost/compress@v1.19.1
+tailscaled golang.org/x/crypto@v0.57.0

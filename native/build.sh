@@ -47,7 +47,7 @@ gobuild() { # abi srcdir package name [extra-ldflags] [tags]
   mkdir -p "$out/$abi"
   echo "==> $name ($abi)"
   (cd "$src" && GOOS=android GOARCH=$goarch GOARM=$goarm CGO_ENABLED=1 CC="$toolchain/$cc" \
-    go build -trimpath -buildvcs=false -tags="$tags" -ldflags="-s -w $extra" -o "$out/$abi/lib$name.so" "$pkg")
+    go build -mod=mod -trimpath -buildvcs=false -tags="$tags" -ldflags="-s -w $extra" -o "$out/$abi/lib$name.so" "$pkg")
 }
 
 mkdir -p "$work"
@@ -55,6 +55,24 @@ fetch https://github.com/caddyserver/caddy.git "$CADDY_VERSION" "caddy-$CADDY_VE
 fetch https://github.com/cloudflare/cloudflared.git "$CLOUDFLARED_VERSION" "cloudflared-$CLOUDFLARED_VERSION"
 fetch https://github.com/tailscale/tailscale.git "$TAILSCALE_VERSION" "tailscale-$TAILSCALE_VERSION"
 (cd "$here/sshd" && go mod tidy)
+
+# Upstream release tags can lag dependency security fixes. Use the same explicit pins
+# as the Windows builder, and module mode rather than stale upstream vendor trees.
+patchdeps() {
+  local name=$1 src=$2 service dep
+  local deps=()
+  while read -r service dep; do
+    if [[ "$service" == "$name" ]]; then deps+=("$dep"); fi
+  done < "$here/go-security-deps.txt"
+  (cd "$src" && go get "${deps[@]}")
+}
+patchdeps caddy "$work/caddy-$CADDY_VERSION"
+patchdeps cloudflared "$work/cloudflared-$CLOUDFLARED_VERSION"
+patchdeps tailscaled "$work/tailscale-$TAILSCALE_VERSION"
+(cd "$work/caddy-$CADDY_VERSION" && {
+  patch="$here/patches/caddy-cel-v2.patch"
+  if ! git apply --reverse --check "$patch" 2>/dev/null; then git apply "$patch"; fi
+})
 
 for abi in "${abis[@]}"; do
   gobuild "$abi" "$here/sshd" . sshd

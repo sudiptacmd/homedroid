@@ -95,10 +95,15 @@ class Config(ctx: Context) {
             .joinToString("-") { it.joinToString("") }
     }
 
-    /** Hashes of logged-in dashboard sessions, oldest first. */
-    var dashboardSessions: List<String>
-        get() = prefs.getString("dashboard_sessions", "")!!.split(',').filter { it.isNotEmpty() }
-        set(v) = prefs.edit().putString("dashboard_sessions", v.joinToString(",")).apply()
+    /** Expiring hashed sessions and failed-password counters. Legacy sessions require a new login. */
+    var dashboardAuth: String
+        get() = prefs.getString("dashboard_auth_v2", "{}")!!
+        set(v) {
+            // Persist before accepting a new session or another attempt, including across process death.
+            check(prefs.edit().remove("dashboard_sessions").putString("dashboard_auth_v2", v).commit()) {
+                "Could not persist authentication state"
+            }
+        }
 
     val dashboardPort: Int get() = 8800
 

@@ -11,6 +11,11 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.URLDecoder
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.Executors
 
 class Request(
@@ -26,7 +31,7 @@ class Request(
     private var consumed = false
 
     val body: ByteArray by lazy {
-        if (length > MAX_BODY) throw IOException("body too large")
+        if (length !in 0..MAX_BODY.toLong()) throw IOException("body too large")
         consume()
         ByteArray(length.toInt()).also { b ->
             var read = 0
@@ -40,6 +45,7 @@ class Request(
 
     /** Copies the body to [out] as it arrives; returns false if the client hung up early. */
     fun bodyTo(out: OutputStream): Boolean {
+        if (length < 0) throw IOException("invalid body length")
         consume()
         val buf = ByteArray(1 shl 16)
         var left = length
@@ -74,6 +80,8 @@ class Response(
     val length: Long? = null,
     /** For status 101: takes over the connection (a WebSocket) once the headers are sent. */
     val upgrade: ((InputStream, OutputStream) -> Unit)? = null,
+    /** Rechecked while a terminal is open, including while the connection is idle. */
+    val upgradeAuthorized: (() -> Boolean)? = null,
 ) {
     companion object {
         fun json(o: Any, status: Int = 200, headers: Map<String, String> = emptyMap()) =
@@ -90,7 +98,9 @@ class Response(
  * request per connection. Enough for a handful of users on a LAN, with no dependencies.
  */
 class Http(private val port: Int, private val handler: (Request) -> Response) {
-    private val pool = Executors.newFixedThreadPool(16)
+    private val pool = ThreadPoolExecutor(16, 16, 0, TimeUnit.MILLISECONDS, ArrayBlockingQueue(32))
+    private val clients = ConcurrentHashMap.newKeySet<Socket>()
+    private val leases = Executors.newSingleThreadScheduledExecutor()
     private var socket: ServerSocket? = null
 
     fun start() {
@@ -106,7 +116,13 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
                 } catch (_: IOException) {
                     break
                 }
-                pool.execute { serve(client) }
+                clients.add(client)
+                try {
+                    pool.execute { try { serve(client) } finally { clients.remove(client) } }
+                } catch (_: RejectedExecutionException) {
+                    clients.remove(client)
+                    client.close()
+                }
             }
         }, "http-$port").apply { isDaemon = true; start() }
     }
@@ -114,18 +130,26 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
     fun stop() {
         socket?.close()
         pool.shutdownNow()
+        leases.shutdownNow()
+        clients.forEach { try { it.close() } catch (_: IOException) {} }
+        clients.clear()
     }
 
     private fun serve(client: Socket) = client.use {
-        client.soTimeout = 30_000
+        client.soTimeout = 8_000
         val input = BufferedInputStream(client.getInputStream())
         val response = try {
             val request = read(input, client.inetAddress.hostAddress.orEmpty())
                 ?: return@use
+            client.soTimeout = 30_000
             try {
                 handler(request)
-            } catch (e: Exception) {
-                Response.error(500, e.message ?: e.toString())
+            } catch (_: org.json.JSONException) {
+                Response.error(400, "invalid JSON")
+            } catch (_: IllegalArgumentException) {
+                Response.error(400, "invalid request")
+            } catch (_: Exception) {
+                Response.error(500, "request failed")
             }
         } catch (_: Exception) {
             Response.error(400, "bad request")
@@ -139,7 +163,10 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
                 out.write(head.append("\r\n").toString().toByteArray())
                 out.flush()
                 client.soTimeout = 0 // a terminal can sit idle for hours
-                response.upgrade.invoke(input, out)
+                val lease = response.upgradeAuthorized?.let { valid ->
+                    leases.scheduleWithFixedDelay({ if (!runCatching(valid).getOrDefault(false)) runCatching { client.close() } }, 1, 1, TimeUnit.SECONDS)
+                }
+                try { response.upgrade.invoke(input, out) } finally { lease?.cancel(false) }
             } else {
                 write(client, response)
             }
@@ -148,18 +175,31 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
         }
     }
 
-    private fun read(input: InputStream, remote: String): Request? {
-        val requestLine = readLine(input) ?: return null
+    internal fun read(input: InputStream, remote: String): Request? {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(8)
+        val requestLine = readLine(input, deadline) ?: return null
         val parts = requestLine.split(' ')
-        if (parts.size < 3) throw IOException("bad request line")
+        if (parts.size != 3 || !Regex("[A-Z]+").matches(parts[0]) || !parts[1].startsWith('/') ||
+            parts[2] !in setOf("HTTP/1.1", "HTTP/1.0")) throw IOException("bad request line")
         val headers = HashMap<String, String>()
+        var bytes = requestLine.length
         while (true) {
-            val line = readLine(input) ?: break
+            val line = readLine(input, deadline) ?: throw IOException("truncated headers")
+            bytes += line.length + 2
+            if (bytes > 32768 || headers.size >= 64) throw IOException("too many headers")
             if (line.isEmpty()) break
             val i = line.indexOf(':')
-            if (i > 0) headers[line.substring(0, i).trim().lowercase()] = line.substring(i + 1).trim()
+            if (i <= 0) throw IOException("invalid header")
+            val name = line.substring(0, i).lowercase()
+            if (!Regex("[a-z0-9!#$%&'*+.^_`|~-]+").matches(name) || headers.containsKey(name) ||
+                line.substring(i + 1).any { it.code < 32 && it != '\t' || it.code == 127 }) throw IOException("invalid header")
+            headers[name] = line.substring(i + 1).trim()
         }
-        val length = headers["content-length"]?.toLongOrNull() ?: 0
+        if (headers["host"].isNullOrEmpty() || headers.containsKey("transfer-encoding")) throw IOException("unsupported framing")
+        val length = headers["content-length"]?.let {
+            if (!Regex("[0-9]+").matches(it)) throw IOException("invalid length")
+            it.toLongOrNull() ?: throw IOException("invalid length")
+        } ?: 0
         val target = parts[1]
         val path = decode(target.substringBefore('?'))
         val query = target.substringAfter('?', "").split('&').filter { it.isNotEmpty() }.associate {
@@ -168,9 +208,10 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
         return Request(parts[0], path, query, headers, input, length, remote)
     }
 
-    private fun readLine(input: InputStream): String? {
+    private fun readLine(input: InputStream, deadline: Long): String? {
         val sb = StringBuilder()
         while (true) {
+            if (System.nanoTime() > deadline) throw IOException("headers timed out")
             val c = input.read()
             if (c < 0) return if (sb.isEmpty()) null else sb.toString()
             if (c == '\n'.code) return sb.toString().trimEnd('\r')
@@ -213,6 +254,7 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
         409 -> "Conflict"
         413 -> "Payload Too Large"
         416 -> "Range Not Satisfiable"
+        429 -> "Too Many Requests"
         507 -> "Insufficient Storage"
         else -> if (status >= 500) "Server Error" else "Status"
     }

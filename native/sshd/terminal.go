@@ -41,21 +41,27 @@ func serveTerminal(addr, token string) {
 		log.Printf("terminal: %v", err)
 		return
 	}
+	connections := make(chan struct{}, 16)
 	for {
 		c, err := ln.Accept()
 		if err != nil {
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
-		go terminal(c, token)
+		select {
+		case connections <- struct{}{}:
+			go func() { defer func() { <-connections }(); terminal(c, token) }()
+		default:
+			c.Close()
+		}
 	}
 }
 
 func terminal(c net.Conn, token string) {
 	defer c.Close()
-	r := bufio.NewReader(c)
+	r := bufio.NewReaderSize(c, 4096)
 	c.SetReadDeadline(time.Now().Add(10 * time.Second))
-	line, err := r.ReadBytes('\n')
+	line, err := r.ReadSlice('\n') // Reject an oversized greeting before allocating an unbounded buffer.
 	var hello terminalHello
 	if err != nil || json.Unmarshal(line, &hello) != nil ||
 		subtle.ConstantTimeCompare([]byte(hello.Token), []byte(token)) != 1 {

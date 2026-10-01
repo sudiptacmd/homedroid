@@ -51,8 +51,18 @@ jobs:
           test -n "$HOMEDROID_KEYSTORE_B64" || { echo "signing secrets are missing" >&2; exit 1; }
           echo "$HOMEDROID_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
           export HOMEDROID_KEYSTORE="$RUNNER_TEMP/release.jks"
-          ./gradlew --no-daemon assembleRelease
+          ./gradlew --no-daemon testDebugUnitTest lintDebug assembleRelease
           rm -f "$RUNNER_TEMP/release.jks"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check dashboard behavior and bundled Go dependencies
+        run: |
+          node tests/ipcam-dashboard.test.cjs
+          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+          bash native/security-check.sh
 
       - name: Collect APKs
         run: |

@@ -3,8 +3,6 @@ package dev.homedroid
 import android.content.Context
 import org.json.JSONObject
 import java.security.MessageDigest
-import java.security.SecureRandom
-import java.util.Collections
 
 /**
  * The web dashboard: a single-page UI (assets/dashboard.html) plus a JSON API to manage
@@ -22,8 +20,7 @@ class Dashboard(private val ctx: Context) {
     private val alpine = Alpine(ctx, paths)
     private val files = FileBrowser(ctx, paths)
     private val ssh = SshAdmin(paths, alpine)
-    /** SHA-256 of each session cookie, saved so logins survive restarts and app updates. */
-    private val sessions: MutableSet<String> = Collections.synchronizedSet(LinkedHashSet(cfg.dashboardSessions))
+    private val auth = AuthSecurity(cfg.dashboardAuth, persist = { cfg.dashboardAuth = it })
     private val http = Http(cfg.dashboardPort, ::handle)
 
     fun start() = http.start()
@@ -38,9 +35,12 @@ class Dashboard(private val ctx: Context) {
         }
         if (r.method == "GET" && r.path.startsWith("/vendor/")) return vendor(r)
         if (r.method == "GET" && r.path.startsWith("/guides/")) return guideImage(r.path.removePrefix("/guides/"))
-        if (r.path == "/api/login" && r.method == "POST") return login(r)
         if (!r.path.startsWith("/api/")) return Response.error(404, "not found")
-        if (!authorized(r)) return Response.error(401, "log in first")
+        if (!AuthSecurity.browserAllowed(r.method, r.headers, r.path == "/api/terminal")) {
+            return Response.error(403, "Use the dashboard from its own address")
+        }
+        if (r.path == "/api/login" && r.method == "POST") return login(r)
+        authorized(r)?.let { return it }
         return route(r)
     }
 
@@ -96,8 +96,8 @@ class Dashboard(private val ctx: Context) {
         val seg = r.path.removePrefix("/api/").split('/')
         return when {
             r.method == "POST" && seg == listOf("logout") -> {
-                r.cookie(COOKIE)?.let { sessions.remove(sha256(it)); saveSessions() }
-                Response.json(JSONObject().put("ok", true), headers = mapOf("Set-Cookie" to "$COOKIE=; Max-Age=0; Path=/"))
+                auth.logout(r.cookie(COOKIE))
+                Response.json(JSONObject().put("ok", true), headers = mapOf("Set-Cookie" to "$COOKIE=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict"))
             }
             seg.firstOrNull() == "camera" -> cameraRoute(r, seg.drop(1))
             r.method == "GET" && seg == listOf("status") -> Response.json(status())
@@ -122,7 +122,11 @@ class Dashboard(private val ctx: Context) {
             r.method == "POST" && seg.size == 3 && seg[0] == "deploys" -> deployAction(seg[1], seg[2])
             r.method == "DELETE" && seg.size == 2 && seg[0] == "deploys" -> deleteDeploy(seg[1])
             seg[0] == "files" -> files.handle(r, seg.drop(1).filter { it.isNotEmpty() })
-            r.method == "GET" && seg == listOf("terminal") -> Terminal.open(r, cfg.sshEnabled && ServerService.running)
+            r.method == "GET" && seg == listOf("terminal") -> Terminal.open(r, cfg.sshEnabled && ServerService.running) {
+                synchronized(auth) {
+                    auth.session(r.cookie(COOKIE)) || AuthSecurity.bearer(r.headers)?.let(::passwordMatches) == true
+                }
+            }
             seg[0] == "ssh" -> ssh.handle(r, seg.drop(1))
             seg[0] == "tailscale" -> tailscaleRoute(r, seg.drop(1))
             r.method == "GET" && seg == listOf("update") -> Response.json(Updater.json(ctx, r.query["refresh"] == "1"))
@@ -137,38 +141,32 @@ class Dashboard(private val ctx: Context) {
 
     // --- auth ---------------------------------------------------------------------------
 
-    private fun login(r: Request): Response {
+    private fun login(r: Request): Response = synchronized(auth) {
         val password = r.json().optString("password")
-        synchronized(sessions) {
-            if (passwordMatches(password)) return newSession()
-        }
-        Thread.sleep(1000) // slow down guessing without blocking password changes
-        return Response.error(401, "wrong password")
+        val result = auth.password(r.remote) { passwordMatches(password) }
+        if (result.accepted) newSession(r) else authError(result)
     }
 
-    private fun newSession(): Response {
-        val token = ByteArray(32).also(SecureRandom()::nextBytes).joinToString("") { "%02x".format(it) }
-        synchronized(sessions) {
-            sessions += sha256(token)
-            while (sessions.size > MAX_SESSIONS) sessions.remove(sessions.first())
-            saveSessions()
-        }
+    private fun newSession(r: Request): Response {
+        val token = auth.newSession()
         return Response.json(
             JSONObject().put("ok", true),
-            headers = mapOf("Set-Cookie" to "$COOKIE=$token; Path=/; HttpOnly; SameSite=Strict"),
+            headers = mapOf("Set-Cookie" to "$COOKIE=$token; Max-Age=${AuthSecurity.SESSION_MS / 1000}; Path=/; HttpOnly; SameSite=Strict" +
+                if (AuthSecurity.secureCookie(r.headers)) "; Secure" else ""),
         )
     }
 
-    private fun authorized(r: Request): Boolean {
-        r.cookie(COOKIE)?.let { if (sha256(it) in sessions) return true }
-        val bearer = r.headers["authorization"]?.removePrefix("Bearer ")?.trim() ?: return false
-        return passwordMatches(bearer)
+    private fun authorized(r: Request): Response? = synchronized(auth) {
+        if (auth.session(r.cookie(COOKIE))) return null
+        val bearer = AuthSecurity.bearer(r.headers) ?: return Response.error(401, "log in first")
+        val result = auth.password(r.remote) { passwordMatches(bearer) }
+        if (result.accepted) null else authError(result)
     }
 
-    private fun saveSessions() = synchronized(sessions) { cfg.dashboardSessions = sessions.toList() }
-
-    private fun sha256(s: String) =
-        MessageDigest.getInstance("SHA-256").digest(s.toByteArray()).joinToString("") { "%02x".format(it) }
+    private fun authError(result: AuthSecurity.Result, status: Int = 401): Response = if (result.retrySeconds > 0) {
+        Response.json(JSONObject().put("error", "Too many password attempts. Try again in ${result.retrySeconds} seconds.")
+            .put("retryAfter", result.retrySeconds), 429, mapOf("Retry-After" to result.retrySeconds.toString()))
+    } else Response.error(status, "Incorrect password")
 
     private fun passwordMatches(given: String) =
         MessageDigest.isEqual(given.toByteArray(), cfg.dashboardPassword.toByteArray())
@@ -412,11 +410,12 @@ class Dashboard(private val ctx: Context) {
     private fun settings() = JSONObject().put("autostart", cfg.autostart).put("cameraEnabled", cfg.cameraEnabled)
         .put("dashboardPort", cfg.dashboardPort).put("sshPort", cfg.sshPort).put("webPort", cfg.webPort)
 
-    private fun saveSettings(r: Request): Response = synchronized(sessions) {
+    private fun saveSettings(r: Request): Response = synchronized(auth) {
         val body = r.json()
         val password = body.optString("password")
         if (password.isNotEmpty()) {
-            if (!passwordMatches(body.optString("currentPassword"))) return Response.error(403, "Current password is incorrect")
+            val result = auth.password(r.remote) { passwordMatches(body.optString("currentPassword")) }
+            if (!result.accepted) return authError(result, 403)
             if (password.length !in 12..128 || password.any { it.isISOControl() }) {
                 return Response.error(400, "Use 12–128 characters without control characters")
             }
@@ -424,11 +423,10 @@ class Dashboard(private val ctx: Context) {
         if (body.has("autostart") && body.opt("autostart") !is Boolean) return Response.error(400, "Invalid startup preference")
         if (body.has("autostart")) cfg.autostart = body.getBoolean("autostart")
         if (password.isNotEmpty()) {
-            synchronized(sessions) {
+            synchronized(auth) {
                 cfg.dashboardPassword = password
-                sessions.clear()
-                saveSessions()
-                return newSession()
+                auth.revokeSessions()
+                return newSession(r)
             }
         }
         return Response.ok()
@@ -443,6 +441,9 @@ class Dashboard(private val ctx: Context) {
                 if (it.status == 200) JSONObject(String(it.body)) else null
             } ?: JSONObject().put("armed", false)
             state.put("cameras", jsonArray(CameraService.cameras(ctx)))
+            val preferences = CameraPreferences(ctx)
+            state.put("storage", JSONObject().put("quotaMb", preferences.quotaMb)
+                .put("usedBytes", CaptureStore(dir) { preferences.quotaMb * 1024L * 1024 }.used()))
             state.put("files", jsonArray(dir.listFiles().orEmpty()
                 .filter { it.isFile && it.extension in setOf("jpg", "mp4", "wav") }
                 .sortedByDescending { it.name }.take(100).map {
@@ -464,9 +465,30 @@ class Dashboard(private val ctx: Context) {
         if (r.method == "GET" && seg == listOf("live", "frame")) {
             val live = service ?: return Response.error(409, "Enable IPCam access in the phone app")
             val (seq, jpeg) = live.nextFrame(r.query["after"]?.toLongOrNull() ?: -1) ?: return Response(204, byteArrayOf())
-            return Response(200, jpeg, "image/jpeg", mapOf("X-Frame" to seq.toString()))
+            return Response(200, jpeg, "image/jpeg", mapOf("X-Frame" to seq.toString(), "Cache-Control" to "no-store"))
         }
-        if (r.method == "POST" && seg.joinToString("/") in setOf("photo", "record", "stop", "torch", "live/start", "live/stop", "microphone/start", "microphone/stop", "announce")) {
+        if (r.method == "POST" && seg == listOf("settings") && service == null) {
+            return try {
+                val body = r.json()
+                val id = body.getString("id")
+                require(id in ctx.getSystemService(android.hardware.camera2.CameraManager::class.java).cameraIdList) { "Unknown camera" }
+                CameraPreferences(ctx).save(id, body)
+                Response.json(JSONObject().put("saved", true))
+            } catch (e: Exception) { Response.error(400, e.message ?: "Invalid camera settings") }
+        }
+        if (r.method == "POST" && seg == listOf("storage") && service == null) {
+            return try {
+                val preferences = CameraPreferences(ctx)
+                val quota = r.json().getInt("quotaMb")
+                require(quota in 128..102400) { "Storage must be between 128 and 102400 MB" }
+                val store = CaptureStore(dir) { preferences.quotaMb * 1024L * 1024 }
+                check(store.activeBytes() <= quota * 1024L * 1024) { "Incomplete captures occupy more than the requested quota" }
+                preferences.quotaMb = quota
+                check(store.reserve(0)) { "Could not free enough capture storage" }
+                Response.json(JSONObject().put("saved", true))
+            } catch (e: Exception) { Response.error(400, e.message ?: "Invalid storage settings") }
+        }
+        if (r.method == "POST" && seg.joinToString("/") in setOf("photo", "record", "stop", "torch", "live/start", "live/stop", "microphone/start", "microphone/stop", "announce", "settings", "storage", "monitor/start", "monitor/stop")) {
             return service?.request(seg.joinToString("/"), r.json())
                 ?: Response.error(409, "Enable IPCam camera and microphone access in the phone app first")
         }
@@ -504,10 +526,9 @@ class Dashboard(private val ctx: Context) {
     companion object {
         private const val COOKIE = "homedroid_session"
         private val VENDOR = setOf("xterm.js", "xterm.css", "addon-fit.js", "JetBrainsMono-Regular.woff2")
-        private const val MAX_SESSIONS = 20
 
         private val SECURITY_HEADERS = mapOf(
-            "Content-Security-Policy" to "default-src 'self'; img-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'",
+            "Content-Security-Policy" to "default-src 'self'; img-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
             "X-Frame-Options" to "DENY",
             "Referrer-Policy" to "no-referrer",
         )

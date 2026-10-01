@@ -8,12 +8,12 @@ const fullScript = html.split('<script>')[1].split('</script>')[0];
 const script = fullScript.slice(fullScript.indexOf('const $ ='), fullScript.indexOf('// ---- Dialogs'))
   + "\nlet tab = 'overview'; function refresh() {} function showLogin() {}\n"
   + fullScript.slice(fullScript.indexOf('// ---- IPCam and settings'), fullScript.indexOf("api('status').then(showApp)"));
-function setup() {
+function setup(extra = {}) {
   const nodes = new Map();
   function element(key) {
     if (!nodes.has(key)) {
       const classes = new Set();
-      nodes.set(key, {dataset: {}, innerHTML: '', textContent: '', disabled: false, value: '',
+      nodes.set(key, {dataset: {}, style: {}, innerHTML: '', textContent: '', disabled: false, value: '',
         classList: {add: x => classes.add(x), remove: x => classes.delete(x), contains: x => classes.has(x),
           toggle(x, yes) { if (yes) classes.add(x); else classes.delete(x); }},
         querySelectorAll: () => [], addEventListener() {}, append() {}, remove() {},
@@ -38,7 +38,7 @@ function setup() {
       if (failure && options.method === 'POST') return {status: 409, ok: false, json: async () => ({error: failure})};
       const data = path === '/api/modules' ? {core: [{id: 'camera', enabled}], apps: [], job: {}} : path === '/api/settings' ? {cameraEnabled: enabled, autostart: false} : path === '/api/camera' ? state : {};
       return {status: 200, ok: true, json: async () => data};
-    }});
+    }, ...extra});
   vm.runInContext(script, context);
   return {element, requests, run: s => vm.runInContext(s, context), state: x => state = {...state, ...x}, enabled: x => enabled = x, fail: x => failure = x};
 }
@@ -127,4 +127,85 @@ test('each camera offers a live view', async () => {
   assert.equal((t.element('#cameraControls').innerHTML.match(/data-action="live"/g) || []).length, 2);
   t.state({live: '0'}); await t.run('renderCamera()');
   assert.match(t.element('#cameraControls').innerHTML, /Close live view/);
+});
+test('API mutations include the browser request protection header', async () => {
+  const t = setup(); await t.run("api('camera/monitor/stop', {method: 'POST'})");
+  assert.equal(t.requests[0].options.headers['X-Homedroid-Request'], '1');
+  assert.equal(t.requests[0].options.method, 'POST');
+});
+
+test('camera settings and storage drafts survive polling', async () => {
+  const t = setup(); t.state({storage: {quotaMb: 2048, usedBytes: 1024}, cameras: [
+    {id: '0', name: 'Rear', settings: {rotation: 90, fps: 5}},
+    {id: '1', name: 'Front', settings: {rotation: 270, fps: 15}},
+  ]});
+  await t.run('renderCamera()');
+  const markup = t.element('#cameraSettings').innerHTML;
+  assert.match(markup, /data-camera-settings="0"/);
+  assert.match(markup, /data-camera-settings="1"/);
+  assert.match(markup, /value="90" selected/);
+  assert.match(markup, /value="270" selected/);
+  t.element('#cameraSettings').innerHTML = 'user editing';
+  t.element('#cameraQuota').value = 512;
+  await t.run('renderCamera()');
+  assert.equal(t.element('#cameraSettings').innerHTML, 'user editing');
+  assert.equal(t.element('#cameraQuota').value, 512);
+});
+
+test('monitoring blocks manual capture and offers a stop without closing the browser view', async () => {
+  const t = setup(); t.state({monitor: {id: '0', recording: true, width: 640, height: 480, fpsMin: 5, fpsMax: 15}});
+  await t.run('renderCamera()');
+  assert.match(t.element('#cameraStatus').textContent, /Motion detected/);
+  assert.equal((t.element('#cameraControls').innerHTML.match(/data-action="photo" disabled/g) || []).length, 2);
+  assert.match(t.element('#cameraControls').innerHTML, /data-action="monitor\/stop"/);
+});
+
+test('settings save targets only the selected camera and sends numeric options', async () => {
+  const t = setup({FormData: class { constructor(form) { return form.values; } }});
+  const button = {disabled: false}, message = {textContent: ''};
+  const form = {dataset: {cameraSettings: '1'},
+    values: [['resolution', '720'], ['fps', '15'], ['rotation', '270'], ['mode', 'watch'], ['sensitivity', '5'], ['quietSeconds', '10'], ['clipSeconds', '120']],
+    querySelector: selector => selector === 'button[type="submit"]' ? button : message};
+  await t.element('#cameraSettings').onsubmit({preventDefault() {}, target: form});
+  const request = t.requests.find(x => x.path === '/api/camera/settings');
+  assert.deepEqual(JSON.parse(request.options.body), {id: '1', resolution: 720, fps: 15, rotation: 270, mode: 'watch', sensitivity: 5, quietSeconds: 10, clipSeconds: 120});
+  assert.equal(button.disabled, false);
+  assert.match(message.textContent, /saved on the phone/);
+});
+
+test('saved rotation combines with sensor orientation', async () => {
+  const t = setup(); t.state({cameras: [{id: '0', rotation: 90, settings: {rotation: 180}}]});
+  await t.run('renderCamera()');
+  const canvas = t.element('#liveImg'); canvas.width = 640; canvas.height = 480;
+  t.run("live.id = '0'; fitLive()");
+  assert.match(canvas.style.transform, /rotate\(270deg\)/);
+  assert.equal(t.element('#liveFrame').style.aspectRatio, '480 / 640');
+});
+
+test('live canvas keeps the current frame visible until decoding completes', async () => {
+  let decode, closed = 0, draws = 0;
+  const t = setup({AbortController, createImageBitmap: () => new Promise(resolve => decode = resolve),
+    fetch: async () => ({status: 200, headers: {get: () => '1'}, blob: async () => ({})})});
+  const canvas = t.element('#liveImg'); canvas.width = 640; canvas.height = 480;
+  canvas.getContext = () => ({drawImage() { draws++; t.run('live.id = null'); }});
+  const loop = t.run("live.id = '0'; live.gen = 1; liveLoop(1)");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(draws, 0); assert.equal(canvas.width, 640);
+  decode({width: 640, height: 480, close() { closed++; }});
+  await loop;
+  assert.equal(draws, 1); assert.equal(closed, 1);
+});
+
+test('closing a live view during decoding prevents a late frame from being drawn', async () => {
+  let decode, closed = 0, draws = 0;
+  const t = setup({AbortController, createImageBitmap: () => new Promise(resolve => decode = resolve),
+    fetch: async () => ({status: 200, headers: {get: () => '1'}, blob: async () => ({})})});
+  const canvas = t.element('#liveImg'); canvas.width = 640; canvas.height = 480;
+  canvas.getContext = () => ({drawImage() { draws++; }, clearRect() {}});
+  const loop = t.run("live.id = '0'; live.gen = 1; liveLoop(1)");
+  await new Promise(resolve => setImmediate(resolve));
+  t.run('closeLive(false)');
+  decode({width: 640, height: 480, close() { closed++; }});
+  await loop;
+  assert.equal(draws, 0); assert.equal(closed, 1);
 });

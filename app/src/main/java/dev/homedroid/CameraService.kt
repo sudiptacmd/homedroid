@@ -17,6 +17,8 @@ import android.media.Image
 import android.hardware.camera2.*
 import android.media.ImageReader
 import android.media.MediaRecorder
+import android.util.Range
+import android.util.Size
 import android.os.*
 import android.view.Surface
 import android.speech.tts.TextToSpeech
@@ -52,6 +54,7 @@ class CameraService : Service() {
                     // The live view is sent as the sensor delivers it; the page rotates (and mirrors) it.
                     .put("rotation", c.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 0)
                     .put("front", facing == "Front")
+                    .put("settings", CameraPreferences(ctx).get(id).json())
             }
         }
     }
@@ -88,13 +91,23 @@ class CameraService : Service() {
     private var frameSeq = 0L
     @Volatile private var lastViewer = 0L
     private var lastFrameAt = 0L
+    private lateinit var preferences: CameraPreferences
+    private lateinit var store: CaptureStore
+    private var monitorWanted: String? = null
+    private var motionRecorder: MotionRecorder? = null
+    private var detector = MotionDetector()
+    private var lastMotionCheck = 0L
+    private var actualFps: Range<Int>? = null
+    private var actualSize: Size? = null
 
     override fun onBind(intent: Intent?) = null
 
     override fun onCreate() {
         super.onCreate()
         manager = getSystemService(CameraManager::class.java)
-        microphone = Microphone(directory(this))
+        preferences = CameraPreferences(this)
+        store = CaptureStore(directory(this)) { preferences.quotaMb * 1024L * 1024 }
+        microphone = Microphone(directory(this), store)
         thread.start()
         handler = Handler(thread.looper)
         if (!Config(this).cameraEnabled || checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
@@ -116,6 +129,8 @@ class CameraService : Service() {
                 .apply { setReferenceCounted(false); acquire() }
             instance = this
             speech = TextToSpeech(this) { speechReady = it == TextToSpeech.SUCCESS }
+            monitorWanted = preferences.monitorId?.takeIf { it in manager.cameraIdList }
+            handler.post { runCatching { resumeLive() }.onFailure { fail(it.message ?: "Monitoring could not start") } }
         } catch (e: Exception) {
             Jobs.line("Camera could not start: ${e.message}")
             stopSelf()
@@ -150,6 +165,36 @@ class CameraService : Service() {
             try {
                 when (action) {
                     "status" -> Unit
+                    "settings" -> {
+                        val id = body.getString("id")
+                        require(id in manager.cameraIdList) { "Unknown camera" }
+                        check(!busy && !recording) { "Stop manual capture before changing settings" }
+                        preferences.save(id, body)
+                        if (selected == id) cleanup()
+                    }
+                    "storage" -> {
+                        val quota = body.getInt("quotaMb")
+                        require(quota in 128..102400) { "Storage must be between 128 and 102400 MB" }
+                        check(store.activeBytes() <= quota * 1024L * 1024) {
+                            "Stop active recordings before reducing the quota below their size"
+                        }
+                        preferences.quotaMb = quota
+                        check(store.reserve(0)) { "Could not free enough capture storage" }
+                    }
+                    "monitor/start" -> {
+                        val id = body.getString("id")
+                        require(id in manager.cameraIdList) { "Unknown camera" }
+                        check(!busy && !recording) { "Stop manual capture before starting monitoring" }
+                        monitorWanted = id
+                        preferences.monitorId = id
+                        if (liveWanted != id) liveWanted = null
+                        cleanup()
+                    }
+                    "monitor/stop" -> {
+                        monitorWanted = null
+                        preferences.monitorId = null
+                        cleanup()
+                    }
                     "announce" -> {
                         val text = body.getString("text").trim()
                         require(text.isNotEmpty() && text.length <= 500) { "Enter an announcement of 1–500 characters" }
@@ -166,6 +211,7 @@ class CameraService : Service() {
                     "live/start" -> {
                         val id = body.getString("id")
                         require(manager.cameraIdList.contains(id)) { "Unknown camera" }
+                        check(monitorWanted == null || monitorWanted == id) { "Stop monitoring the other camera first" }
                         lastViewer = SystemClock.elapsedRealtime()
                         if (liveWanted != id) liveTorch = false
                         liveWanted = id
@@ -175,6 +221,7 @@ class CameraService : Service() {
                     }
                     "live/stop" -> stopLive()
                     "photo", "record" -> {
+                        check(monitorWanted == null) { "Stop continuous monitoring before manual capture" }
                         check(!busy && !recording) { "Camera is busy; stop the current capture first" }
                         begin(body.getString("id"), action == "record", body.optBoolean("flash"))
                     }
@@ -214,14 +261,20 @@ class CameraService : Service() {
         .put("selected", selected.takeUnless { liveActive } ?: JSONObject.NULL)
         .put("torch", torchId ?: liveWanted.takeIf { liveTorch } ?: JSONObject.NULL)
         .put("live", liveWanted ?: JSONObject.NULL)
-        .put("error", error ?: JSONObject.NULL).put("microphone", microphone.status())
+        .put("monitor", JSONObject().put("id", monitorWanted ?: JSONObject.NULL)
+            .put("recording", motionRecorder?.recording == true)
+            .put("width", actualSize?.width ?: 0).put("height", actualSize?.height ?: 0)
+            .put("fpsMin", actualFps?.lower ?: 0).put("fpsMax", actualFps?.upper ?: 0))
+        .put("error", motionRecorder?.storageError ?: error ?: JSONObject.NULL).put("microphone", microphone.status())
 
     @Suppress("MissingPermission", "DEPRECATION")
     private fun begin(id: String, video: Boolean, useFlash: Boolean) {
         require(manager.cameraIdList.contains(id)) { "Unknown camera" }
         val characteristics = manager.getCameraCharacteristics(id)
+        val options = preferences.get(id)
         require(!useFlash || characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true) { "This camera has no flash" }
         check(directory(this).usableSpace > 128L * 1024 * 1024) { "At least 128 MB free storage is required" }
+        check(store.reserve(if (video) 4L * 1024 * 1024 else 16L * 1024 * 1024)) { "Capture storage is full" }
         cleanup()
         error = null
         selected = id
@@ -237,19 +290,20 @@ class CameraService : Service() {
             val surface: Surface
             if (video) {
                 val sizes = map.getOutputSizes(MediaRecorder::class.java).orEmpty()
-                val size = sizes.filter { it.width <= 1920 && it.height <= 1080 }.maxByOrNull { it.width.toLong() * it.height }
-                    ?: sizes.minByOrNull { it.width.toLong() * it.height } ?: error("Video recording is unsupported")
+                val size = chooseSize(sizes, options.resolution)
                 recorder = MediaRecorder().apply {
                     setVideoSource(MediaRecorder.VideoSource.SURFACE)
                     setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                     setOutputFile(output!!.absolutePath)
                     setVideoEncoder(MediaRecorder.VideoEncoder.H264)
                     setVideoSize(size.width, size.height)
-                    setVideoFrameRate(30)
-                    setVideoEncodingBitRate(8_000_000)
-                    setOrientationHint(orientation)
-                    setMaxDuration(30 * 60 * 1000)
-                    setMaxFileSize(minOf(1024L * 1024 * 1024, directory(this@CameraService).usableSpace - 64L * 1024 * 1024))
+                    setVideoFrameRate(options.fps)
+                    setVideoEncodingBitRate((size.width.toLong() * size.height * options.fps / 5).coerceIn(150_000, 8_000_000).toInt())
+                    setOrientationHint((orientation + options.rotation) % 360)
+                    setMaxDuration(options.clipSeconds * 1000)
+                    val maxBytes = minOf(1024L * 1024 * 1024, preferences.quotaMb * 1024L * 1024 - store.used(), directory(this@CameraService).usableSpace - 64L * 1024 * 1024)
+                    check(maxBytes >= 1024 * 1024) { "Not enough recording space" }
+                    setMaxFileSize(maxBytes)
                     setOnInfoListener { _, what, _ ->
                         if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED || what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
                             handler.post { if (generation == token) { finishRecording(); cleanup() } }
@@ -315,7 +369,8 @@ class CameraService : Service() {
                                         set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
                                         set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
                                         set(CaptureRequest.FLASH_MODE, if (flash) CaptureRequest.FLASH_MODE_TORCH else CaptureRequest.FLASH_MODE_OFF)
-                                        if (!video) set(CaptureRequest.JPEG_ORIENTATION, orientation)
+                                        if (video) set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange(characteristics, options.fps))
+                                        if (!video) set(CaptureRequest.JPEG_ORIENTATION, (orientation + options.rotation) % 360)
                                     }.build()
                                     if (video) {
                                         s.setRepeatingRequest(request, null, handler)
@@ -323,6 +378,7 @@ class CameraService : Service() {
                                         recording = true
                                         busy = false
                                         notifyState("Recording video on camera $id")
+                                        checkRecordingSpace(token)
                                     } else {
                                         var captured = false
                                         val capture = {
@@ -391,6 +447,16 @@ class CameraService : Service() {
         val file = output ?: return
         check(file.renameTo(File(file.parentFile, file.name.removeSuffix(".partial")))) { "Could not finalize capture" }
         output = null
+        check(store.reserve(0)) { "Capture quota is full" }
+    }
+
+    private fun checkRecordingSpace(token: Int) {
+        handler.postDelayed({
+            if (generation == token && recording) {
+                if (!store.reserve(1024 * 1024)) { finishRecording(); cleanup() }
+                else checkRecordingSpace(token)
+            }
+        }, 500)
     }
 
     private fun finishRecording() {
@@ -406,13 +472,16 @@ class CameraService : Service() {
     private fun fail(message: String) {
         // A live view that fails would only fail again; give up on it.
         if (liveActive) liveWanted = null
+        monitorWanted = null // Keep saved preference, but do not loop on failing hardware.
         error = message
         cleanup()
     }
 
     private fun cleanup() {
         generation++
+        synchronized(frameLock) { frame = null; frameSeq++; frameLock.notifyAll() }
         runCatching { session?.close() }; session = null
+        runCatching { motionRecorder?.close() }.onFailure { error = it.message }; motionRecorder = null
         runCatching { device?.close() }; device = null
         runCatching { recorder?.reset() }
         runCatching { recorder?.release() }; recorder = null
@@ -426,11 +495,13 @@ class CameraService : Service() {
         liveActive = false
         if (!closing) notifyState(if (microphone.running) "IPCam microphone active" else "Camera ready for remote controls")
         // A photo or video interrupted the live view: bring it back once the camera is free.
-        if (!closing && liveWanted != null) handler.post(::resumeLive)
+        if (!closing && (liveWanted != null || monitorWanted != null)) handler.post {
+            runCatching { resumeLive() }.onFailure { fail(it.message ?: "Camera could not resume") }
+        }
     }
 
     private fun resumeLive() {
-        val id = liveWanted ?: return
+        val id = monitorWanted ?: liveWanted ?: return
         if (!liveActive && !busy && !recording && !closing) startLive(id)
     }
 
@@ -438,7 +509,7 @@ class CameraService : Service() {
         val wasLive = liveActive
         liveWanted = null
         liveTorch = false
-        if (wasLive) cleanup()
+        if (wasLive && monitorWanted == null) cleanup()
         synchronized(frameLock) { frameLock.notifyAll() }
     }
 
@@ -450,17 +521,32 @@ class CameraService : Service() {
     }
 
     private fun liveSize(map: android.hardware.camera2.params.StreamConfigurationMap) =
-        map.getOutputSizes(ImageFormat.YUV_420_888).orEmpty()
-            .minByOrNull { kotlin.math.abs(it.width.toLong() * it.height - 640L * 480) }
-            ?: error("Live view is unsupported")
+        chooseSize(map.getOutputSizes(ImageFormat.YUV_420_888).orEmpty(), preferences.get(monitorWanted ?: liveWanted ?: selected ?: "0").resolution)
+
+    private fun chooseSize(sizes: Array<out Size>, resolution: Int): Size {
+        val maxWidth = when (resolution) { 240 -> 320; 480 -> 640; 720 -> 1280; else -> 1920 }
+        return sizes.filter { it.width <= maxWidth && it.height <= resolution }.maxByOrNull { it.width.toLong() * it.height }
+            ?: sizes.minByOrNull { it.width.toLong() * it.height } ?: error("Camera output is unsupported")
+    }
+
+    private fun fpsRange(c: CameraCharacteristics, fps: Int): Range<Int> =
+        c.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES).orEmpty()
+            .minByOrNull { kotlin.math.abs(it.upper - fps) * 100 + kotlin.math.abs(it.lower - fps) }
+            ?: Range(fps, fps)
 
     /** Opens [id] with only a small preview stream, for watching. */
-    @Suppress("MissingPermission")
+    @Suppress("MissingPermission", "DEPRECATION")
     private fun startLive(id: String) {
         cleanup()
         val characteristics = manager.getCameraCharacteristics(id)
         val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: error("No supported camera outputs")
         val size = liveSize(map)
+        val options = preferences.get(id)
+        val fps = fpsRange(characteristics, options.fps)
+        actualFps = fps
+        actualSize = size
+        detector = MotionDetector()
+        lastMotionCheck = 0L
         val token = generation
         liveActive = true
         selected = id
@@ -468,20 +554,29 @@ class CameraService : Service() {
             setOnImageAvailableListener(::onPreviewFrame, handler)
         }
         previewReader = reader
-        notifyState("Live view on camera $id")
+        if (monitorWanted == id && options.mode == "motion") {
+            val videoSizes = map.getOutputSizes(MediaRecorder::class.java).orEmpty()
+            val videoSize = chooseSize(videoSizes, options.resolution)
+            motionRecorder = MotionRecorder(directory(this), store, handler, options, videoSize.width, videoSize.height,
+                ((characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 0) + options.rotation) % 360) { fail(it) }
+        }
+        val surfaces = listOfNotNull(reader.surface, motionRecorder?.surface)
+        notifyState(if (monitorWanted == id) "Continuous monitoring on camera $id" else "Live view on camera $id")
         manager.openCamera(id, object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice) {
                 if (generation != token || closing) { camera.close(); return }
                 device = camera
                 try {
-                    camera.createCaptureSession(listOf(reader.surface), object : CameraCaptureSession.StateCallback() {
+                    camera.createCaptureSession(surfaces, object : CameraCaptureSession.StateCallback() {
                         override fun onConfigured(s: CameraCaptureSession) {
                             if (generation != token || closing) { s.close(); return }
                             session = s
                             try {
                                 s.setRepeatingRequest(camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
                                     addTarget(reader.surface)
+                                    motionRecorder?.surface?.let { addTarget(it) }
                                     set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
+                                    set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fps)
                                     set(CaptureRequest.FLASH_MODE, if (liveTorch) CaptureRequest.FLASH_MODE_TORCH else CaptureRequest.FLASH_MODE_OFF)
                                     val modes = characteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES) ?: intArrayOf()
                                     if (CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO in modes) {
@@ -503,8 +598,22 @@ class CameraService : Service() {
     private fun onPreviewFrame(source: ImageReader) {
         val image = runCatching { source.acquireLatestImage() }.getOrNull() ?: return
         image.use {
+            if (source !== previewReader) return
             val now = SystemClock.elapsedRealtime()
-            if (liveWanted == null || now - lastViewer > VIEWER_TIMEOUT_MS || now - lastFrameAt < 100) return
+            if (monitorWanted != null && motionRecorder != null && now - lastMotionCheck >= 200) {
+                lastMotionCheck = now
+                val y = it.planes[0]
+                val samples = IntArray(32 * 24) { i ->
+                    val row = (i / 32) * (it.height - 1) / 23
+                    val col = (i % 32) * (it.width - 1) / 31
+                    y.buffer.get(row * y.rowStride + col * y.pixelStride).toInt() and 255
+                }
+                if (detector.changed(samples, preferences.get(monitorWanted!!).sensitivity)) {
+                    runCatching { motionRecorder?.motion() }.onFailure { fail(it.message ?: "Motion recording failed") }
+                }
+            }
+            val options = preferences.get(selected ?: "0")
+            if (liveWanted == null || now - lastViewer > VIEWER_TIMEOUT_MS || now - lastFrameAt < 1000 / options.fps) return
             lastFrameAt = now
             val jpeg = runCatching { jpeg(it) }.getOrNull() ?: return
             synchronized(frameLock) { frame = jpeg; frameSeq++; frameLock.notifyAll() }

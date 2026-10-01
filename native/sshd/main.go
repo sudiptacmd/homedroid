@@ -49,7 +49,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("host key: %v", err)
 	}
-	cfg := &ssh.ServerConfig{PublicKeyCallback: checkKey, ServerVersion: "SSH-2.0-homedroid"}
+	cfg := &ssh.ServerConfig{PublicKeyCallback: checkKey, MaxAuthTries: 5, ServerVersion: "SSH-2.0-homedroid"}
 	cfg.AddHostKey(signer)
 
 	ln, err := net.Listen("tcp", *listen)
@@ -60,6 +60,7 @@ func main() {
 	if *termAddr != "" {
 		go serveTerminal(*termAddr, os.Getenv("HOMEDROID_TERMINAL_TOKEN"))
 	}
+	connections := make(chan struct{}, 64)
 	for {
 		c, err := ln.Accept()
 		if err != nil {
@@ -67,7 +68,12 @@ func main() {
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
-		go serveConn(c, cfg)
+		select {
+		case connections <- struct{}{}:
+			go func() { defer func() { <-connections }(); serveConn(c, cfg) }()
+		default:
+			c.Close()
+		}
 	}
 }
 
@@ -119,6 +125,7 @@ func checkKey(meta ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error
 
 func serveConn(c net.Conn, cfg *ssh.ServerConfig) {
 	start := time.Now()
+	c.SetDeadline(start.Add(10 * time.Second))
 	sc, chans, reqs, err := ssh.NewServerConn(c, cfg)
 	if err != nil {
 		log.Printf("%s: handshake failed: %v", c.RemoteAddr(), err)
@@ -130,6 +137,8 @@ func serveConn(c net.Conn, cfg *ssh.ServerConfig) {
 		c.Close()
 		return
 	}
+	c.SetDeadline(time.Time{})
+	defer sc.Close()
 	log.Printf("%s: login as %q", sc.RemoteAddr(), sc.User())
 	s := newSession("ssh", start, sc.RemoteAddr(), sc.User(), sc.Permissions.Extensions["key"])
 	defer func() {

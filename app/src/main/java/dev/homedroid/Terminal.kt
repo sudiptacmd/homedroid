@@ -28,12 +28,14 @@ object Terminal {
     private const val GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
     /** Upgrades [r] to a WebSocket running a shell, or explains why not. */
-    fun open(r: Request, sshEnabled: Boolean): Response {
+    fun open(r: Request, sshEnabled: Boolean, authorized: () -> Boolean = { false }): Response {
         val key = r.headers["sec-websocket-key"]
         if (r.headers["upgrade"]?.lowercase() != "websocket" || key == null) return Response.error(400, "expected a WebSocket")
         // Cookies ride along on cross-site WebSockets too, so insist on this origin.
-        val origin = r.headers["origin"]?.substringAfter("://")
-        if (origin != null && origin != r.headers["host"]) return Response.error(403, "wrong origin")
+        if (!AuthSecurity.browserAllowed(r.method, r.headers, websocket = true)) return Response.error(403, "wrong origin")
+        if (r.headers["sec-websocket-version"] != "13" || runCatching { Base64.getDecoder().decode(key).size }.getOrNull() != 16) {
+            return Response.error(400, "invalid WebSocket handshake")
+        }
         if (!sshEnabled) return Response.error(409, "turn on SSH & SFTP to use the terminal")
         val cols = r.query["cols"]?.toIntOrNull() ?: 80
         val rows = r.query["rows"]?.toIntOrNull() ?: 24
@@ -43,6 +45,7 @@ object Terminal {
             101, ByteArray(0), "",
             mapOf("Upgrade" to "websocket", "Connection" to "Upgrade", "Sec-WebSocket-Accept" to accept),
             upgrade = { input, output -> relay(input, output, cols, rows, alpine, r.remote) },
+            upgradeAuthorized = authorized,
         )
     }
 
@@ -116,15 +119,18 @@ class WebSocket(input: InputStream, output: OutputStream) {
     fun receive(): Message? {
         var text = false
         var payload = ByteArray(0)
+        var started = false
         while (true) {
             val b0 = input.readUnsignedByte()
             val b1 = input.readUnsignedByte()
             val fin = b0 and 0x80 != 0
             val op = b0 and 0x0f
+            if (b0 and 0x70 != 0 || b1 and 0x80 == 0) throw IOException("invalid client frame")
             var len = (b1 and 0x7f).toLong()
             if (len == 126L) len = input.readUnsignedShort().toLong()
             else if (len == 127L) len = input.readLong()
-            if (len > MAX_MESSAGE) throw IOException("message too large")
+            if (len < 0 || len > MAX_MESSAGE || (op == 0 && payload.size.toLong() + len > MAX_MESSAGE)) throw IOException("message too large")
+            if (op >= 8 && (!fin || len > 125)) throw IOException("invalid control frame")
             val mask = ByteArray(4).also { if (b1 and 0x80 != 0) input.readFully(it) }
             val data = ByteArray(len.toInt()).also(input::readFully)
             if (b1 and 0x80 != 0) for (i in data.indices) data[i] = (data[i].toInt() xor mask[i and 3].toInt()).toByte()
@@ -132,8 +138,12 @@ class WebSocket(input: InputStream, output: OutputStream) {
                 0x8 -> { close(); return null }
                 0x9 -> { frame(0xA, data); continue }
                 0xA -> continue
-                0x1, 0x2 -> { text = op == 0x1; payload = data }
-                0x0 -> payload += data
+                0x1, 0x2 -> {
+                    if (started) throw IOException("unexpected data frame")
+                    started = true; text = op == 0x1; payload = data
+                }
+                0x0 -> { if (!started) throw IOException("unexpected continuation"); payload += data }
+                else -> throw IOException("unsupported frame")
             }
             if (fin) return Message(text, payload)
         }

@@ -31,6 +31,7 @@ class Tar(private val root: File, private val oci: Boolean = false) {
             if (!readFully(input, header)) return
             if (header.all { it == 0.toByte() }) return
             val size = octal(header, 124, 12)
+            if (size < 0) throw IOException("invalid tar size")
             val type = header[156].toInt().toChar()
             when (type) {
                 'L' -> { longName = String(readData(input, size)).trimEnd('\u0000'); continue }
@@ -208,6 +209,7 @@ class Tar(private val root: File, private val oci: Boolean = false) {
             while (i < data.size) {
                 val sp = (i until data.size).firstOrNull { data[it] == ' '.code.toByte() } ?: break
                 val len = String(data, i, sp - i).toIntOrNull() ?: break
+                if (len <= sp - i + 2 || len > data.size - i) throw IOException("invalid pax record")
                 val record = String(data, sp + 1, len - (sp - i) - 2, Charsets.UTF_8)
                 val eq = record.indexOf('=')
                 if (eq > 0) out[record.substring(0, eq)] = record.substring(eq + 1)
@@ -230,6 +232,7 @@ class Tar(private val root: File, private val oci: Boolean = false) {
         }
 
         private fun readData(input: InputStream, size: Long): ByteArray {
+            if (size !in 0..(1L shl 20)) throw IOException("tar metadata too large")
             val data = ByteArray(size.toInt())
             if (!readFully(input, data) && size > 0) throw EOFException("truncated tar")
             skipPadding(input, size)

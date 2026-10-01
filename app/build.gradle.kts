@@ -4,6 +4,11 @@ plugins {
     id("com.android.application")
 }
 
+dependencies {
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
+}
+
 /**
  * Release signing key: from keystore.properties (see keystore.properties.example; never
  * committed) or, in CI, from HOMEDROID_KEYSTORE* environment variables. Without either,
@@ -32,11 +37,13 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "dev.homedroid"
+        // Hardware checks can run beside the release install without replacing its data.
+        applicationId = if (providers.gradleProperty("cameraTest").orNull == "true") "dev.homedroid.cameratest" else "dev.homedroid"
         minSdk = 29
         targetSdk = 36
-        versionCode = 804
-        versionName = "0.8.4"
+        versionCode = 805
+        versionName = "0.8.5-beta"
+        testInstrumentationRunner = "dev.homedroid.CameraHardwareTest"
     }
 
     signingConfigs {

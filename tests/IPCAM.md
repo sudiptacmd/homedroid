@@ -31,3 +31,17 @@ phone before release:
 7. Unauthenticated camera, audio, announcement and file requests must return 401.
    With IPCam disabled they must return 409. Downloads must reject traversal and
    `.partial` names. Verify a large recording downloads without loading it into RAM.
+8. Set different FPS, resolution and rotation for rear/front cameras. Reload the dashboard
+   and re-arm the service; verify saved settings, preview rotation, JPEG and MP4 orientation.
+   Settings/storage drafts must survive polling. Watch the live canvas for blank frames while
+   switching cameras, slowing the network and closing the view during frame decoding.
+9. Start motion monitoring at 480p/5 FPS, then close/background the browser for longer than
+   15 seconds. Stillness should create no files; move in view and verify a playable silent MP4
+   beginning at a keyframe, followed by a stop after the quiet period. Continuous movement
+   should split into clips at the saved limit without reopening the camera. Check watch-only
+   mode, permission revocation, unsupported encoder surfaces and Stop IPCam notification.
+10. Use a small capture quota and generate videos/photos/WAV files until full. Verify oldest
+    completed captures disappear first, active files are protected, usage remains bounded and
+    recording stops cleanly when active recordings consume all available space. Lower the
+    quota while idle and during capture; unrelated files must survive. Download important
+    footage before testing eviction on a real phone.

@@ -305,7 +305,7 @@ dialog[open] { animation: pop .14s var(--ease); }
 /* IPCam live view and capture previews */
 .live { overflow: hidden; margin-bottom: 16px; }
 .vf { position: relative; background: #000; overflow: hidden; margin: 0 auto; width: 100%; aspect-ratio: 4 / 3; }
-.vf img { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; object-fit: contain; transform: translate(-50%, -50%); }
+.vf canvas { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; object-fit: contain; transform: translate(-50%, -50%); }
 .vf .vf-wait { position: absolute; inset: 0; display: grid; place-items: center; color: #b4bac6; font-size: 13px; }
 .live-badge { background: var(--bad); color: #fff; }
 .live-badge::before { animation: pulse 1.2s ease-in-out infinite; }
@@ -464,11 +464,21 @@ dialog[open] { animation: pop .14s var(--ease); }
           <div class="grow ellipsis" id="liveName" style="font-weight:600"></div>
           <button class="btn ghost sm" data-act="liveClose"><svg class="i"><use href="#i-x"/></svg>Close</button>
         </div>
-        <div class="vf" id="liveFrame"><div class="vf-wait" id="liveWait">Starting the camera…</div><img id="liveImg" alt="Live camera view"></div>
+        <div class="vf" id="liveFrame"><div class="vf-wait" id="liveWait">Starting the camera…</div><canvas id="liveImg" role="img" aria-label="Live camera view"></canvas></div>
         <div class="row ipcam-actions pad" id="liveActions"></div>
       </div>
       <div id="captureNotice"></div>
       <div class="grid" id="cameraControls"></div>
+      <h2>Camera settings</h2>
+      <p class="hint">Settings are saved on the phone separately for each camera. One camera can monitor continuously at a time, even with this page closed. Stop monitoring before taking a manual photo or video. Supported hardware sizes and frame rates may differ from your preset.</p>
+      <div class="grid" id="cameraSettings"></div>
+      <h2>Capture storage</h2>
+      <form id="cameraStorage" class="card pad ipcam-stack">
+        <div id="cameraStorageStatus" role="status"></div>
+        <label class="field">Total space for all captures (MB)<input id="cameraQuota" type="number" min="128" max="102400" step="1" required></label>
+        <div><button class="btn" type="submit">Save storage limit</button></div>
+        <p class="hint">Includes videos, photos and microphone recordings. When space fills up, the phone deletes the oldest completed captures automatically. Active recordings are protected. Reducing the limit also removes old captures; download anything you want to keep first.</p>
+      </form>
       <div class="ipcam-grid"><div><h2>Microphone</h2>
       <div class="card pad ipcam-stack">
         <div id="microphoneStatus" role="status"></div>
@@ -487,7 +497,7 @@ dialog[open] { animation: pop .14s var(--ease); }
       </form>
       </div></div><h2>Saved captures</h2>
       <div class="card pad ipcam-stack" id="cameraFiles"></div>
-      <p class="hint">Latest 100 captures. Saved in the app’s camera folder; download files to keep a copy. Video stops at 30 minutes or 1 GB.</p>
+      <p class="hint">Latest 100 captures. Saved in the app’s camera folder; download files to keep a copy. Clip duration follows that camera’s saved settings. Continued motion starts a new clip when the maximum length is reached.</p>
     </section>
 
     <section data-view="deploys" class="hidden">
@@ -631,7 +641,7 @@ function stored(k) { try { return localStorage.getItem(k); } catch (e) { return 
 async function api(path, {method = 'GET', body} = {}) {
   const res = await fetch('/api/' + path, {
     method, body: body === undefined ? undefined : JSON.stringify(body),
-    headers: body === undefined ? {} : {'Content-Type': 'application/json'},
+    headers: {'X-Homedroid-Request': '1', ...(body === undefined ? {} : {'Content-Type': 'application/json'})},
   });
   if (res.status === 401 && path !== 'login') { showLogin(); throw new Error('Log in first'); }
   const data = await res.json().catch(() => ({}));
@@ -1258,6 +1268,7 @@ function nextUpload() {
   const send = overwrite => {
     const x = u.xhr = new XMLHttpRequest();
     x.open('PUT', `/api/files/${encodeURIComponent(u.root)}?path=${encodeURIComponent(u.path)}${overwrite ? '&overwrite=1' : ''}`);
+    x.setRequestHeader('X-Homedroid-Request', '1');
     // Redrawing on every progress event is wasted work; 4 times a second is plenty.
     x.upload.onprogress = e => { u.loaded = e.loaded; const now = performance.now(); if (now - last > 250) { last = now; drawTray(); } };
     x.onload = async () => {
@@ -1583,6 +1594,7 @@ $('#apkPick').onchange = e => {
   if (!file) return;
   const x = new XMLHttpRequest();
   x.open('POST', '/api/update/upload');
+  x.setRequestHeader('X-Homedroid-Request', '1');
   x.upload.onprogress = ev => setHTML($('#updateBox'), `<div class="hint">Uploading ${esc(file.name)}: ${bytes(ev.loaded)} of ${bytes(ev.total)}</div><div class="meter"><i style="width:${Math.max(2, 100 * ev.loaded / ev.total)}%"></i></div>`);
   x.onload = () => {
     let err = null; try { err = JSON.parse(x.responseText).error; } catch (e) {}
@@ -1595,21 +1607,63 @@ $('#apkPick').onchange = e => {
 
 let cameraState = {}, audioContext = null, audioTimer = null, audioSequence = 0, audioTime = 0;
 let listening = false, audioGeneration = 0;
+function cameraSettingsMarkup(c) {
+  const s = {resolution: 480, fps: 5, rotation: 0, mode: 'motion', sensitivity: 10, quietSeconds: 10, clipSeconds: 60, ...c.settings};
+  const select = (name, label, choices) => `<label class="field">${label}<select name="${name}">${choices.map(([v, text]) => `<option value="${v}" ${String(s[name]) === String(v) ? 'selected' : ''}>${text}</option>`).join('')}</select></label>`;
+  return `<form class="card pad ipcam-stack" data-camera-settings="${esc(c.id)}"><div class="ipcam-title">${esc(c.name)}</div>
+    ${select('resolution', 'Resolution', [[240, '240p · smallest'], [480, '480p · low resource'], [720, '720p · HD'], [1080, '1080p · full HD']])}
+    ${select('fps', 'Frame rate', [2, 5, 10, 15, 30].map(v => [v, v + ' FPS']))}
+    ${select('rotation', 'Rotation', [[0, 'Auto · sensor orientation'], [90, 'Auto + 90°'], [180, 'Auto + 180°'], [270, 'Auto + 270°']])}
+    ${select('mode', 'Continuous monitoring mode', [['motion', 'Save video only when motion occurs'], ['watch', 'Always running · no automatic recording']])}
+    <label class="field">Motion threshold (% of image changed)<input name="sensitivity" type="number" min="1" max="50" value="${s.sensitivity}" required></label>
+    <label class="field">Stop after no motion for (seconds)<input name="quietSeconds" type="number" min="2" max="120" value="${s.quietSeconds}" required></label>
+    <label class="field">Maximum clip length (seconds)<input name="clipSeconds" type="number" min="5" max="1800" value="${s.clipSeconds}" required></label>
+    <div><button class="btn" type="submit">Save camera settings</button></div><div class="hint" data-settings-message role="status"></div>
+  </form>`;
+}
+function renderCameraSettings(state) {
+  const container = $('#cameraSettings'), ids = JSON.stringify(state.cameras.map(c => c.id));
+  if (container.dataset.cameras !== ids) {
+    container.innerHTML = state.cameras.map(cameraSettingsMarkup).join(''); container.dataset.cameras = ids;
+  }
+  if (!$('#cameraQuota').dataset.loaded && state.storage) {
+    $('#cameraQuota').value = state.storage.quotaMb; $('#cameraQuota').dataset.loaded = '1';
+  }
+  $('#cameraStorageStatus').textContent = state.storage ? `${bytes(state.storage.usedBytes)} used of ${state.storage.quotaMb} MB allocated` : '';
+}
+$('#cameraSettings').onsubmit = async e => {
+  e.preventDefault(); const form = e.target, button = form.querySelector('button[type="submit"]');
+  const values = Object.fromEntries(new FormData(form));
+  for (const key of ['resolution', 'fps', 'rotation', 'sensitivity', 'quietSeconds', 'clipSeconds']) values[key] = Number(values[key]);
+  button.disabled = true;
+  try {
+    await api('camera/settings', {method: 'POST', body: {id: form.dataset.cameraSettings, ...values}});
+    form.querySelector('[data-settings-message]').textContent = 'Settings saved on the phone.'; await renderCamera();
+  } catch (e) { form.querySelector('[data-settings-message]').textContent = e.message; }
+  finally { button.disabled = false; }
+};
+$('#cameraStorage').onsubmit = async e => {
+  e.preventDefault();
+  await cameraAction('camera/storage', {body: {quotaMb: Number($('#cameraQuota').value)}}, 'Storage limit saved');
+  await renderCamera();
+};
 async function renderCamera() {
   try {
     const state = await api('camera'); cameraState = state;
     $('#cameraStatus').textContent = !state.armed ? 'Open Homedroid on the phone and tap Enable IPCam camera and microphone access.'
-      : state.error || (state.recording ? 'Recording video…' : state.busy ? 'Capturing…' : 'IPCam ready');
+      : state.error || (state.monitor?.recording ? 'Motion detected · saving video…' : state.monitor?.id ? 'Continuous monitoring active' : state.recording ? 'Recording video…' : state.busy ? 'Capturing…' : 'IPCam ready');
     const controls = state.cameras.map(c => {
-      const disabled = !state.armed || state.busy || state.recording;
+      const disabled = !state.armed || state.busy || state.recording || !!state.monitor?.id;
       return `<div class="card pad ipcam-stack"><div class="ipcam-title">${esc(c.name)}</div>
         <label class="check"><input type="checkbox" data-flash="${esc(c.id)}" style="width:auto" ${!c.flash || disabled ? 'disabled' : ''}> Flash during capture${!c.flash ? ' (unavailable)' : ''}</label>
         <div class="row ipcam-actions">
-          <button class="btn" data-camera="${esc(c.id)}" data-action="live" ${!state.armed ? 'disabled' : ''}>${icon('eye')}${state.live === c.id ? 'Close live view' : 'Live view'}</button>
+          <button class="btn" data-camera="${esc(c.id)}" data-action="live" ${!state.armed || state.monitor?.id && state.monitor.id !== c.id ? 'disabled' : ''}>${icon('eye')}${state.live === c.id ? 'Close live view' : 'Live view'}</button>
           <button class="btn" data-camera="${esc(c.id)}" data-action="photo" ${disabled ? 'disabled' : ''}>Take photo</button>
           <button class="btn primary" data-camera="${esc(c.id)}" data-action="record" ${disabled ? 'disabled' : ''}>Record video</button>
           ${c.flash ? `<button class="btn" data-camera="${esc(c.id)}" data-action="torch" ${disabled ? 'disabled' : ''}>${state.torch === c.id ? 'Turn flash off' : 'Turn flash on'}</button>` : ''}
           ${state.selected === c.id ? '<button class="btn danger" data-action="stop">Stop capture</button>' : ''}
+          <button class="btn" data-camera="${esc(c.id)}" data-action="${state.monitor?.id === c.id ? 'monitor/stop' : 'monitor/start'}" ${!state.armed || state.busy || state.recording ? 'disabled' : ''}>${state.monitor?.id === c.id ? 'Stop monitoring' : 'Start continuous monitoring'}</button>
+          ${state.monitor?.id === c.id ? `<span class="hint">Actual preview: ${state.monitor.width} × ${state.monitor.height} · hardware ${state.monitor.fpsMin}–${state.monitor.fpsMax} FPS</span>` : ''}
         </div></div>`;
     }).join('') || '<div class="hint">No cameras exposed by Android.</div>';
     // Preserve flash selection and keyboard focus while polling unchanged controls.
@@ -1629,6 +1683,7 @@ async function renderCamera() {
     setHTML($('#cameraFiles'), state.files.map(captureRow).join('') || '<div class="hint">No captures yet.</div>');
     noteNewCapture(state.files);
     renderLive(state);
+    renderCameraSettings(state);
     if (!mic.running && listening) stopListening();
   } catch (e) { $('#cameraStatus').textContent = e.message; }
 }
@@ -1649,14 +1704,18 @@ $('#liveActions').onclick = cameraButton;
 // Live view: the page asks the phone for the next JPEG frame as soon as it has shown one
 // (plain requests work in every browser, unlike MJPEG). The sensor's frames arrive sideways
 // on most phones, so the page rotates them by the camera's sensor orientation.
-const live = {id: null, gen: 0};
+const live = {id: null, gen: 0, controller: null};
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function openLive(id) {
-  const fresh = !live.id;
+  const fresh = live.id !== id;
+  if (fresh) live.controller?.abort();
   live.id = id; live.opened = Date.now();
-  api('camera/live/start', {method: 'POST', body: {id}}).then(s => { cameraState = {...cameraState, ...s}; renderCamera(); })
-    .catch(e => { toast(e.message, true); closeLive(false); });
-  if (fresh) { $('#liveWait').classList.remove('hidden'); liveLoop(++live.gen); }
+  const gen = fresh ? ++live.gen : live.gen;
+  api('camera/live/start', {method: 'POST', body: {id}}).then(s => {
+    if (live.gen !== gen || live.id !== id) return;
+    cameraState = {...cameraState, ...s}; renderCamera(); if (fresh) liveLoop(gen);
+  }).catch(e => { if (live.gen === gen) { toast(e.message, true); closeLive(false); } });
+  if (fresh) $('#liveWait').classList.remove('hidden');
   $('#liveBox').classList.remove('hidden');
   renderLive(cameraState);
   $('#liveBox').scrollIntoView({behavior: 'smooth', block: 'nearest'});
@@ -1664,38 +1723,42 @@ function openLive(id) {
 async function liveLoop(gen) {
   let after = -1;
   const img = $('#liveImg');
+  const controller = new AbortController(); live.controller = controller;
   while (live.id && live.gen === gen) {
     if (document.hidden) { await sleep(500); continue; }
     try {
-      const res = await fetch(`/api/camera/live/frame?after=${after}`);
+      const res = await fetch(`/api/camera/live/frame?after=${after}`, {signal: controller.signal, cache: 'no-store'});
       if (live.gen !== gen) return;
       if (res.status === 401) return showLogin();
       if (res.status !== 200) { if (res.status !== 204) await sleep(1000); continue; }
       after = +res.headers.get('X-Frame');
-      const old = img.src;
-      img.src = URL.createObjectURL(await res.blob());
-      await img.decode().catch(() => {});
-      if (old.startsWith('blob:')) URL.revokeObjectURL(old);
+      // Decode offscreen. The canvas retains the previous frame until the new one is ready.
+      const bitmap = await createImageBitmap(await res.blob());
+      try {
+        if (live.gen !== gen || !live.id) return;
+        if (img.width !== bitmap.width || img.height !== bitmap.height) { img.width = bitmap.width; img.height = bitmap.height; }
+        img.getContext('2d').drawImage(bitmap, 0, 0);
+      } finally { bitmap.close(); }
       $('#liveWait').classList.add('hidden');
       fitLive();
-    } catch (e) { await sleep(1500); }
+    } catch (e) { if (controller.signal.aborted) return; await sleep(1500); }
   }
 }
 function closeLive(tell = true) {
   const was = live.id;
   live.id = null; live.gen++;
+  live.controller?.abort(); live.controller = null;
   const img = $('#liveImg');
-  if (img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
-  img.removeAttribute('src');
+  img.getContext('2d').clearRect(0, 0, img.width, img.height);
   $('#liveBox').classList.add('hidden');
   if (tell && was) api('camera/live/stop', {method: 'POST'}).then(() => tab === 'camera' && renderCamera()).catch(() => {});
 }
 /** Frames pause while the page is hidden, and the phone turns the camera off; ask again on return. */
 document.addEventListener('visibilitychange', () => { if (live.id && !document.hidden && tab === 'camera') openLive(live.id); });
 function fitLive() {
-  const img = $('#liveImg'), w = img.naturalWidth, h = img.naturalHeight;
+  const img = $('#liveImg'), w = img.width, h = img.height;
   if (!w || !h) return;
-  const cam = (cameraState.cameras || []).find(c => c.id === live.id) || {}, r = cam.rotation || 0, side = r % 180 !== 0;
+  const cam = (cameraState.cameras || []).find(c => c.id === live.id) || {}, r = ((cam.rotation || 0) + (cam.settings?.rotation || 0)) % 360, side = r % 180 !== 0;
   const [dw, dh] = side ? [h, w] : [w, h], box = $('#liveFrame');
   box.style.aspectRatio = `${dw} / ${dh}`;
   box.style.maxWidth = `calc(60vh * ${(dw / dh).toFixed(4)})`;
@@ -1713,15 +1776,15 @@ function renderLive(state) {
   if (state.live && state.live !== live.id) live.id = state.live;
   const cam = (state.cameras || []).find(c => c.id === live.id) || {id: live.id, name: 'Camera'};
   $('#liveName').textContent = cam.name;
-  const rec = state.recording && (state.selected == null || state.selected === cam.id);
+  const rec = (state.recording || state.monitor?.recording) && (state.selected == null || state.selected === cam.id);
   $('#liveBadge').textContent = rec ? 'Recording' : state.busy ? 'Taking photo' : 'Live';
-  const busy = state.busy || state.recording;
+  const busy = state.busy || state.recording || !!state.monitor?.id;
   setHTML($('#liveActions'), `
     <button class="btn" data-camera="${esc(cam.id)}" data-action="photo" ${busy ? 'disabled' : ''}>${icon('camera')}Take photo</button>
     ${state.recording ? `<button class="btn danger" data-action="stop">Stop recording</button>`
       : `<button class="btn primary" data-camera="${esc(cam.id)}" data-action="record" ${busy ? 'disabled' : ''}>Record video</button>`}
     ${cam.flash ? `<button class="btn" data-camera="${esc(cam.id)}" data-action="torch" ${busy ? 'disabled' : ''}>${state.torch === cam.id ? 'Turn flash off' : 'Turn flash on'}</button>` : ''}
-    <span class="hint">${state.recording ? 'The live view keeps running while recording where the camera allows it.' : 'The phone turns the camera off when you close this or leave the page.'}</span>`);
+    <span class="hint">${state.monitor?.id ? 'Continuous monitoring stays active after closing this page.' : state.recording ? 'The live view keeps running while recording where the camera allows it.' : 'The phone turns the camera off when you close this or leave the page.'}</span>`);
   fitLive();
 }
 

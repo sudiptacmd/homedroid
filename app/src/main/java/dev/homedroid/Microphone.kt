@@ -11,7 +11,7 @@ import java.util.ArrayDeque
 import java.util.UUID
 
 /** Shared PCM source for browser listening and optional WAV recording. */
-class Microphone(private val dir: File) {
+class Microphone(private val dir: File, private val store: CaptureStore) {
     private val chunks = ArrayDeque<Pair<Long, String>>()
     private var sequence = 0L
     @Volatile var running = false
@@ -51,6 +51,7 @@ class Microphone(private val dir: File) {
                     val n = source.read(buffer, 0, buffer.size)
                     if (!running) break
                     check(n > 0) { "Microphone read failed ($n)" }
+                    if (out != null && !store.reserve(n.toLong() + 44)) break
                     out?.write(buffer, 0, n)
                     count += n
                     synchronized(chunks) {
