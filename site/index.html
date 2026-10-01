@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Homedroid – Turn your old Android phone into a home server (no root)</title>
-<meta name="description" content="Homedroid turns an old Android phone into a self-hosted home server: Jellyfin with hardware transcoding, a NAS for USB drives and SD cards, Immich, qBittorrent, Home Assistant, on-phone AI, SSH and a web dashboard. No root, one free APK.">
-<meta name="keywords" content="android home server, old phone server, self-hosted, jellyfin android, android nas, no root, home server app, raspberry pi alternative, immich android, qbittorrent android, llama.cpp android, homelab">
+<meta name="description" content="Homedroid turns an old Android phone into a self-hosted home server: Jellyfin with hardware transcoding, a NAS for USB drives and SD cards, Immich, qBittorrent, Home Assistant, AdGuard Home ad blocking, Wake on LAN, network tools, on-phone AI, SSH and a web dashboard. No root, one free APK.">
+<meta name="keywords" content="android home server, old phone server, self-hosted, adguard home android, wake on lan android, android network tools, jellyfin android, android nas, no root, home server app, raspberry pi alternative, immich android, qbittorrent android, llama.cpp android, homelab">
 <link rel="canonical" href="https://sudiptacmd.github.io/homedroid/">
 <meta name="theme-color" content="#07090d">
 <link rel="icon" href="img/homedroid-mark.svg" type="image/svg+xml">
@@ -31,7 +31,7 @@
   "description": "Turn an old Android phone into a home server: Jellyfin with hardware transcoding, a NAS for USB drives and SD cards, Immich, qBittorrent, Home Assistant, on-phone AI, SSH and a web dashboard. No root.",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "Android 10+",
-  "softwareVersion": "0.9.3-beta",
+  "softwareVersion": "0.9.4-beta",
   "license": "https://www.gnu.org/licenses/gpl-3.0.html",
   "url": "https://sudiptacmd.github.io/homedroid/",
   "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases",
@@ -268,8 +268,8 @@ footer a { color: var(--text-2); }
 
   <div class="ticker" aria-hidden="true">
     <div class="row">
-      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>Phone clusters</span>
-      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>Phone clusters</span>
+      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>AdGuard Home ad blocking</span><span>Wake on LAN</span><span>Network tools</span><span>Gemma 4 on device</span><span>Phone clusters</span>
+      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>AdGuard Home ad blocking</span><span>Wake on LAN</span><span>Network tools</span><span>Gemma 4 on device</span><span>Phone clusters</span>
     </div>
   </div>
 
@@ -370,6 +370,9 @@ footer a { color: var(--text-2); }
       <div class="mod"><div class="ic">☁️</div><b>Cloudflare Tunnel</b><span>Public HTTPS without opening a port.</span><code>tunnel</code></div>
       <div class="mod"><div class="ic">🛰️</div><b>Tailscale</b><span>Private access from anywhere, no VPN slot.</span><code>tailnet</code></div>
       <div class="mod"><div class="ic">📱</div><b>Cluster</b><span>Several phones, one dashboard.</span><code>:8801 mTLS</code></div>
+      <div class="mod"><div class="ic">🛡️</div><b>AdGuard Home</b><span>Ad blocking for your whole tailnet, even on mobile data.</span><code>DNS :1053</code></div>
+      <div class="mod"><div class="ic">🔎</div><b>Network tools</b><span>Discovery, port scans, DNS, ping and speed tests.</span><code>dashboard</code></div>
+      <div class="mod"><div class="ic">⚡</div><b>Wake on LAN</b><span>Turn on your PC at home from anywhere.</span><code>/api/wol</code></div>
       <div class="mod"><div class="ic">🧩</div><b>Your app?</b><span>Apps are just JSON. <a href="https://github.com/sudiptacmd/homedroid/blob/main/CONTRIBUTING.md">Add one.</a></span><code>apps.json</code></div>
     </div>
   </section>
@@ -385,7 +388,7 @@ footer a { color: var(--text-2); }
         <source src="media/homedroid-walkthrough.mp4" type="video/mp4">
       </video>
     </div>
-    <p style="color:var(--muted);font-size:14px;margin-top:12px">Can't play it here? <a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.3-beta/homedroid-walkthrough.mp4">Download the MP4 (13 MB)</a>. Demo films: Blender Foundation open movies, CC BY.</p>
+    <p style="color:var(--muted);font-size:14px;margin-top:12px">Can't play it here? <a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4">Download the MP4 (13 MB)</a>. Demo films: Blender Foundation open movies, CC BY.</p>
   </section>
 
   <section id="how" class="wrap">
@@ -496,7 +499,7 @@ document.querySelectorAll('.reveal').forEach(el => reveal.observe(el));
 // The full walkthrough is fetched from the release at deploy time; fall back to the release link.
 const wt = document.getElementById('walkthrough');
 wt.querySelector('source').addEventListener('error', () => {
-  wt.querySelector('source').src = 'https://github.com/sudiptacmd/homedroid/releases/download/v0.9.3-beta/homedroid-walkthrough.mp4';
+  wt.querySelector('source').src = 'https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4';
   wt.load();
 });
 
