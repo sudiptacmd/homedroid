@@ -42,7 +42,7 @@
         android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.DeviceDefault.DayNight">
+        android:theme="@style/AppTheme">
 
         <activity
             android:name=".MainActivity"
@@ -57,6 +57,13 @@
             android:name=".AppsActivity"
             android:exported="false"
             android:label="Apps"
+            android:parentActivityName=".MainActivity" />
+
+        <activity android:name=".SettingsActivity" android:exported="false"
+            android:label="Settings" android:parentActivityName=".MainActivity" />
+        <activity android:name=".DashboardActivity" android:exported="false"
+            android:label="Control panel" android:windowSoftInputMode="adjustResize"
+            android:enableOnBackInvokedCallback="true"
             android:parentActivityName=".MainActivity" />
 
         <service

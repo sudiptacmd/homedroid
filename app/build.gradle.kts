@@ -41,8 +41,8 @@ android {
         applicationId = if (providers.gradleProperty("cameraTest").orNull == "true") "dev.homedroid.cameratest" else "dev.homedroid"
         minSdk = 29
         targetSdk = 36
-        versionCode = 901
-        versionName = "0.9.1-beta"
+        versionCode = 902
+        versionName = "0.9.2-beta"
         testInstrumentationRunner = "dev.homedroid.CameraHardwareTest"
     }
 

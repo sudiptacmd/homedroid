@@ -6,6 +6,11 @@ import android.content.Context
 class Config(ctx: Context) {
     private val prefs = ctx.getSharedPreferences("config", Context.MODE_PRIVATE)
 
+    /** Native phone interface only: system, light or dark. */
+    var appearance: String
+        get() = prefs.getString("appearance", "system")!!
+        set(v) = prefs.edit().putString("appearance", v).apply()
+
     var cameraEnabled: Boolean
         get() = prefs.getBoolean("camera", false)
         set(v) = prefs.edit().putBoolean("camera", v).apply()

@@ -53,7 +53,7 @@ svg.i { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none;
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 
-/* Layout: sidebar on wide screens, top bar + bottom tabs on phones. */
+/* One navigation sidebar: persistent on desktop, a modal drawer on phones. */
 .shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
 .side { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 4px; padding: 16px 12px; border-right: 1px solid var(--line); background: var(--surface); }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 16px; padding: 4px 8px 16px; letter-spacing: -.01em; }
@@ -66,6 +66,7 @@ svg.i { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none;
 .side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
 .side-foot .row { justify-content: space-between; }
 .top { display: none; }
+.side-close, .nav-backdrop { display: none; }
 main { min-width: 0; padding: 28px clamp(16px, 4vw, 40px) 48px; max-width: 1180px; width: 100%; }
 .page-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
 .page-head h1 { font-size: 22px; line-height: 1.2; margin: 0; letter-spacing: -.02em; font-weight: 650; }
@@ -73,18 +74,23 @@ main { min-width: 0; padding: 28px clamp(16px, 4vw, 40px) 48px; max-width: 1180p
 h2 { font-size: 12px; font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin: 28px 0 10px; }
 @media (max-width: 860px) {
   .shell { display: block; }
-  .side { display: none; }
+  .side { position: fixed; inset: 0 auto 0 0; z-index: 40; display: flex; width: min(300px, calc(100vw - 48px)); height: 100vh; height: 100dvh; overflow-y: auto; overscroll-behavior: contain; padding: calc(16px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)); visibility: hidden; transform: translateX(-100%); transition: transform .2s var(--ease), visibility .2s; box-shadow: var(--pop); }
+  .nav-open .side { visibility: visible; transform: translateX(0); }
+  body.nav-open { overflow: hidden; }
+  .side .brand { padding-bottom: 12px; }
+  .side-close { display: inline-flex; margin-left: auto; }
+  .side .nav a { min-height: 44px; }
+  .side .nav, .side-foot { flex-shrink: 0; }
+  .nav-backdrop:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 39; border: 0; border-radius: 0; background: rgba(8,10,14,.48); padding: 0; cursor: pointer; }
   .top { display: flex; position: sticky; top: 0; z-index: 5; align-items: center; gap: 4px; padding: 8px 12px 8px 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
   .top .brand { padding: 0; font-size: 15px; }
-  .tabbar { position: fixed; z-index: 5; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
-  .tabbar a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 6px; font-size: 11px; color: var(--muted); font-weight: 550; position: relative; }
-  .tabbar a:hover { text-decoration: none; }
-  .tabbar a[aria-current="page"] { color: var(--accent); }
-  .tabbar .count { position: absolute; top: 6px; left: calc(50% + 7px); width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
-  main { padding: 18px 16px 96px; }
+  .top #navToggle { min-width: 44px; min-height: 44px; margin-right: 6px; }
+  .top .nodesel { max-width: 120px; }
+  .top .brand { flex-shrink: 0; }
+  main { padding: 18px 16px calc(32px + env(safe-area-inset-bottom)); }
   .page-head h1 { font-size: 20px; }
 }
-@media (min-width: 861px) { .tabbar { display: none; } }
+@media (max-width: 480px) { .top .brand img { display: none; } .top .nodesel { max-width: 100px; } }
 
 /* Building blocks */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); min-width: 0; }
@@ -257,7 +263,7 @@ dialog[open] { animation: pop .14s var(--ease); }
 .menu button:hover, .menu button:focus-visible { background: var(--hover); outline: none; }
 .menu button.danger { color: var(--bad); }
 .toasts { position: fixed; z-index: 30; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
-@media (max-width: 860px) { .toasts { bottom: 76px; } }
+@media (max-width: 860px) { .toasts { bottom: calc(20px + env(safe-area-inset-bottom)); } }
 .toast { background: var(--text); color: var(--bg); padding: 9px 14px; border-radius: 10px; font-size: 13.5px; box-shadow: var(--pop); animation: pop .14s var(--ease); max-width: calc(100vw - 32px); }
 .toast.bad { background: var(--bad); color: #fff; }
 
@@ -275,9 +281,6 @@ dialog[open] { animation: pop .14s var(--ease); }
 .ipcam-file { overflow-wrap: anywhere; }
 .ipcam-title { font-weight: 650; font-size: 15px; }
 @media (max-width: 600px) { .ipcam-grid { grid-template-columns: 1fr; } }
-@media (max-width: 860px) {
-  .tabbar { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(64px, 1fr); overflow-x: auto; }
-}
 /* Setup guides */
 .guide-body { padding: 4px 18px 0; display: flex; flex-direction: column; gap: 12px; color: var(--text-2); min-height: 280px; }
 .guide-body h4 { margin: 0; font-size: 15px; color: var(--text); }
@@ -354,6 +357,7 @@ dialog[open] { animation: pop .14s var(--ease); }
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
   <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7h4l2-3h4l2 3h4a1 1 0 0 1 1 1v11H3V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="4"/></symbol>
   <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h6m4 0h6M4 17h10m4 0h2"/><circle cx="12" cy="7" r="2"/><circle cx="16" cy="17" r="2"/></symbol>
   <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11v1a6 6 0 0 0 12 0v-1M12 18v3M9 21h6"/></symbol>
@@ -416,8 +420,9 @@ dialog[open] { animation: pop .14s var(--ease); }
 </div>
 
 <div id="appView" class="shell hidden">
-  <aside class="side">
-    <div class="brand"><img src="/favicon.svg" alt="">Homedroid</div>
+  <button id="navBackdrop" class="nav-backdrop" aria-label="Close navigation" tabindex="-1" hidden></button>
+  <aside class="side" id="sidebar" aria-label="Main navigation" tabindex="-1">
+    <div class="brand"><img src="/favicon.svg" alt="">Homedroid<button class="btn ghost icon side-close" id="navClose" aria-label="Close navigation"><svg class="i"><use href="#i-x"/></svg></button></div>
     <label class="nodesel hidden" data-nodewrap><span class="sr">Phone</span><select data-nodesel aria-label="Phone to manage"></select></label>
     <nav class="nav" aria-label="Sections">
       <a href="#overview" data-tab="overview"><svg class="i"><use href="#i-overview"/></svg>Overview</a>
@@ -441,12 +446,11 @@ dialog[open] { animation: pop .14s var(--ease); }
     </div>
   </aside>
   <header class="top">
+    <button class="btn ghost icon" id="navToggle" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><svg class="i"><use href="#i-menu"/></svg></button>
     <div class="brand"><img src="/favicon.svg" alt="">Homedroid</div>
     <div class="grow"></div>
     <label class="nodesel hidden" data-nodewrap><select data-nodesel aria-label="Phone to manage"></select></label>
     <a href="#settings" class="btn ghost icon hidden" data-update-pill title="Update available" aria-label="Update available" style="color:var(--accent)"><svg class="i"><use href="#i-sparkle"/></svg><span class="sr"></span></a>
-    <button class="btn ghost icon" data-act="theme" title="Switch theme" aria-label="Switch theme"><svg class="i"><use href="#i-auto" data-themeicon/></svg></button>
-    <button class="btn ghost icon" data-act="logout" title="Log out" aria-label="Log out"><svg class="i"><use href="#i-logout"/></svg></button>
   </header>
 
   <main>
@@ -739,18 +743,6 @@ dialog[open] { animation: pop .14s var(--ease); }
     </section>
   </main>
 
-  <nav class="tabbar" aria-label="Sections">
-    <a href="#overview" data-tab="overview"><svg class="i"><use href="#i-overview"/></svg>Overview</a>
-    <a href="#modules" data-tab="modules"><svg class="i"><use href="#i-modules"/></svg>Modules<span class="count hidden" data-jobdot></span></a>
-    <a href="#deploys" data-tab="deploys"><svg class="i"><use href="#i-deploy"/></svg>Deploy</a>
-    <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
-    <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal</a>
-    <a href="#ai" data-tab="ai"><svg class="i"><use href="#i-sparkle"/></svg>AI</a>
-      <a href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg>IPCam</a>
-      <a href="#cameras" data-tab="cameras" data-wall-nav class="hidden"><svg class="i"><use href="#i-eye"/></svg>Cameras</a>
-      <a href="#cluster" data-tab="cluster"><svg class="i"><use href="#i-cluster"/></svg>Cluster<span class="count hidden" data-pairdot></span></a>
-      <a href="#settings" data-tab="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</a>
-  </nav>
 </div>
 
 <dialog id="modal"><form method="dialog" id="modalForm"></form></dialog>
@@ -887,12 +879,49 @@ function applyTheme() {
 }
 applyTheme();
 
+// ---- Mobile sidebar --------------------------------------------------------------------
+const narrowScreen = matchMedia('(max-width: 860px)');
+let sidebarOpen = false;
+function setSidebar(open, restoreFocus = true) {
+  const side = $('#sidebar'), mobile = narrowScreen.matches;
+  const wasOpen = sidebarOpen;
+  sidebarOpen = mobile && open;
+  document.body.classList.toggle('nav-open', sidebarOpen);
+  $('#navBackdrop').hidden = !sidebarOpen;
+  $('#navToggle').setAttribute('aria-expanded', String(sidebarOpen));
+  side.inert = mobile && !sidebarOpen;
+  if (mobile && !sidebarOpen) side.setAttribute('aria-hidden', 'true'); else side.removeAttribute('aria-hidden');
+  if (sidebarOpen) { side.setAttribute('role', 'dialog'); side.setAttribute('aria-modal', 'true'); }
+  else { side.removeAttribute('role'); side.removeAttribute('aria-modal'); }
+  $('main').inert = sidebarOpen;
+  $('.top').inert = sidebarOpen;
+  if (sidebarOpen) $('#navClose').focus();
+  else if (wasOpen && restoreFocus && mobile) $('#navToggle').focus();
+}
+$('#navToggle').onclick = () => setSidebar(true);
+$('#navClose').onclick = $('#navBackdrop').onclick = () => setSidebar(false);
+$('#sidebar').addEventListener('click', e => { if (e.target.closest('a[href^="#"]')) setSidebar(false); });
+document.addEventListener('keydown', e => {
+  if (!sidebarOpen) return;
+  if (e.key === 'Escape') { e.preventDefault(); setSidebar(false); }
+  if (e.key === 'Tab') {
+    const targets = [...$('#sidebar').querySelectorAll('a[href], button, select')].filter(el => !el.disabled && el.offsetParent !== null);
+    const first = targets[0], last = targets[targets.length - 1];
+    if (!first) return;
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+narrowScreen.addEventListener('change', () => setSidebar(false, false));
+setSidebar(false, false);
+
 // ---- Routing and polling ---------------------------------------------------------------
 // The tab (and the open folder) live in the URL hash, so reloads and the back button work.
 // Only the visible tab polls, never while the page is hidden, faster only while a job runs.
 const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000, camera: 3000, settings: 0, cluster: 4000, cameras: 5000, ai: 4000};
 let tab = 'overview', authed = false, pollTimer = 0, seq = 0, busyJob = false;
 function route() {
+  setSidebar(false);
   const [t, ...rest] = location.hash.slice(1).split('/').map(s => { try { return decodeURIComponent(s); } catch (e) { return s; } });
   if (tab === 'camera' && t !== 'camera') { stopListening(); closeLive(); }
   if (tab === 'cameras' && t !== 'cameras') stopWall();
@@ -931,6 +960,7 @@ async function refresh() {
 document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(pollTimer); else refresh(); });
 
 function showLogin() {
+  setSidebar(false, false);
   stopListening(); settingsLoaded = false;
   ['#currentPassword', '#newPassword', '#confirmPassword'].forEach(id => $(id).value = '');
   authed = false; clearTimeout(pollTimer);

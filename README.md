@@ -23,6 +23,7 @@ from a web dashboard, where you can also deploy web apps straight from GitHub.
 <p align="center">
   <img src="docs/screenshots/phone-main.png" width="260" alt="The Homedroid app: services, addresses and battery status">
   <img src="docs/screenshots/phone-apps.png" width="260" alt="The Apps screen with Jellyfin, qBittorrent, Home Assistant and Immich">
+  <img src="docs/screenshots/phone-settings.png" width="260" alt="Phone settings: appearance, startup and connection controls">
 </p>
 <p align="center">
   <img src="docs/screenshots/dashboard-overview-dark.png" width="820" alt="The web dashboard overview: phone health and running services">
@@ -36,7 +37,7 @@ A 6-minute tour of every module on an Android 10 emulator, including Tailscale, 
 
 ## Download
 
-Homedroid is in **beta (0.9.1)**. Get the APK from the
+Homedroid is in **beta (0.9.2)**. Get the APK from the
 [latest release](https://github.com/sudiptacmd/homedroid/releases):
 
 | Your phone | APK |
@@ -92,12 +93,14 @@ from the browser there. The server comes back on the new version by itself.
 ## Getting started
 
 1. Install the APK from [Download](#download) (or [build it](#building)).
-2. Open Homedroid, paste your SSH public key (`~/.ssh/id_ed25519.pub`), tap **Save & apply**,
-   then **Start server**. (Keys can also be added later in the dashboard.)
-3. Tap **Allow running in background**. On Samsung phones also add Homedroid to
+2. Open Homedroid, go to **Settings → SSH public keys**, paste your public key
+   (`~/.ssh/id_ed25519.pub`) and tap **Save**. Return to **Overview → Start server**.
+   Keys can also be added later in the dashboard.
+3. Open **Settings → Battery settings** and allow background running. On Samsung phones also add Homedroid to
    *Settings → Battery → Background usage limits → Never sleeping apps*.
 4. Android 12+: turn off the phantom process killer (the app shows how).
-5. Open the dashboard at `http://<phone-ip>:8800` with the password shown in the app.
+5. Tap **Open control panel** to manage everything on the phone, or open
+   `http://<phone-ip>:8800` from another device. **Overview → Dashboard login** shows the password.
 6. Keep the phone cool and, if you can, limit charging to about 80%.
 
 ```bash
@@ -142,12 +145,26 @@ step-by-step **Setup guide** in the dashboard.
   history of both shells.
 
 It works without internet access: everything it needs is in the app.
+On mobile browsers, a menu button opens the navigation sidebar with every page, theme
+controls and logout. The sidebar closes after choosing a page or tapping outside.
 
 ### Settings
 
-Open **Settings** in the dashboard to change the login password or whether the server
-starts when the phone boots. Password changes require the current password and sign out
-other browser sessions. The phone app continues to display the current dashboard password.
+The phone app has **Overview**, **Apps** and **Settings** in its bottom navigation. Settings
+controls appearance (phone theme, light or dark), startup on boot, SSH and web hosting,
+Tailscale setup, Cloudflare Tunnel tokens, SSH public keys and the dashboard password.
+It also links to battery optimization, permissions, shared storage access and updates.
+Connection changes restart active services; while stopped, they apply on the next start.
+
+The phone's **control panel** opens the local dashboard inside the app and signs in with an
+expiring session. Manage files, AI, routines, deployments, camera controls and your cluster
+from the Overview shortcuts. Document uploads and HTTP downloads work in the panel;
+generated browser-only downloads may need the browser dashboard to save.
+
+Open **Settings** in the browser dashboard to change the login password or whether the server
+starts when the phone boots. Browser password changes require the current password. Both
+phone and browser password changes sign out existing browser sessions; **Dashboard login**
+in the phone's Overview shows the current password.
 
 ### IPCam
 
@@ -247,7 +264,7 @@ server runs. Tap it to open the dashboard; tap its title to open the app.
 ### Storage
 
 App data stays inside the app by default. To use an SD card or USB drive, choose
-**Change location** on the app (phone) and pick a volume:
+**Storage location** on the app (phone) and pick a volume:
 
 - Android 11+: data goes to a visible `Homedroid/<name>` folder, with *All files access*.
 - Android 10: apps can only write to their own folder on removable volumes

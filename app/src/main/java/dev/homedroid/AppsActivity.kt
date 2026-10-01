@@ -1,6 +1,5 @@
 package dev.homedroid
 
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Typeface
@@ -17,7 +16,7 @@ import android.widget.Toast
 import java.io.File
 
 /** The app directory: install, open and remove apps that run inside Alpine. */
-class AppsActivity : Activity() {
+class AppsActivity : MobileActivity() {
     private lateinit var apps: Apps
     private lateinit var cfg: Config
 
@@ -52,23 +51,24 @@ class AppsActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        title = "Apps"
         apps = Apps(this, Paths(this))
         cfg = Config(this)
 
-        val list = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(8), dp(16), dp(16))
-        }
-        list.addView(text("Apps run inside a small Alpine Linux environment that is downloaded on first install.", 13f))
+        val list = design.page("Make it yours", "Your favorite services, running on this phone.", "Apps")
+        list.addView(design.row("Modules & connections", "Manage SSH, web hosting, tunnels, camera and AI") { DashboardActivity.open(this, "modules") })
+        list.addView(design.label("APP LIBRARY"))
         for (app in apps.catalog) list.addView(card(app))
         jobLog = text("", 10f).apply {
             typeface = Typeface.MONOSPACE
             setTextIsSelectable(true)
-            setPadding(0, dp(16), 0, 0)
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            background = design.shape(design.surface, 12)
         }
+        list.addView(design.button("Installation activity") {
+            jobLog.visibility = if (jobLog.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        })
+        jobLog.visibility = View.GONE
         list.addView(jobLog)
-        setContentView(ScrollView(this).apply { fitsSystemWindows = true; addView(list) })
     }
 
     override fun onResume() {
@@ -87,48 +87,38 @@ class AppsActivity : Activity() {
     }
 
     private fun card(app: AppDef): View {
-        val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(0, dp(16), 0, dp(8))
-        }
-        box.addView(text(app.name, 18f).apply { setTypeface(typeface, Typeface.BOLD) })
-        box.addView(text(app.description, 14f))
-        box.addView(text("Port ${app.port} · ${app.size}", 12f).apply { alpha = 0.7f })
-        val status = text("", 12f)
+        val box = design.card()
+        box.addView(design.text(app.name, 21f, design.ink, true))
+        box.addView(text(app.description.substringBefore(". ").let { if (it.endsWith('.')) it else "$it." }, 14f))
+        box.addView(design.text("Port ${app.port} · ${app.size}", 12f, design.muted).apply { setPadding(0, dp(8), 0, 0) })
+        val status = design.text("", 13f, design.accent, true).apply { setPadding(0, dp(8), 0, dp(4)) }
         box.addView(status)
         val storage = app.storagePath?.let { text("", 12f).also(box::addView) }
 
         val buttons = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        val action = Button(this)
-        val open = Button(this).apply {
-            text = "Open"
-            setOnClickListener {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("http://127.0.0.1:${app.port}")))
-            }
+        val action = design.button("Install") {}
+        val open = design.button("Open", true) {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("http://127.0.0.1:${app.port}")))
         }
-        val toggle = Button(this).apply {
-            setOnClickListener {
-                cfg.setDisabled(app.id, !cfg.isDisabled(app.id))
-                if (ServerService.running) ServerService.restart(this@AppsActivity)
-            }
+        val toggle = design.button("Turn off") {
+            cfg.setDisabled(app.id, !cfg.isDisabled(app.id))
+            if (ServerService.running) ServerService.restart(this@AppsActivity)
         }
-        val clear = Button(this).apply {
-            text = "Clear data"
-            setOnClickListener { confirmClear(app) }
+        val clear = design.button("Clear data") { confirmClear(app) }
+        fun addButton(row: LinearLayout, button: Button) {
+            row.addView(button, LinearLayout.LayoutParams(0, -2, 1f).apply {
+                setMargins(dp(3), dp(12), dp(3), 0)
+            })
         }
-        buttons.addView(action)
-        buttons.addView(open)
-        buttons.addView(toggle)
-        // A second row, so the buttons fit narrow screens.
+        addButton(buttons, action)
+        addButton(buttons, open)
+        addButton(buttons, toggle)
         val more = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        more.addView(clear)
+        addButton(more, clear)
         box.addView(buttons)
         box.addView(more)
         if (app.storagePath != null) {
-            more.addView(Button(this).apply {
-                text = "Change location"
-                setOnClickListener { chooseStorage(app) }
-            })
+            addButton(more, design.button("Storage location") { chooseStorage(app) })
         }
         rows += Row(app, status, storage, action, open, toggle, clear)
         return box
@@ -156,10 +146,11 @@ class AppsActivity : Activity() {
             row.storage?.setTextIfChanged(
                 "${row.app.storageLabel}: " + (cfg.storageDir(row.app) ?: "inside the app (default)")
             )
-            row.open.setVisibleIfChanged(installed && d != null)
+            row.open.setVisibleIfChanged(installed && !cfg.isDisabled(row.app.id) && d?.state == Supervisor.State.RUNNING)
             row.toggle.setVisibleIfChanged(installed)
             row.clear.setVisibleIfChanged(installed)
             if (row.clear.isEnabled == busy) row.clear.isEnabled = !busy
+            row.toggle.isEnabled = !busy
             row.toggle.setTextIfChanged(if (cfg.isDisabled(row.app.id)) "Turn on" else "Turn off")
             if (row.action.isEnabled == busy) row.action.isEnabled = !busy
             row.action.setTextIfChanged(if (installed) "Remove" else "Install")
@@ -167,7 +158,7 @@ class AppsActivity : Activity() {
                 if (installed) confirmRemove(row.app) else ServerService.install(this, row.app)
             }
         }
-        jobLog.setTextIfChanged(Jobs.log.tail(40).joinToString("\n"))
+        jobLog.setTextIfChanged(Jobs.log.tail(40).joinToString("\n").ifEmpty { "No installation activity yet." })
     }
 
     private fun chooseStorage(app: AppDef) {
@@ -280,10 +271,7 @@ class AppsActivity : Activity() {
     private fun formatSize(bytes: Long) =
         if (bytes >= 1L shl 30) "%.1f GB".format(bytes / (1L shl 30).toDouble()) else "${bytes shr 20} MB"
 
-    private fun text(s: String, sp: Float) = TextView(this).apply {
-        text = s
-        textSize = sp
-    }
+    private fun text(s: String, sp: Float) = design.text(s, sp, design.muted)
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 }

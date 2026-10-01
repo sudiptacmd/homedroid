@@ -45,6 +45,10 @@ class ServerService : Service() {
 
         val running get() = supervisor != null
 
+        /** Includes startup/restarts, while the supervisor may be temporarily absent. */
+        @Volatile var active = false
+            private set
+
         fun start(ctx: Context) {
             ctx.startForegroundService(Intent(ctx, ServerService::class.java))
         }
@@ -110,6 +114,7 @@ class ServerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        active = true
         startInForeground()
         wakeLock = getSystemService(PowerManager::class.java)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "homedroid:server")
@@ -160,6 +165,7 @@ class ServerService : Service() {
     }
 
     override fun onDestroy() {
+        active = false
         try {
             worker.submit(::shutdown).get(10, TimeUnit.SECONDS)
         } catch (_: Exception) {

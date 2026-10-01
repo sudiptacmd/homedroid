@@ -29,6 +29,7 @@ class Dashboard(private val ctx: Context) {
 
     fun start() {
         http.start()
+        phoneInstance = this
         ai.start()
         routines.start()
         try {
@@ -39,6 +40,7 @@ class Dashboard(private val ctx: Context) {
     }
 
     fun stop() {
+        if (phoneInstance === this) phoneInstance = null
         routines.stop()
         ai.stop()
         cluster.stop()
@@ -644,6 +646,33 @@ class Dashboard(private val ctx: Context) {
     private class Core(val id: String, val name: String, val description: String, val port: Int, val service: String)
 
     companion object {
+        @Volatile private var phoneInstance: Dashboard? = null
+
+        /** Issue a normal session only after our own HTTP listener has started. */
+        fun sessionForPhone(): String? {
+            val live = phoneInstance ?: return null
+            return synchronized(live.auth) {
+                if (phoneInstance !== live) null else {
+                    val token = live.auth.newSession()
+                    "$COOKIE=$token; Max-Age=${AuthSecurity.SESSION_MS / 1000}; Path=/; HttpOnly; SameSite=Strict"
+                }
+            }
+        }
+
+        /** The private, non-exported phone settings screen is already trusted. */
+        fun changePasswordFromPhone(ctx: Context, password: String) {
+            require(PhoneSettings.validPassword(password)) { "Use 12–128 characters without control characters" }
+            val live = phoneInstance
+            if (live != null) synchronized(live.auth) {
+                live.cfg.dashboardPassword = password
+                live.auth.revokeSessions()
+            } else {
+                val config = Config(ctx)
+                config.dashboardPassword = password
+                AuthSecurity(config.dashboardAuth, persist = { config.dashboardAuth = it }).revokeSessions()
+            }
+        }
+
         private const val COOKIE = "homedroid_session"
         private val VENDOR = setOf("xterm.js", "xterm.css", "addon-fit.js", "JetBrainsMono-Regular.woff2")
 
