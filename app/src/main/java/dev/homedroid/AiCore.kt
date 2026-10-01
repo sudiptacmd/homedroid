@@ -65,6 +65,50 @@ object AiCore {
             2489757856, "882e8d2db44dc554fb0ea5077cb7e4bc49e7342a1f0da57901c0802ea21a0863", "Best quality here; needs 8 GB of RAM"),
     )
 
+    /** How a catalog model suits this phone; see [advise]. */
+    class Advice(val fit: String, val recommended: Boolean, val wordsPerSecond: Double?, val reason: String)
+
+    /** Below this an answer feels stuck; a model must reach it to be recommended. */
+    const val USABLE_SPEED = 5.0
+
+    /**
+     * Advice for each catalog model on a phone with [ramTotalMb] of memory, [freeBytes] free
+     * where models are kept and [cores] CPU cores. With a benchmark ([benchTg] tokens/s
+     * writing with a model of [benchBytes]), speeds are estimated from it: writing speed is
+     * bound by memory bandwidth, so it scales inversely with model size.
+     *
+     * The recommendation is the largest (best) model that fits comfortably in memory and
+     * storage and, when speed can be estimated, still reaches [USABLE_SPEED]. Without a
+     * benchmark, phones with fewer than 8 cores aren't recommended models over 1.2 GB.
+     */
+    fun advise(catalog: List<LocalModel>, ramTotalMb: Long, freeBytes: Long, cores: Int, benchTg: Double?, benchBytes: Long?): Map<String, Advice> {
+        fun speed(m: LocalModel) = if (benchTg != null && benchTg > 0 && benchBytes != null && benchBytes > 0) benchTg * benchBytes / m.bytes else null
+        fun fit(m: LocalModel) = when {
+            m.bytes > freeBytes - (512L shl 20) -> "no-space"
+            m.ramMb < ramTotalMb * 0.55 -> "fits"
+            m.ramMb < ramTotalMb * 0.75 -> "tight"
+            else -> "too-big"
+        }
+        val usable = catalog.filter { m ->
+            fit(m) == "fits" && (speed(m)?.let { it >= USABLE_SPEED } ?: (cores >= 8 || m.bytes <= 1_200_000_000L))
+        }
+        val best = usable.maxByOrNull { it.bytes }
+        return catalog.associate { m ->
+            val s = speed(m)
+            val f = fit(m)
+            m.id to Advice(f, m === best, s, when {
+                m === best -> if (s != null) "The best model that answers quickly here (about %.0f words/s)".format(s)
+                    else "The best model that fits this phone's memory; run the benchmark to check its speed"
+                f == "no-space" -> "Not enough free space where models are kept"
+                f == "too-big" -> "Needs more memory than this phone has"
+                f == "tight" -> "Fits, but leaves little memory for your other apps"
+                s != null && s < USABLE_SPEED -> "Fits, but slow here (about %.1f words/s)".format(s)
+                s != null -> "About %.0f words/s here".format(s)
+                else -> ""
+            })
+        }
+    }
+
     /** The API root for a provider [type]; only "compatible" uses the address the user gave. */
     fun baseUrl(type: String, given: String): String = when (type) {
         "openai" -> "https://api.openai.com/v1"

@@ -76,6 +76,41 @@ class AiCoreTest {
         assertEquals("sk-1", Provider.from(openai.toStored()).apiKey)
     }
 
+    private fun pick(ramMb: Long, free: Long = 50L shl 30, cores: Int = 8, tg: Double? = null, benchBytes: Long? = null) =
+        AiCore.advise(AiCore.CATALOG, ramMb, free, cores, tg, benchBytes).filterValues { it.recommended }.keys.singleOrNull()
+
+    @Test fun recommendsTheBestModelThatFitsMemory() {
+        // 12 GB flagship: Gemma 3 4B (~3.4 GB to run) fits comfortably.
+        assertEquals("gemma3-4b", pick(11_500))
+        // ~6 GB phone: a 3B model; Gemma 4B would take too much of it.
+        assertEquals("qwen2.5-3b", pick(5_600))
+        // 3 GB phone: a 1B model (~1.4 GB to run) still fits comfortably.
+        assertEquals("llama3.2-1b", pick(3_000))
+        // 2 GB phone: nothing fits comfortably.
+        assertNull(pick(1_500))
+    }
+
+    @Test fun storageAndCoresLimitTheRecommendation() {
+        // Not enough free space for the bigger ones.
+        assertEquals("qwen2.5-0.5b", pick(11_500, free = 1_200_000_000L))
+        assertEquals("no-space", AiCore.advise(AiCore.CATALOG, 11_500, 1_200_000_000L, 8, null, null).getValue("gemma3-4b").fit)
+        // A 4-core phone without a benchmark: no model over 1.2 GB.
+        assertEquals("qwen2.5-1.5b", pick(11_500, cores = 4))
+    }
+
+    @Test fun aBenchmarkDecidesBySpeed() {
+        val half = 491_400_032L // measured with the 0.5B model
+        // 0.5B writes 30 tokens/s: 4B (5x larger) would manage ~6 → still usable, recommended.
+        assertEquals("gemma3-4b", pick(11_500, tg = 30.0, benchBytes = half))
+        // 0.5B writes only 12 tokens/s: 1.5B ~5.3 is the largest usable one.
+        assertEquals("qwen2.5-1.5b", pick(11_500, tg = 12.0, benchBytes = half))
+        val advice = AiCore.advise(AiCore.CATALOG, 11_500, 50L shl 30, 8, 12.0, half)
+        assertTrue(advice.getValue("gemma3-4b").reason.contains("slow"))
+        assertEquals(12.0, advice.getValue("qwen2.5-0.5b").wordsPerSecond!!, 0.01)
+        // Even a slow benchmark never leaves the user without advice for the smallest model.
+        assertTrue(advice.getValue("qwen2.5-0.5b").reason.isNotEmpty())
+    }
+
     @Test fun catalogFilesAreGgufWithPinnedHashes() {
         for (m in AiCore.CATALOG) {
             assertTrue(m.file.endsWith(".gguf"))
