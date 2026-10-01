@@ -42,7 +42,7 @@ class Cluster(context: Context, private val route: (Request, Peer) -> Response) 
     private val stateFile = File(dir, "state.json")
     val state = ClusterState(
         if (stateFile.exists()) stateFile.readText() else "{}", identity.fingerprint,
-        persist = { s -> File(dir, "state.json.tmp").apply { writeText(s) }.renameTo(stateFile) },
+        persist = { s -> writeDurably(stateFile, s.toByteArray()) },
     )
     private val http = Http(ClusterState.PORT, ClusterTls.server(identity), 24, ::handle)
     private val pool = Executors.newFixedThreadPool(8) { r -> Thread(r, "cluster").apply { isDaemon = true } }
@@ -113,7 +113,7 @@ class Cluster(context: Context, private val route: (Request, Peer) -> Response) 
         }
         state.byFingerprint(fp)?.let { return Response.json(self().put("state", "approved")) }
         val peer = Peer.from(JSONObject().put("id", body.optString("id")).put("name", body.optString("name"))
-            .put("model", body.optString("model")).put("fingerprint", fp).put("address", r.remote)
+            .put("model", body.optString("model")).put("fingerprint", fp).put("address", r.remote.takeUnless(Peer::isLocal) ?: "")
             .put("port", body.optInt("port", ClusterState.PORT)))
             ?: return Response.error(400, "Invalid pairing request")
         // Too many requests is a rate limit; anything else (pairing with itself) is a bad request.
