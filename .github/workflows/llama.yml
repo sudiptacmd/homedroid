@@ -18,7 +18,8 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;30.0.16248370" > /dev/null
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> "$GITHUB_ENV"
-          sudo apt-get install -y ninja-build > /dev/null
+          sudo apt-get install -y ninja-build glslc > /dev/null
+          glslc --version
 
       - name: Cache sources
         uses: actions/cache@v4
