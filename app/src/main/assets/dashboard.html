@@ -300,6 +300,7 @@ dialog[open] { animation: pop .14s var(--ease); }
 .notice .btn svg.i { color: inherit; margin: 0; }
 .notice.wrap { flex-wrap: wrap; align-items: center; }
 .notice.wrap > span { flex: 1 1 180px; }
+.notice.wrap > .spinner { flex: none; }
 .notice.wrap .btn { margin-left: 0; }
 .releasenotes { max-height: 220px; }
 /* IPCam live view and capture previews */
@@ -315,6 +316,20 @@ dialog[open] { animation: pop .14s var(--ease); }
 #preview .media { padding: 0 18px 18px; }
 #preview .media img, #preview .media video { display: block; width: 100%; max-height: 72vh; object-fit: contain; background: #000; border-radius: var(--r-sm); }
 #preview .media audio { width: 100%; }
+/* Cluster: the phone being managed, and the Cluster page */
+.nodesel { padding: 0 4px 12px; }
+.nodesel select { font-weight: 600; }
+.top .nodesel { padding: 0; max-width: 46vw; }
+.top .nodesel select { min-height: 32px; padding: 4px 8px; }
+.node-banner { margin-bottom: 16px; }
+.pair-code { font: 650 26px/1.1 "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; letter-spacing: .12em; color: var(--text); }
+.member .mini { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px 12px; }
+.member .mini div { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.member .mini b { font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.member .mini span { font-size: 12px; color: var(--muted); }
+.found { display: flex; flex-direction: column; gap: 6px; }
+.found button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); cursor: pointer; }
+.found button:hover { background: var(--surface-2); }
 </style>
 </head>
 <body>
@@ -366,6 +381,7 @@ dialog[open] { animation: pop .14s var(--ease); }
   <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7h8M8 11h6"/></symbol>
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
+  <symbol id="i-cluster" viewBox="0 0 24 24"><rect x="2.5" y="3" width="8" height="13" rx="1.8"/><rect x="13.5" y="8" width="8" height="13" rx="1.8"/><path d="M10.5 9.5h3M6.5 13h.01M17.5 18h.01"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M4 10a8 8 0 0 1 14-4l2 2"/><path d="M20 4v4h-4"/><path d="M20 14a8 8 0 0 1-14 4l-2-2"/><path d="M4 20v-4h4"/></symbol>
 </svg>
 
@@ -382,6 +398,7 @@ dialog[open] { animation: pop .14s var(--ease); }
 <div id="appView" class="shell hidden">
   <aside class="side">
     <div class="brand"><img src="/favicon.svg" alt="">Homedroid</div>
+    <label class="nodesel hidden" data-nodewrap><span class="sr">Phone</span><select data-nodesel aria-label="Phone to manage"></select></label>
     <nav class="nav" aria-label="Sections">
       <a href="#overview" data-tab="overview"><svg class="i"><use href="#i-overview"/></svg>Overview</a>
       <a href="#modules" data-tab="modules"><svg class="i"><use href="#i-modules"/></svg>Modules<span class="count hidden" data-jobdot title="A job is running"></span></a>
@@ -389,6 +406,7 @@ dialog[open] { animation: pop .14s var(--ease); }
       <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
       <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal &amp; SSH</a>
       <a href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg>IPCam</a>
+      <a href="#cluster" data-tab="cluster"><svg class="i"><use href="#i-cluster"/></svg>Cluster<span class="count hidden" data-pairdot title="A phone asks to join"></span></a>
       <a href="#settings" data-tab="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</a>
     </nav>
     <div class="side-foot">
@@ -403,12 +421,28 @@ dialog[open] { animation: pop .14s var(--ease); }
   <header class="top">
     <div class="brand"><img src="/favicon.svg" alt="">Homedroid</div>
     <div class="grow"></div>
+    <label class="nodesel hidden" data-nodewrap><select data-nodesel aria-label="Phone to manage"></select></label>
     <a href="#settings" class="btn ghost icon hidden" data-update-pill title="Update available" aria-label="Update available" style="color:var(--accent)"><svg class="i"><use href="#i-sparkle"/></svg><span class="sr"></span></a>
     <button class="btn ghost icon" data-act="theme" title="Switch theme" aria-label="Switch theme"><svg class="i"><use href="#i-auto" data-themeicon/></svg></button>
     <button class="btn ghost icon" data-act="logout" title="Log out" aria-label="Log out"><svg class="i"><use href="#i-logout"/></svg></button>
   </header>
 
   <main>
+    <div class="notice info wrap node-banner hidden" id="nodeBanner" role="status"></div>
+    <section data-view="cluster" class="hidden">
+      <div class="page-head">
+        <div class="grow"><h1>Cluster</h1><div class="sub">Several phones, one dashboard. Each phone runs its own modules; manage any of them from here.</div></div>
+        <button class="btn primary" data-act="addPhone"><svg class="i"><use href="#i-plus"/></svg>Add a phone</button>
+      </div>
+      <div id="clRequests"></div>
+      <h2 style="margin-top:0">This phone</h2>
+      <div class="card pad" id="clSelf"><div class="skeleton" style="width:40%"></div></div>
+      <h2>Phones in the cluster</h2>
+      <div class="grid" id="clMembers"></div>
+      <div class="row" style="margin-top:20px"><div class="grow hint">Phones find each other on the same Wi-Fi network. Traffic between them is encrypted, and each phone only trusts the others it was paired with.</div>
+        <button class="btn ghost sm danger hidden" data-act="leaveCluster" id="clLeave">Leave the cluster</button></div>
+    </section>
+
     <section data-view="overview">
       <div class="page-head"><div><h1>Overview</h1><div class="sub" id="ovSub">&nbsp;</div></div></div>
       <div class="stats" id="ovStats">
@@ -588,6 +622,7 @@ dialog[open] { animation: pop .14s var(--ease); }
     <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
     <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal</a>
       <a href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg>IPCam</a>
+      <a href="#cluster" data-tab="cluster"><svg class="i"><use href="#i-cluster"/></svg>Cluster<span class="count hidden" data-pairdot></span></a>
       <a href="#settings" data-tab="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</a>
   </nav>
 </div>
@@ -624,7 +659,13 @@ const icon = name => `<svg class="i"><use href="#i-${name}"/></svg>`;
 const bytes = n => n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(0) + ' KB' : n < 1073741824 ? (n / 1048576).toFixed(1) + ' MB' : (n / 1073741824).toFixed(2) + ' GB';
 const gb = mb => (mb / 1024).toFixed(1);
 const join = (...p) => p.filter(Boolean).join('/');
-const appUrl = port => `${location.protocol === 'https:' ? 'https' : 'http'}://${location.hostname.includes(':') ? `[${location.hostname}]` : location.hostname}:${port}`;
+// The phone being managed: null for this one, or a cluster member's id. Every view talks to it
+// through this phone, which forwards the request (see Cluster.kt).
+let node = null, cluster = null;
+const apiBase = () => node ? `/api/nodes/${encodeURIComponent(node)}/` : '/api/';
+/** Where the managed phone's own apps are reached from this browser. */
+function hostFor() { return (node && cluster?.members.find(m => m.id === node)?.address) || location.hostname; }
+const appUrl = port => { const h = hostFor(); return `${location.protocol === 'https:' && !node ? 'https' : 'http'}://${h.includes(':') ? `[${h}]` : h}:${port}`; };
 function ago(sec) {
   if (sec < 3600) return Math.max(1, Math.floor(sec / 60)) + ' min';
   if (sec < 86400) return Math.floor(sec / 3600) + ' h ' + Math.floor(sec % 3600 / 60) + ' min';
@@ -638,8 +679,9 @@ function setHTML(el, html) {
 function store(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
 function stored(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 
-async function api(path, {method = 'GET', body} = {}) {
-  const res = await fetch('/api/' + path, {
+/** Calls the managed phone's API; `local` calls this phone's own (logins, the cluster). */
+async function api(path, {method = 'GET', body, local = false} = {}) {
+  const res = await fetch((local || path === 'login' || path === 'logout' ? '/api/' : apiBase()) + path, {
     method, body: body === undefined ? undefined : JSON.stringify(body),
     headers: {'X-Homedroid-Request': '1', ...(body === undefined ? {} : {'Content-Type': 'application/json'})},
   });
@@ -721,7 +763,7 @@ applyTheme();
 // ---- Routing and polling ---------------------------------------------------------------
 // The tab (and the open folder) live in the URL hash, so reloads and the back button work.
 // Only the visible tab polls, never while the page is hidden, faster only while a job runs.
-const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000, camera: 3000, settings: 0};
+const POLL = {overview: 5000, modules: 5000, deploys: 6000, files: 0, ssh: 10000, camera: 3000, settings: 0, cluster: 4000};
 let tab = 'overview', authed = false, pollTimer = 0, seq = 0, busyJob = false;
 function route() {
   const [t, ...rest] = location.hash.slice(1).split('/').map(s => { try { return decodeURIComponent(s); } catch (e) { return s; } });
@@ -741,15 +783,17 @@ async function refresh() {
   if (!authed) return;
   const my = ++seq;
   try {
-    if (!syncCameraNavigation(await api('settings'))) return;
-    if (tab === 'camera') await renderCamera();
+    if (tab === 'cluster') await renderCluster();
+    else if (!syncCameraNavigation(await api('settings'))) return;
+    else if (tab === 'camera') await renderCamera();
     else if (tab === 'settings') await renderSettings();
     else if (tab === 'overview') await renderOverview();
     else if (tab === 'modules') await renderModules();
     else if (tab === 'deploys') await renderDeploys();
     else if (tab === 'files') await renderFiles();
     else await renderSsh();
-  } catch (e) { /* polling stays quiet; actions report their own errors */ }
+    noteNodeError(null);
+  } catch (e) { noteNodeError(e); /* polling stays quiet otherwise; actions report their own errors */ }
   if (my !== seq || document.hidden) return; // a newer refresh owns the schedule
   const ms = busyJob && tab !== 'files' ? 1500 : POLL[tab];
   if (ms) pollTimer = setTimeout(refresh, ms);
@@ -765,9 +809,10 @@ function showLogin() {
 }
 function showApp() {
   authed = true;
-  api('update').then(showUpdatePill).catch(() => {});
+  api('update', {local: true}).then(showUpdatePill).catch(() => {});
   $('#loginView').classList.add('hidden'); $('#appView').classList.remove('hidden');
-  route();
+  // A phone remembered from last time may have left the cluster: check before showing it.
+  if (node) loadCluster().finally(route); else { loadCluster(); route(); }
 }
 $('#loginForm').onsubmit = async e => {
   e.preventDefault();
@@ -1183,7 +1228,7 @@ $('#logs').addEventListener('close', () => clearInterval(logTimer));
 
 // ---- Files -----------------------------------------------------------------------------
 const files = {root: stored('filesRoot'), path: '', entries: [], sort: 'name', desc: false, uploads: [], active: null};
-const fUrl = (path, dl = false) => `/api/files/${encodeURIComponent(files.root)}${dl ? '/download' : ''}?path=${encodeURIComponent(path)}`;
+const fUrl = (path, dl = false) => `${apiBase()}files/${encodeURIComponent(files.root)}${dl ? '/download' : ''}?path=${encodeURIComponent(path)}`;
 const KINDS = {video: /\.(mp4|m4v|mkv|webm|mov|avi|ts|wmv)$/i, image: /\.(jpe?g|png|gif|webp|avif|heic|bmp|svg)$/i, audio: /\.(mp3|m4a|aac|flac|ogg|opus|wav)$/i, archive: /\.(zip|tar|gz|tgz|xz|7z|rar|iso|apk)$/i};
 const OPENABLE = /\.(mp4|m4v|webm|mov|mp3|m4a|aac|flac|ogg|opus|wav|jpe?g|png|gif|webp|avif|bmp|pdf|txt|log|srt|vtt|md|json|conf|ya?ml|csv|xml)$/i;
 const kind = name => Object.keys(KINDS).find(k => KINDS[k].test(name)) || 'file';
@@ -1255,7 +1300,7 @@ async function removeFile(p, dir) {
 function queueUploads(items) {
   if (!items.length) return;
   const root = files.root, base = files.path;
-  for (const {file, rel} of items) files.uploads.push({file, root, path: join(base, rel || file.name), loaded: 0, state: 'waiting'});
+  for (const {file, rel} of items) files.uploads.push({file, api: apiBase(), root, path: join(base, rel || file.name), loaded: 0, state: 'waiting'});
   drawTray(); nextUpload();
 }
 function nextUpload() {
@@ -1267,7 +1312,7 @@ function nextUpload() {
   const finish = () => { files.active = null; u.xhr = null; drawTray(); nextUpload(); };
   const send = overwrite => {
     const x = u.xhr = new XMLHttpRequest();
-    x.open('PUT', `/api/files/${encodeURIComponent(u.root)}?path=${encodeURIComponent(u.path)}${overwrite ? '&overwrite=1' : ''}`);
+    x.open('PUT', `${u.api}files/${encodeURIComponent(u.root)}?path=${encodeURIComponent(u.path)}${overwrite ? '&overwrite=1' : ''}`);
     x.setRequestHeader('X-Homedroid-Request', '1');
     // Redrawing on every progress event is wasted work; 4 times a second is plenty.
     x.upload.onprogress = e => { u.loaded = e.loaded; const now = performance.now(); if (now - last > 250) { last = now; drawTray(); } };
@@ -1371,7 +1416,7 @@ async function termStart() {
   }
   term.fit.fit(); term.xterm.reset();
   const {cols, rows} = term.xterm;
-  const ws = term.ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/terminal?cols=${cols}&rows=${rows}${term.kind === 'alpine' ? '&alpine=1' : ''}`);
+  const ws = term.ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}${apiBase()}terminal?cols=${cols}&rows=${rows}${term.kind === 'alpine' ? '&alpine=1' : ''}`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => { termState(term.kind === 'alpine' ? 'Connected to Alpine Linux' : 'Connected to the phone shell', true); term.xterm.focus(); };
   ws.onmessage = e => term.xterm.write(new Uint8Array(e.data));
@@ -1388,7 +1433,7 @@ function setSeg(b) { $$('button', b.parentElement).forEach(x => x.setAttribute('
 
 async function renderSsh() {
   const [keys, sessions, history] = await Promise.all([api('ssh/keys'), api('ssh/sessions'), api('ssh/history')]);
-  $('#sshCmd').textContent = `ssh -p 8022 ${location.hostname}`;
+  $('#sshCmd').textContent = `ssh -p 8022 ${hostFor()}`;
   setHTML($('#keyList'), keys.map(k => `<div class="item">
       <span class="ficon">${icon('key')}</span>
       <div class="grow"><div class="name ellipsis">${esc(k.name || 'Unnamed key')}</div><div class="hint mono ellipsis" title="${esc(k.fingerprint)}">${esc(k.type)} · ${esc(k.fingerprint)}</div></div>
@@ -1418,6 +1463,137 @@ $('#keyForm').onsubmit = async e => {
   const f = e.target;
   if (await run(api('ssh/keys', {method: 'POST', body: {key: f.elements.key.value, name: f.elements.name.value}}), 'Key added')) f.reset();
 };
+
+// ---- Cluster ---------------------------------------------------------------------------
+/** Who is in the cluster, with each phone's live status; also fills the phone switcher. */
+async function loadCluster() {
+  try { cluster = await api('cluster', {local: true}); } catch (e) { return cluster; }
+  if (node && !cluster.members.some(m => m.id === node)) setNode(null);
+  drawNodes();
+  return cluster;
+}
+setInterval(() => { if (authed && !document.hidden && tab !== 'cluster') loadCluster(); }, 30000);
+function drawNodes() {
+  const ms = cluster?.members || [];
+  $$('[data-nodesel]').forEach(sel => {
+    sel.closest('[data-nodewrap]').classList.toggle('hidden', !ms.length);
+    setHTML(sel, `<option value="">${esc(cluster?.self.name || 'This phone')} (this phone)</option>`
+      + ms.map(m => `<option value="${esc(m.id)}">${esc(m.name)}${m.online ? '' : ' (offline)'}</option>`).join(''));
+    sel.value = node || '';
+  });
+  $$('[data-pairdot]').forEach(d => d.classList.toggle('hidden', !cluster?.pending.length));
+  noteNodeError(nodeError);
+}
+let nodeError = null;
+/** The banner over every page while another phone is managed, with why it isn't answering. */
+function noteNodeError(e) {
+  nodeError = e;
+  const m = node && cluster?.members.find(x => x.id === node), box = $('#nodeBanner');
+  box.classList.toggle('hidden', !m || tab === 'cluster');
+  if (!m) return;
+  setHTML(box, `${e ? icon('alert') : icon('cluster')}<span>${e ? esc(e.message) :`Managing <b>${esc(m.name)}</b> · ${esc(m.model)} · ${esc(m.address)}`}</span>
+    <button class="btn sm" data-act="nodeHome">Back to ${esc(cluster.self.name)}</button>`);
+}
+/** Switches every page to phone [id] (null: this one), forgetting what was shown for the last. */
+function setNode(id) {
+  id = id || null;
+  if (id === node) return;
+  stopListening(); closeLive(); if (term.ws) termStop();
+  node = id; store('node', node);
+  modules = null; settingsLoaded = false; knownCaptures = null; files.root = null; files.path = '';
+  Object.values(hist).forEach(a => a.length = 0);
+  $('#cameraSettings').dataset.cameras = ''; $('#cameraControls').dataset.markup = ''; delete $('#cameraQuota').dataset.loaded;
+  nodeError = null; drawNodes();
+  if (tab === 'files') location.hash = '#files'; else refresh();
+}
+$$('[data-nodesel]').forEach(sel => sel.onchange = () => setNode(sel.value));
+node = stored('node') || null;
+
+const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
+function memberCard(m) {
+  const s = m.status, mt = s?.metrics;
+  const stats = s ? `<div class="mini">
+      <div><b>${s.battery}%</b><span>${s.charging ? 'Charging' : 'Battery'}</span></div>
+      <div><b>${(mt.cpuTemp ?? s.batteryTemp).toFixed(0)} °C</b><span>${esc(mt.thermal)}</span></div>
+      <div><b>${mt.cpu.toFixed(0)}%</b><span>CPU · ${mt.cores} cores</span></div>
+      <div><b>${pct(s.ramTotalMb - s.ramFreeMb, s.ramTotalMb)}%</b><span>of ${gb(s.ramTotalMb)} GB RAM</span></div>
+      <div><b>${gb(s.storageFreeMb)} GB</b><span>storage free</span></div>
+      <div><b>${ago(s.uptime)}</b><span>up</span></div></div>` : `<div class="notice">${icon('alert')}<span>${esc(m.error || 'Not answering')}</span></div>`;
+  const mismatch = s && s.version !== cluster.self.version;
+  return `<div class="card mod member">
+    <div class="mod-head"><div class="avatar" style="background:#334155">${icon('cluster')}</div>
+      <div class="grow"><div class="title ellipsis">${esc(m.name)}</div>
+        <span class="badge ${m.online ? 'running' : 'backoff'}">${m.online ? 'online' : 'offline'}</span></div></div>
+    <div class="hint">${esc(m.model)} · <span class="mono">${esc(m.address || 'address unknown')}</span>${s ? ` · Homedroid ${esc(s.version)}` : ''}</div>
+    ${stats}
+    ${mismatch ? `<div class="notice">${icon('alert')}<span>Runs a different version than this phone (${esc(cluster.self.version)}). Update both to keep everything working.</span></div>` : ''}
+    <div class="mod-foot">
+      <button class="btn primary sm" data-act="manageNode" data-id="${esc(m.id)}" ${m.online ? '' : 'disabled'}>${icon('settings')}Manage</button>
+      ${m.online && m.address ? `<a class="btn sm" href="http://${esc(m.address.includes(':') ? `[${m.address}]` : m.address)}:8800" target="_blank" rel="noopener">${icon('external')}Its dashboard</a>` : ''}
+      <div class="grow"></div>
+      <button class="btn ghost sm danger" data-act="removeNode" data-id="${esc(m.id)}" data-name="${esc(m.name)}">${icon('trash')}Remove</button>
+    </div></div>`;
+}
+async function renderCluster() {
+  const c = await loadCluster(); if (!c) return;
+  const o = c.outgoing, self = c.self;
+  const requests = c.pending.map(p => `<div class="notice info wrap" style="margin-bottom:12px">${icon('cluster')}
+      <span><b>${esc(p.name)}</b> (${esc(p.model)}, ${esc(p.address)}) wants to join the cluster. Approve only if its dashboard shows
+        <span class="pair-code">${esc(p.code.slice(0, 3))} ${esc(p.code.slice(3))}</span></span>
+      <button class="btn primary sm" data-act="pairAnswer" data-id="${esc(p.id)}" data-answer="approve">${icon('check')}Approve</button>
+      <button class="btn sm" data-act="pairAnswer" data-id="${esc(p.id)}" data-answer="reject">Reject</button></div>`);
+  if (o) {
+    const text = {waiting: `Waiting for approval on <b>${esc(o.name)}</b>. Check that it shows this code, then tap <b>Approve</b> in its notification or its dashboard:`,
+      approved: `<b>${esc(o.name)}</b> joined the cluster.`, rejected: `<b>${esc(o.name)}</b> rejected the request.`,
+      expired: `The request to <b>${esc(o.name)}</b> expired. Try again.`, failed: `Pairing with <b>${esc(o.name)}</b> failed: ${esc(o.error || '')}`}[o.state] || '';
+    requests.unshift(`<div class="notice ${o.state === 'approved' ? 'info' : o.state === 'waiting' ? 'info' : ''} wrap" style="margin-bottom:12px">
+      ${o.state === 'waiting' ? '<span class="spinner"></span>' : icon(o.state === 'approved' ? 'check' : 'alert')}
+      <span>${text}${o.state === 'waiting' ? ` <span class="pair-code">${esc(o.code.slice(0, 3))} ${esc(o.code.slice(3))}</span>` : ''}</span>
+      <button class="btn ${o.state === 'waiting' ? '' : 'ghost'} sm" data-act="pairCancel">${o.state === 'waiting' ? 'Cancel' : 'Dismiss'}</button></div>`);
+  }
+  setHTML($('#clRequests'), requests.join(''));
+  setHTML($('#clSelf'), `<div class="row" style="flex-wrap:wrap;gap:6px 14px">
+      <div class="grow"><div class="ipcam-title">${esc(self.name)}</div>
+        <div class="hint">${esc(self.model)} · Homedroid ${esc(self.version)} · ${self.ips.map(ip => `<span class="mono">${esc(ip)}</span>`).join(', ') || 'no network'} · certificate <span class="mono">${esc(self.fingerprint)}…</span></div></div>
+      <button class="btn sm" data-act="renameNode">${icon('edit')}Rename</button></div>`);
+  setHTML($('#clMembers'), c.members.map(memberCard).join('') || `<div class="card empty" style="grid-column:1/-1">${icon('cluster')}
+      <div>No other phones yet. Install Homedroid on another phone on this network and add it here.</div>
+      <div style="margin-top:12px"><button class="btn primary" data-act="addPhone">${icon('plus')}Add a phone</button></div></div>`);
+  $('#clLeave').classList.toggle('hidden', !c.members.length);
+}
+async function pairWith(address) {
+  if ($('#modal').open) $('#modal').close();
+  toast('Asking ' + address + '…');
+  try { await api('cluster/pair', {method: 'POST', local: true, body: {address}}); }
+  catch (e) { toast(e.message, true); }
+  if (tab !== 'cluster') location.hash = '#cluster'; else refresh();
+}
+function addPhone() {
+  api('cluster/discover', {method: 'POST', local: true}).catch(() => {});
+  const dlg = $('#modal'), form = $('#modalForm');
+  form.innerHTML = `<div class="dlg-head"><h3>Add a phone</h3></div>
+    <div class="dlg-body">
+      <div class="hint">On the other phone, install Homedroid and start its server. Keep both phones on the same network (or the same tailnet).</div>
+      <div class="found" id="foundList"></div>
+      <label class="field">Or enter its address<input name="value" placeholder="192.168.1.20" autocomplete="off" spellcheck="false"></label>
+      <div class="notice">${icon('alert')}<span>Phones in a cluster fully control each other. Anyone who can log in to one phone's dashboard can manage all of them, so give every phone a strong password.</span></div>
+    </div>
+    <div class="dlg-foot"><button class="btn primary" value="ok">${icon('cluster')}Pair</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>`;
+  const draw = () => {
+    const list = (cluster?.discovered || []).filter(f => !f.member);
+    setHTML($('#foundList'), list.map(f => `<button type="button" data-act="pairFound" data-address="${esc(f.address.includes(':') ? `[${f.address}]` : f.address)}:${f.port}">
+        <span class="ficon">${icon('cluster')}</span><span class="grow"><b>${esc(f.name)}</b><br><span class="hint mono">${esc(f.address)}</span></span>${icon('plus')}</button>`).join('')
+      || `<div class="row hint">${cluster?.discovering ? '<span class="spinner"></span>Looking for phones on this network…' : 'No other phones found automatically. Enter the address shown in its Homedroid app.'}</div>`);
+  };
+  draw();
+  const timer = setInterval(() => loadCluster().then(draw), 2500);
+  dlg.onclose = () => {
+    clearInterval(timer);
+    const v = form.elements.value.value.trim();
+    if (dlg.returnValue === 'ok' && v) pairWith(v);
+  };
+  dlg.returnValue = ''; dlg.showModal(); form.elements.value.focus();
+}
 
 // ---- Actions: one delegated listener for every button ------------------------------------
 const ACT = {
@@ -1481,6 +1657,25 @@ const ACT = {
   async removeKey(b) {
     const r = await ask({title: `Remove ${b.dataset.name}?`, text: 'It can no longer log in over SSH. Sessions already open stay open.', confirm: 'Remove', danger: true});
     if (r) run(api(`ssh/keys?fingerprint=${encodeURIComponent(b.dataset.fp)}`, {method: 'DELETE'}), 'Key removed');
+  },
+  addPhone,
+  pairFound: b => pairWith(b.dataset.address),
+  pairCancel: () => run(api('cluster/pair/cancel', {method: 'POST', local: true})),
+  pairAnswer: b => run(api(`cluster/requests/${encodeURIComponent(b.dataset.id)}/${b.dataset.answer}`, {method: 'POST', local: true}),
+    b.dataset.answer === 'approve' ? 'Phone added to the cluster' : 'Request rejected'),
+  manageNode(b) { setNode(b.dataset.id); location.hash = '#overview'; },
+  nodeHome: () => setNode(null),
+  async renameNode() {
+    const r = await ask({title: 'Rename this phone', confirm: 'Save', input: {label: 'Name shown to the other phones', value: cluster?.self.name}});
+    if (r?.value) run(api('cluster/name', {method: 'POST', local: true, body: {name: r.value}}), 'Renamed');
+  },
+  async removeNode(b) {
+    const r = await ask({title: `Remove ${b.dataset.name} from the cluster?`, text: 'Every phone forgets it, and it forgets them. Its own modules keep running. You can pair it again later.', confirm: 'Remove', danger: true});
+    if (r) { if (node === b.dataset.id) setNode(null); run(api(`cluster/members/${encodeURIComponent(b.dataset.id)}/remove`, {method: 'POST', local: true}), 'Removed ' + b.dataset.name); }
+  },
+  async leaveCluster() {
+    const r = await ask({title: 'Leave the cluster?', text: 'This phone forgets the others and they forget it. Modules keep running on every phone.', confirm: 'Leave', danger: true});
+    if (r) { setNode(null); run(api('cluster/leave', {method: 'POST', local: true}), 'Left the cluster'); }
   },
   async clearSessions() { if (await ask({title: 'Clear the session log?', confirm: 'Clear', danger: true})) run(api('ssh/sessions', {method: 'DELETE'}), 'Cleared'); },
   async clearHistory() { if (await ask({title: 'Clear the command history?', text: 'Of both the phone shell and Alpine.', confirm: 'Clear', danger: true})) run(api('ssh/history', {method: 'DELETE'}), 'Cleared'); },
@@ -1581,7 +1776,7 @@ async function waitForNewVersion() {
     await new Promise(r => setTimeout(r, 2000));
     try {
       // Not api(): a 401 there would switch to the login screen mid-update.
-      const res = await fetch('/api/status');
+      const res = await fetch(apiBase() + 'status');
       if (res.status === 401) { location.reload(); return; }
       const s = await res.json();
       if (s.version && updateVersion && s.version !== updateVersion) { toast(`Updated to ${s.version}`); setTimeout(() => location.reload(), 800); return; }
@@ -1593,7 +1788,7 @@ $('#apkPick').onchange = e => {
   const file = e.target.files[0]; e.target.value = '';
   if (!file) return;
   const x = new XMLHttpRequest();
-  x.open('POST', '/api/update/upload');
+  x.open('POST', apiBase() + 'update/upload');
   x.setRequestHeader('X-Homedroid-Request', '1');
   x.upload.onprogress = ev => setHTML($('#updateBox'), `<div class="hint">Uploading ${esc(file.name)}: ${bytes(ev.loaded)} of ${bytes(ev.total)}</div><div class="meter"><i style="width:${Math.max(2, 100 * ev.loaded / ev.total)}%"></i></div>`);
   x.onload = () => {
@@ -1727,7 +1922,7 @@ async function liveLoop(gen) {
   while (live.id && live.gen === gen) {
     if (document.hidden) { await sleep(500); continue; }
     try {
-      const res = await fetch(`/api/camera/live/frame?after=${after}`, {signal: controller.signal, cache: 'no-store'});
+      const res = await fetch(`${apiBase()}camera/live/frame?after=${after}`, {signal: controller.signal, cache: 'no-store'});
       if (live.gen !== gen) return;
       if (res.status === 401) return showLogin();
       if (res.status !== 200) { if (res.status !== 204) await sleep(1000); continue; }
@@ -1789,7 +1984,7 @@ function renderLive(state) {
 }
 
 // Captures: preview in the page, or download.
-const captureUrl = (name, inline) => `/api/camera/files/${encodeURIComponent(name)}${inline ? '?inline=1' : ''}`;
+const captureUrl = (name, inline) => `${apiBase()}camera/files/${encodeURIComponent(name)}${inline ? '?inline=1' : ''}`;
 const captureKind = name => name.endsWith('.jpg') ? 'Photo' : name.endsWith('.mp4') ? 'Video' : 'Audio';
 function captureTime(name) {
   const t = +name.split('-')[0];
@@ -1883,7 +2078,7 @@ $('#announceForm').onsubmit = async e => {
   await renderCamera();
 };
 
-api('status').then(showApp).catch(showLogin);
+api('status', {local: true}).then(showApp).catch(showLogin);
 </script>
 </body>
 </html>

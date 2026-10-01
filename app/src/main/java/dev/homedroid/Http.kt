@@ -27,6 +27,8 @@ class Request(
     private val input: InputStream,
     val length: Long,
     val remote: String,
+    /** On the cluster port: the SHA-256 fingerprint of the certificate the other phone presented. */
+    val peer: String? = null,
 ) {
     private var consumed = false
 
@@ -97,15 +99,25 @@ class Response(
  * Minimal HTTP/1.1 server for the dashboard: one short-lived thread per connection, one
  * request per connection. Enough for a handful of users on a LAN, with no dependencies.
  */
-class Http(private val port: Int, private val handler: (Request) -> Response) {
-    private val pool = ThreadPoolExecutor(16, 16, 0, TimeUnit.MILLISECONDS, ArrayBlockingQueue(32))
+class Http(
+    private val port: Int,
+    /** With TLS (the cluster port), clients must present a certificate; see [ClusterTls]. */
+    private val tls: javax.net.ssl.SSLContext? = null,
+    threads: Int = 16,
+    private val handler: (Request) -> Response,
+) {
+    private val pool = ThreadPoolExecutor(threads, threads, 0, TimeUnit.MILLISECONDS, ArrayBlockingQueue(32))
     private val clients = ConcurrentHashMap.newKeySet<Socket>()
     private val leases = Executors.newSingleThreadScheduledExecutor()
     private var socket: ServerSocket? = null
 
+    /** The port actually bound, e.g. when started on port 0. */
+    val localPort get() = socket?.localPort ?: port
+
     fun start() {
-        val server = ServerSocket().apply {
+        val server = (tls?.serverSocketFactory?.createServerSocket() ?: ServerSocket()).apply {
             reuseAddress = true
+            (this as? javax.net.ssl.SSLServerSocket)?.let(ClusterTls::configureServer)
             bind(InetSocketAddress(port))
         }
         socket = server
@@ -137,9 +149,13 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
 
     private fun serve(client: Socket) = client.use {
         client.soTimeout = 8_000
+        val peer = (client as? javax.net.ssl.SSLSocket)?.let {
+            try { it.startHandshake() } catch (_: IOException) { return@use }
+            ClusterTls.clientFingerprint(it)
+        }
         val input = BufferedInputStream(client.getInputStream())
         val response = try {
-            val request = read(input, client.inetAddress.hostAddress.orEmpty())
+            val request = read(input, client.inetAddress.hostAddress.orEmpty(), peer)
                 ?: return@use
             client.soTimeout = 30_000
             try {
@@ -175,7 +191,7 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
         }
     }
 
-    internal fun read(input: InputStream, remote: String): Request? {
+    internal fun read(input: InputStream, remote: String, peer: String? = null): Request? {
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(8)
         val requestLine = readLine(input, deadline) ?: return null
         val parts = requestLine.split(' ')
@@ -205,7 +221,7 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
         val query = target.substringAfter('?', "").split('&').filter { it.isNotEmpty() }.associate {
             decode(it.substringBefore('=')) to decode(it.substringAfter('=', ""))
         }
-        return Request(parts[0], path, query, headers, input, length, remote)
+        return Request(parts[0], path, query, headers, input, length, remote, peer)
     }
 
     private fun readLine(input: InputStream, deadline: Long): String? {
@@ -255,6 +271,8 @@ class Http(private val port: Int, private val handler: (Request) -> Response) {
         413 -> "Payload Too Large"
         416 -> "Range Not Satisfiable"
         429 -> "Too Many Requests"
+        502 -> "Bad Gateway"
+        504 -> "Gateway Timeout"
         507 -> "Insufficient Storage"
         else -> if (status >= 500) "Server Error" else "Status"
     }

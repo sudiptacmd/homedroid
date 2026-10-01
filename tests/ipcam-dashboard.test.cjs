@@ -7,7 +7,7 @@ const html = fs.readFileSync('app/src/main/assets/dashboard.html', 'utf8');
 const fullScript = html.split('<script>')[1].split('</script>')[0];
 const script = fullScript.slice(fullScript.indexOf('const $ ='), fullScript.indexOf('// ---- Dialogs'))
   + "\nlet tab = 'overview'; function refresh() {} function showLogin() {}\n"
-  + fullScript.slice(fullScript.indexOf('// ---- IPCam and settings'), fullScript.indexOf("api('status').then(showApp)"));
+  + fullScript.slice(fullScript.indexOf('// ---- IPCam and settings'), fullScript.indexOf("api('status', {local: true}).then(showApp)"));
 function setup(extra = {}) {
   const nodes = new Map();
   function element(key) {

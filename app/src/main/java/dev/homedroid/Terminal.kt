@@ -28,11 +28,12 @@ object Terminal {
     private const val GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
     /** Upgrades [r] to a WebSocket running a shell, or explains why not. */
-    fun open(r: Request, sshEnabled: Boolean, authorized: () -> Boolean = { false }): Response {
+    /** [fromPeer]: forwarded by another phone in the cluster, which checked the browser's origin itself. */
+    fun open(r: Request, sshEnabled: Boolean, fromPeer: Boolean = false, authorized: () -> Boolean = { false }): Response {
         val key = r.headers["sec-websocket-key"]
         if (r.headers["upgrade"]?.lowercase() != "websocket" || key == null) return Response.error(400, "expected a WebSocket")
         // Cookies ride along on cross-site WebSockets too, so insist on this origin.
-        if (!AuthSecurity.browserAllowed(r.method, r.headers, websocket = true)) return Response.error(403, "wrong origin")
+        if (!fromPeer && !AuthSecurity.browserAllowed(r.method, r.headers, websocket = true)) return Response.error(403, "wrong origin")
         if (r.headers["sec-websocket-version"] != "13" || runCatching { Base64.getDecoder().decode(key).size }.getOrNull() != 16) {
             return Response.error(400, "invalid WebSocket handshake")
         }

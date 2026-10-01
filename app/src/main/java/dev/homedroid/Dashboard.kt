@@ -21,11 +21,23 @@ class Dashboard(private val ctx: Context) {
     private val files = FileBrowser(ctx, paths)
     private val ssh = SshAdmin(paths, alpine)
     private val auth = AuthSecurity(cfg.dashboardAuth, persist = { cfg.dashboardAuth = it })
-    private val http = Http(cfg.dashboardPort, ::handle)
+    // Room for live views and downloads forwarded to other phones, which hold a thread each.
+    private val http = Http(cfg.dashboardPort, threads = 32, handler = ::handle)
+    private val cluster = Cluster(ctx) { r, peer -> route(r, peer) }
 
-    fun start() = http.start()
+    fun start() {
+        http.start()
+        try {
+            cluster.start()
+        } catch (e: java.io.IOException) {
+            Jobs.line("cluster port could not open: ${e.message}")
+        }
+    }
 
-    fun stop() = http.stop()
+    fun stop() {
+        cluster.stop()
+        http.stop()
+    }
 
     private fun handle(r: Request): Response {
         if (r.method == "GET" && (r.path == "/" || r.path == "/index.html")) return page(r)
@@ -36,12 +48,51 @@ class Dashboard(private val ctx: Context) {
         if (r.method == "GET" && r.path.startsWith("/vendor/")) return vendor(r)
         if (r.method == "GET" && r.path.startsWith("/guides/")) return guideImage(r.path.removePrefix("/guides/"))
         if (!r.path.startsWith("/api/")) return Response.error(404, "not found")
-        if (!AuthSecurity.browserAllowed(r.method, r.headers, r.path == "/api/terminal")) {
+        val terminal = r.path == "/api/terminal" || r.path.startsWith("/api/nodes/") && r.path.endsWith("/terminal")
+        if (!AuthSecurity.browserAllowed(r.method, r.headers, terminal)) {
             return Response.error(403, "Use the dashboard from its own address")
         }
         if (r.path == "/api/login" && r.method == "POST") return login(r)
         authorized(r)?.let { return it }
+        val seg = r.path.removePrefix("/api/").split('/')
+        if (seg[0] == "nodes" && seg.size >= 3) return cluster.proxy(r, seg[1], seg.drop(2)) { sessionValid(r) }
+        if (seg[0] == "cluster") return clusterRoute(r, seg.drop(1))
         return route(r)
+    }
+
+    /** Still logged in: rechecked while a forwarded terminal is open. */
+    private fun sessionValid(r: Request) = synchronized(auth) {
+        auth.session(r.cookie(COOKIE)) || AuthSecurity.bearer(r.headers)?.let(::passwordMatches) == true
+    }
+
+    private fun clusterRoute(r: Request, seg: List<String>): Response {
+        val body = if (r.method == "POST") r.json() else JSONObject()
+        return when {
+            r.method == "GET" && seg.isEmpty() -> Response.json(cluster.json())
+            r.method != "POST" -> Response.error(404, "No such cluster endpoint")
+            seg == listOf("discover") -> { cluster.discovery.discover(); Response.ok() }
+            seg == listOf("pair") -> {
+                val target = body.optString("address").trim()
+                // "host", "host:port" or "[v6]:port"
+                val m = Regex("""^\[?([0-9A-Za-z.:%-]+?)]?(?::(\d{1,5}))?$""").matchEntire(target)
+                    ?: return Response.error(400, "Enter the other phone's address, like 192.168.1.20")
+                cluster.pair(m.groupValues[1], m.groupValues[2].toIntOrNull() ?: ClusterState.PORT)
+            }
+            seg == listOf("pair", "cancel") -> { cluster.cancelPairing(); Response.ok() }
+            seg.size == 3 && seg[0] == "requests" && seg[2] in setOf("approve", "reject") ->
+                if (if (seg[2] == "approve") cluster.approve(seg[1]) else cluster.reject(seg[1])) Response.ok()
+                else Response.error(404, "That request expired; ask again from the other phone")
+            seg.size == 3 && seg[0] == "members" && seg[2] == "remove" ->
+                if (cluster.remove(seg[1])) Response.ok() else Response.error(404, "No such phone in the cluster")
+            seg == listOf("leave") -> { cluster.leave(); Response.ok() }
+            seg == listOf("name") -> {
+                val name = Peer.cleanName(body.optString("name"))
+                if (name.isEmpty()) return Response.error(400, "Enter a name")
+                cluster.state.rename(name)
+                Response.ok()
+            }
+            else -> Response.error(404, "No such cluster endpoint")
+        }
     }
 
     /**
@@ -92,7 +143,8 @@ class Dashboard(private val ctx: Context) {
         java.io.ByteArrayOutputStream().also { out -> java.util.zip.GZIPOutputStream(out).use { it.write(pageRaw) } }.toByteArray()
     }
 
-    private fun route(r: Request): Response {
+    /** The API itself; [peer] is set when another phone in the cluster sent the request. */
+    private fun route(r: Request, peer: Peer? = null): Response {
         val seg = r.path.removePrefix("/api/").split('/')
         return when {
             r.method == "POST" && seg == listOf("logout") -> {
@@ -122,11 +174,9 @@ class Dashboard(private val ctx: Context) {
             r.method == "POST" && seg.size == 3 && seg[0] == "deploys" -> deployAction(seg[1], seg[2])
             r.method == "DELETE" && seg.size == 2 && seg[0] == "deploys" -> deleteDeploy(seg[1])
             seg[0] == "files" -> files.handle(r, seg.drop(1).filter { it.isNotEmpty() })
-            r.method == "GET" && seg == listOf("terminal") -> Terminal.open(r, cfg.sshEnabled && ServerService.running) {
-                synchronized(auth) {
-                    auth.session(r.cookie(COOKIE)) || AuthSecurity.bearer(r.headers)?.let(::passwordMatches) == true
-                }
-            }
+            r.method == "GET" && seg == listOf("terminal") ->
+                if (peer != null) Terminal.open(r, cfg.sshEnabled && ServerService.running, fromPeer = true) { cluster.state.byFingerprint(r.peer) != null }
+                else Terminal.open(r, cfg.sshEnabled && ServerService.running) { sessionValid(r) }
             seg[0] == "ssh" -> ssh.handle(r, seg.drop(1))
             seg[0] == "tailscale" -> tailscaleRoute(r, seg.drop(1))
             r.method == "GET" && seg == listOf("update") -> Response.json(Updater.json(ctx, r.query["refresh"] == "1"))
@@ -191,6 +241,7 @@ class Dashboard(private val ctx: Context) {
             .put("running", ServerService.running)
             .put("version", ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName)
             .put("metrics", Metrics.sample(ctx))
+            .put("node", JSONObject().put("id", cluster.state.id).put("name", cluster.name))
     }
 
     private fun servicesJson() = jsonArray(

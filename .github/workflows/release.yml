@@ -61,6 +61,7 @@ jobs:
       - name: Check dashboard behavior and bundled Go dependencies
         run: |
           node tests/ipcam-dashboard.test.cjs
+          node tests/cluster-dashboard.test.cjs
           go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
           bash native/security-check.sh
 
