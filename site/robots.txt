@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://sudiptacmd.github.io/homedroid/sitemap.xml

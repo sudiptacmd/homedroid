@@ -1,0 +1,19 @@
+name: Idea or app request
+description: Suggest a feature, or an app you'd like to self-host on a phone
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like Homedroid to do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it help you?
+  - type: input
+    id: app
+    attributes:
+      label: App link (for app requests)
+      placeholder: https://github.com/…

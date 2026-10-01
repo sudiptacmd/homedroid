@@ -1,0 +1,41 @@
+name: Website
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      # The full walkthrough is a release asset, not part of the repository.
+      - name: Fetch the walkthrough video
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          url=$(gh api "repos/${{ github.repository }}/releases?per_page=20" \
+            --jq '[.[].assets[] | select(.name == "homedroid-walkthrough.mp4")][0].browser_download_url // empty')
+          if [ -n "$url" ]; then curl -fsSL -o site/media/homedroid-walkthrough.mp4 "$url"; else echo "No walkthrough asset yet"; fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
