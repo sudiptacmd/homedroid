@@ -1,0 +1,37 @@
+name: llama.cpp runtime
+
+# Builds the on-phone AI runtime (native/build-llama.sh) on its own, for testing changes to it.
+# Releases build it in release.yml and attach it to the GitHub release.
+on:
+  push:
+    paths: [native/build-llama.sh, .github/workflows/llama.yml]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install NDK and CMake
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;30.0.16248370" > /dev/null
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> "$GITHUB_ENV"
+          sudo apt-get install -y ninja-build > /dev/null
+
+      - name: Cache sources
+        uses: actions/cache@v4
+        with:
+          path: native/.work/llama/*/
+          key: llama-src-${{ hashFiles('native/build-llama.sh') }}
+
+      - name: Build
+        run: native/build-llama.sh arm64-v8a x86_64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: llama-runtime
+          path: |
+            native/out/*.tar.gz
+            app/src/main/assets/llama-runtime.json
