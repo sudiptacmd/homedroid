@@ -12,3 +12,7 @@ native/.work/
 # Release signing; see keystore.properties.example
 keystore.properties
 *.jks
+
+# Built by native/build-llama.sh: release assets and their hashes for the app.
+native/out/
+app/src/main/assets/llama-runtime.json
