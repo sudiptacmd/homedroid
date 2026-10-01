@@ -1,0 +1,66 @@
+--- a/wgengine/netstack/netstack.go	2026-10-02 04:37:06.404790300 +0600
++++ b/wgengine/netstack/netstack.go	2026-10-02 04:37:07.181828800 +0600
+@@ -16,6 +16,7 @@
+ 	"net/netip"
+ 	"runtime"
+ 	"strconv"
++	"strings"
+ 	"sync"
+ 	"sync/atomic"
+ 	"time"
+@@ -1527,6 +1528,33 @@
+ 	ipv6Loopback = netip.MustParseAddr("::1")
+ )
+ 
++// localPortMap sends connections that reach this node's Tailscale IPs on one port to
++// another port on localhost, for hosts where a service can't listen on the port clients
++// use (Homedroid: DNS on 53, which an Android app can't bind, served on 1053).
++// TS_LOCAL_PORT_MAP="53=1053,80=8080".
++var localPortMap = func() map[uint16]uint16 {
++	m := map[uint16]uint16{}
++	for _, kv := range strings.Split(envknob.String("TS_LOCAL_PORT_MAP"), ",") {
++		from, to, ok := strings.Cut(strings.TrimSpace(kv), "=")
++		if !ok {
++			continue
++		}
++		f, err1 := strconv.ParseUint(from, 10, 16)
++		t, err2 := strconv.ParseUint(to, 10, 16)
++		if err1 == nil && err2 == nil && f > 0 && t > 0 {
++			m[uint16(f)] = uint16(t)
++		}
++	}
++	return m
++}()
++
++func mapLocalPort(p uint16) uint16 {
++	if to, ok := localPortMap[p]; ok {
++		return to
++	}
++	return p
++}
++
+ func (ns *Impl) acceptTCP(r *tcp.ForwarderRequest) {
+ 	reqDetails := r.ID()
+ 	if debugNetstack() {
+@@ -1727,7 +1755,11 @@
+ 	case isTailscaleIP:
+ 		dialIP = ipv4Loopback
+ 	}
+-	dialAddr := netip.AddrPortFrom(dialIP, uint16(reqDetails.LocalPort))
++	localPort := uint16(reqDetails.LocalPort)
++	if isTailscaleIP && dialIP == ipv4Loopback {
++		localPort = mapLocalPort(localPort)
++	}
++	dialAddr := netip.AddrPortFrom(dialIP, localPort)
+ 
+ 	if !ns.forwardTCP(getConnOrReset, clientRemoteIP, &wq, dialAddr, isLocal) {
+ 		r.Complete(true) // sends a RST
+@@ -2066,7 +2098,7 @@
+ 	isLocal := ns.isLocalIP(dstAddr.Addr())
+ 	isLoopback := dstAddr.Addr() == ipv4Loopback || dstAddr.Addr() == ipv6Loopback
+ 	if isLocal {
+-		backendRemoteAddr = &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: int(port)}
++		backendRemoteAddr = &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: int(mapLocalPort(port))}
+ 		backendListenAddr = &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: int(srcPort)}
+ 	} else if isLoopback {
+ 		ip := net.IP(ipv4Loopback.AsSlice())

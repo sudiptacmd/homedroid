@@ -33,6 +33,14 @@ foreach ($src in $sources) {
                 if ($LASTEXITCODE -ne 0) { throw 'Caddy CEL compatibility patch failed' }
             }
         }
+        if ($src.Name -eq 'tailscaled') {
+            $patchFile = "$projectRoot/native/patches/tailscale-local-port-map.patch"
+            git apply --reverse --check $patchFile 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                git apply $patchFile
+                if ($LASTEXITCODE -ne 0) { throw 'Tailscale local port map patch failed' }
+            }
+        }
         $env:GOOS = 'linux'; $env:GOARCH = 'amd64'; $env:CGO_ENABLED = '0'; $env:GOARM = ''
         $pins = @(Get-Content "$projectRoot/native/go-security-deps.txt" | Where-Object { $_ -match "^$($src.Name) " } | ForEach-Object { ($_ -split ' ')[1] })
         if ($pins.Count) {

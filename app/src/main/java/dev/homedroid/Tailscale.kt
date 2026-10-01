@@ -11,6 +11,9 @@ import java.util.concurrent.TimeUnit
  *
  * tailscaled forwards connections to the phone's Tailscale address to 127.0.0.1 on the same
  * port, so every module is reachable at 100.x.y.z:<port> (or <hostname>:<port> with MagicDNS).
+ * DNS is the exception: an app can't listen on 53, so our tailscaled (patched, see
+ * native/patches/tailscale-local-port-map.patch) sends port 53 to [DNS_PORT], where AdGuard
+ * Home answers. Tailnet devices can then use the phone as their DNS server.
  * Settings are applied with `tailscale up --reset`, so the dashboard is the source of truth;
  * status is read straight from tailscaled's local API over its Unix socket.
  */
@@ -30,7 +33,8 @@ class Tailscale(private val p: Paths, private val c: Config) {
                 p.exe("tailscaled"), "--tun=userspace-networking", "--statedir=${dir.path}",
                 "--socket=${socket.path}", "--port=0",
             ) + proxy,
-            mapOf("TS_LOGS_DIR" to File(dir, "logs").path, "XDG_CACHE_HOME" to File(dir, "cache").path),
+            mapOf("TS_LOGS_DIR" to File(dir, "logs").path, "XDG_CACHE_HOME" to File(dir, "cache").path,
+                "TS_LOCAL_PORT_MAP" to "53=$DNS_PORT"),
         )
     }
 
@@ -139,6 +143,8 @@ class Tailscale(private val p: Paths, private val c: Config) {
 
     companion object {
         const val PROXY_PORT = 1055
+        /** Where AdGuard Home serves plain DNS; see apps.json. */
+        const val DNS_PORT = 1053
         private val LOCK = Any()
 
         /** The last error from applying settings, until the next successful apply. */

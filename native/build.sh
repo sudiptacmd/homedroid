@@ -73,6 +73,10 @@ patchdeps tailscaled "$work/tailscale-$TAILSCALE_VERSION"
   patch="$here/patches/caddy-cel-v2.patch"
   if ! git apply --reverse --check "$patch" 2>/dev/null; then git apply "$patch"; fi
 })
+(cd "$work/tailscale-$TAILSCALE_VERSION" && {
+  patch="$here/patches/tailscale-local-port-map.patch"
+  if ! git apply --reverse --check "$patch" 2>/dev/null; then git apply "$patch"; fi
+})
 
 for abi in "${abis[@]}"; do
   gobuild "$abi" "$here/sshd" . sshd
