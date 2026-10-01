@@ -1978,7 +1978,8 @@ async function renderAi() {
         <div class="row" style="flex-wrap:wrap"><span class="badge ${st[0]}">${esc(st[1])}</span><span class="hint grow">${s.localModel ? esc(s.localModel) : ''} · runs on ${esc(where)} · ${s.effectiveThreads} threads · ${Math.round(s.ramTotalMb / 1024)} GB RAM</span>
         <button class="btn ghost sm" data-act="aiBenchmark" ${s.localModel ? '' : 'disabled'}>${icon('pulse')}Benchmark</button>
         <button class="btn ghost sm" data-act="logs" data-svc="ai-llama" data-name="AI model">${icon('logs')}Logs</button></div>
-        <div class="hint">GPU: ${s.devices.length ? s.devices.map(d => esc(d.name)).join(', ') : 'none that llama.cpp can use'}${bm ? ` · Benchmark of ${esc(bm.model)}: CPU ${speed(bm.cpu)}${bm.gpu ? `, ${esc(bm.gpu.name)} ${speed(bm.gpu)}` : ''}` : ''}</div>`);
+        ${s.localState === 'loading' && s.localError ? `<div class="hint">Waiting for the model: ${esc(s.localError)}</div>` : ''}
+        <div class="hint">GPU: ${s.devices.length ?s.devices.map(d => esc(d.name)).join(', ') : 'none that llama.cpp can use'}${bm ? ` · Benchmark of ${esc(bm.model)}: CPU ${speed(bm.cpu)}${bm.gpu ? `, ${esc(bm.gpu.name)} ${speed(bm.gpu)}` : ''}` : ''}</div>`);
   const f = $('#aiRunForm').elements;
   $('#aiRunForm').classList.toggle('hidden', !s.localSupported || !s.runtimeInstalled);
   setHTML(f.localModel, `<option value="">None</option>` + s.files.map(x => `<option value="${esc(x.file)}">${esc(x.file)} (${bytes(x.bytes)})</option>`).join(''));

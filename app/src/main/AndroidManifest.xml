@@ -32,10 +32,14 @@
         <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
     </queries>
 
+    <!-- Cleartext HTTP is allowed: the app talks to its own servers on 127.0.0.1 (llama.cpp on
+         :8091) and to LAN services the user points it at (Ollama, feeds, ntfy). Android's default
+         blocked these silently, so on-phone AI never became ready in 0.9.0. -->
     <application
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:requestLegacyExternalStorage="true"
+        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.DeviceDefault.DayNight">
