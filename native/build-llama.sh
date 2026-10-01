@@ -32,7 +32,9 @@ fi
 [[ -d "$ndk" ]] || { echo "Android NDK not found; set ANDROID_NDK_HOME" >&2; exit 1; }
 toolchain="$ndk/build/cmake/android.toolchain.cmake"
 sysroot="$ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
-glslc="$(ls "$ndk"/shader-tools/linux-x86_64/glslc 2>/dev/null || command -v glslc)"
+# The shader compiler runs on the build machine. The NDK's is too old for llama.cpp's
+# cooperative-matrix shaders, so prefer a current one (Ubuntu: apt install glslc).
+glslc="${GLSLC:-$(command -v glslc || ls "$ndk"/shader-tools/linux-x86_64/glslc 2>/dev/null)}"
 [[ -x "$glslc" ]] || { echo "glslc not found (NDK shader-tools)" >&2; exit 1; }
 
 if (($#)); then abis=("$@"); else abis=(arm64-v8a x86_64); fi
