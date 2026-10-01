@@ -218,6 +218,14 @@ class Cluster(context: Context, private val route: (Request, Peer) -> Response) 
         for (p in peers) pool.execute { call(p) { PeerHttp.json(identity, p.address, p.port, p.fingerprint, "POST", "/cluster/remove", body) } }
     }
 
+    /** A JSON call to member [p]'s API, made by this phone. */
+    fun peerJson(p: Peer, method: String, path: String, body: JSONObject? = null, readTimeoutMs: Int = 30_000) =
+        PeerHttp.json(identity, p.address, p.port, p.fingerprint, method, path, body, readTimeoutMs = readTimeoutMs)
+
+    /** A streamed GET from member [p], such as an app's data; close it when done. */
+    fun peerStream(p: Peer, path: String): PeerResponse =
+        PeerHttp.request(identity, p.address, p.port, p.fingerprint, "GET", path, readTimeoutMs = 120_000)
+
     /** Runs [block] against [p]; on a connection error, looks the phone up again on the network. */
     private fun <T> call(p: Peer, block: () -> T): T? = try {
         block()
@@ -365,6 +373,8 @@ class Cluster(context: Context, private val route: (Request, Peer) -> Response) 
     companion object {
         private const val CHANNEL = "cluster"
 
+        // Holds only the application context (see ctx), so nothing short-lived leaks.
+        @android.annotation.SuppressLint("StaticFieldLeak")
         @Volatile var instance: Cluster? = null
             private set
 

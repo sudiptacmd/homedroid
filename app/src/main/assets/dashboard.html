@@ -322,7 +322,7 @@ dialog[open] { animation: pop .14s var(--ease); }
 .top .nodesel { padding: 0; max-width: 46vw; }
 .top .nodesel select { min-height: 32px; padding: 4px 8px; }
 .node-banner { margin-bottom: 16px; }
-.pair-code { font: 650 26px/1.1 "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; letter-spacing: .12em; color: var(--text); }
+.pair-code { white-space: nowrap; font: 650 26px/1.1 "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; letter-spacing: .12em; color: var(--text); }
 .member .mini { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px 12px; }
 .member .mini div { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .member .mini b { font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
@@ -330,6 +330,10 @@ dialog[open] { animation: pop .14s var(--ease); }
 .found { display: flex; flex-direction: column; gap: 6px; }
 .found button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); cursor: pointer; }
 .found button:hover { background: var(--surface-2); }
+.placement { table-layout: auto; min-width: 560px; }
+.placement th:not(:first-child), .placement td:not(:first-child) { text-align: center; }
+.placement td:last-child { text-align: right; white-space: nowrap; }
+.placement .muted { font-size: 13px; }
 </style>
 </head>
 <body>
@@ -439,6 +443,12 @@ dialog[open] { animation: pop .14s var(--ease); }
       <div class="card pad" id="clSelf"><div class="skeleton" style="width:40%"></div></div>
       <h2>Phones in the cluster</h2>
       <div class="grid" id="clMembers"></div>
+      <div id="clPlacementBox" class="hidden">
+        <h2>Where apps run</h2>
+        <div id="clJobs"></div>
+        <div class="card" style="overflow-x:auto"><table class="ftable placement" id="clPlacement"></table></div>
+        <div class="hint" style="margin-top:8px">Move an app to run it on another phone: its settings and database go with it, and its library if you choose. Deployments are rebuilt from Git on the new phone.</div>
+      </div>
       <div class="row" style="margin-top:20px"><div class="grow hint">Phones find each other on the same Wi-Fi network. Traffic between them is encrypted, and each phone only trusts the others it was paired with.</div>
         <button class="btn ghost sm danger hidden" data-act="leaveCluster" id="clLeave">Leave the cluster</button></div>
     </section>
@@ -679,9 +689,10 @@ function setHTML(el, html) {
 function store(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
 function stored(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 
-/** Calls the managed phone's API; `local` calls this phone's own (logins, the cluster). */
-async function api(path, {method = 'GET', body, local = false} = {}) {
-  const res = await fetch((local || path === 'login' || path === 'logout' ? '/api/' : apiBase()) + path, {
+/** Calls the managed phone's API; `local` calls this phone's own (logins, the cluster), `at` a given phone (null: this one). */
+async function api(path, {method = 'GET', body, local = false, at} = {}) {
+  const base = local || path === 'login' || path === 'logout' ? '/api/' : at !== undefined ? (at ? `/api/nodes/${encodeURIComponent(at)}/` : '/api/') : apiBase();
+  const res = await fetch(base + path, {
     method, body: body === undefined ? undefined : JSON.stringify(body),
     headers: {'X-Homedroid-Request': '1', ...(body === undefined ? {} : {'Content-Type': 'application/json'})},
   });
@@ -1560,6 +1571,81 @@ async function renderCluster() {
       <div>No other phones yet. Install Homedroid on another phone on this network and add it here.</div>
       <div style="margin-top:12px"><button class="btn primary" data-act="addPhone">${icon('plus')}Add a phone</button></div></div>`);
   $('#clLeave').classList.toggle('hidden', !c.members.length);
+  await renderPlacement(c);
+}
+
+// Which phone runs what: every app and deployment against every phone. Each phone's lists
+// are asked for in parallel; often only while a job runs, otherwise every 15 seconds.
+let placement = {at: 0, phones: []};
+async function renderPlacement(c) {
+  const box = $('#clPlacementBox');
+  box.classList.toggle('hidden', !c.members.length);
+  if (!c.members.length) return;
+  const busy = placement.phones.some(p => p.modules?.job?.running);
+  if (Date.now() - placement.at > (busy ? 2000 : 15000)) {
+    const phones = [{id: null, name: c.self.name, online: true}, ...c.members.map(m => ({id: m.id, name: m.name, online: m.online}))];
+    await Promise.all(phones.map(async p => {
+      if (!p.online) return;
+      try { [p.modules, p.deploys] = await Promise.all([api('modules', {at: p.id}), api('deploys', {at: p.id})]); }
+      catch (e) { p.online = false; }
+    }));
+    placement = {at: Date.now(), phones};
+  }
+  const phones = placement.phones;
+  setHTML($('#clJobs'), phones.filter(p => p.modules?.job?.title && (p.modules.job.running || p.modules.job.error)).map(p => {
+    const j = p.modules.job;
+    return `<div class="notice ${j.running ? 'info' : ''} wrap" style="margin-bottom:10px">${j.running ? '<span class="spinner"></span>' : icon('alert')}
+      <span><b>${esc(p.name)}</b>: ${esc(j.title)}${j.running ? '…' : ` failed: ${esc(j.error)}`}${j.running && j.log.length ? `<br><span class="hint">${esc(j.log[j.log.length - 1])}</span>` : ''}</span>
+      <button class="btn sm" data-act="showJob" data-id="${esc(p.id || '')}">Show log</button></div>`;
+  }).join(''));
+  const where = (p, find) => !p.online ? '<span class="muted">offline</span>' : (x => !x ? '<span class="muted">—</span>' : x)(find(p));
+  const appCell = id => p => { const a = p.modules?.apps.find(x => x.id === id); return a?.installed ? (a.enabled ? badge(a.state) : '<span class="badge">off</span>') : null; };
+  const depCell = id => p => { const d = p.deploys?.find(x => x.id === id); return d ? badge(d.error ? 'failed' : d.state) : null; };
+  const catalog = phones.find(p => p.modules)?.modules.apps || [];
+  const deployIds = [...new Map(phones.flatMap(p => p.deploys || []).map(d => [d.id, d])).values()];
+  const rows = catalog.map(a => ({kind: 'app', id: a.id, name: a.name, cell: appCell(a.id), library: a.storageLabel}))
+    .concat(deployIds.map(d => ({kind: 'deploy', id: d.id, name: d.name, cell: depCell(d.id)})));
+  setHTML($('#clPlacement'), `<thead><tr><th>App</th>${phones.map(p => `<th>${esc(p.name)}</th>`).join('')}<th></th></tr></thead><tbody>`
+    + rows.map(r => {
+      const has = phones.some(p => p.online && r.cell(p));
+      return `<tr><td><div class="name">${esc(r.name)}</div><div class="hint">${r.kind === 'app' ? 'App' : 'Deployment'}</div></td>
+        ${phones.map(p => `<td>${where(p, r.cell)}</td>`).join('')}
+        <td><button class="btn sm" data-act="placeApp" data-kind="${r.kind}" data-id="${esc(r.id)}">${has ? 'Move…' : 'Install on…'}</button></td></tr>`;
+    }).join('') + '</tbody>');
+}
+/** Picks phones for moving (or installing) an app or deployment, then starts it on the target phone. */
+function placeApp(kind, id) {
+  const phones = placement.phones.filter(p => p.online);
+  const has = p => kind === 'app' ? p.modules?.apps.find(x => x.id === id)?.installed : p.deploys?.some(x => x.id === id);
+  const item = kind === 'app' ? phones.find(p => p.modules)?.modules.apps.find(x => x.id === id) : phones.flatMap(p => p.deploys || []).find(x => x.id === id);
+  const sources = phones.filter(has);
+  const dlg = $('#modal'), form = $('#modalForm');
+  const option = p => `<option value="${esc(p.id || '')}">${esc(p.name)}</option>`;
+  // Prefer moving from where it's running.
+  const running = sources.find(p => kind === 'app' ? p.modules.apps.find(x => x.id === id).enabled : true) || sources[0];
+  form.innerHTML = `<div class="dlg-head"><h3>${sources.length ? 'Move' : 'Install'} ${esc(item.name)}</h3></div>
+    <div class="dlg-body">
+      ${sources.length ? `<label class="field">From<select name="from">${sources.map(option).join('')}</select></label>` : ''}
+      <label class="field">${sources.length ? 'To' : 'On'}<select name="to"></select></label>
+      ${sources.length && item.storageLabel ? `<label class="check"><input type="checkbox" name="library"><span>Also copy the ${esc(item.storageLabel.toLowerCase())}<br><span class="hint">Can be large; it's copied over the network. Without it, the app starts with an empty ${esc(item.storageLabel.toLowerCase())} there.</span></span></label>` : ''}
+      ${sources.length ? `<label class="check"><input type="checkbox" name="removeSource"><span>Remove it from the old phone afterwards<br><span class="hint">Frees space there. A library other apps there still use is kept.</span></span></label>
+      <div class="hint">${kind === 'app' ? `${esc(item.name)} is turned off on the old phone while its data is copied, then runs on the new one. Its address changes to the new phone's.` : 'The new phone builds it from Git, using the same settings.'}</div>` : ''}
+    </div>
+    <div class="dlg-foot"><button class="btn primary" value="ok">${sources.length ? 'Move' : 'Install'}</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>`;
+  const f = form.elements;
+  const targets = () => { const from = f.from?.value ?? null; setHTML(f.to, phones.filter(p => (p.id || '') !== from && !has(p)).map(option).join('') || '<option value="-" disabled selected>No other phone available</option>'); };
+  if (f.from) { f.from.value = running.id || ''; f.from.onchange = targets; }
+  targets();
+  dlg.onclose = () => {
+    if (dlg.returnValue !== 'ok' || f.to.value === '-') return;
+    const to = f.to.value || null, toName = phones.find(p => (p.id || '') === f.to.value)?.name;
+    placement.at = 0;
+    if (!sources.length) return run(api(`modules/${encodeURIComponent(id)}/install`, {method: 'POST', at: to}), `Installing ${item.name} on ${toName}`);
+    const from = f.from.value || cluster.self.id;
+    run(api(`${kind === 'app' ? 'modules' : 'deploys'}/${encodeURIComponent(id)}/move`, {method: 'POST', at: to,
+      body: {from, library: !!f.library?.checked, removeSource: f.removeSource.checked}}), `Moving ${item.name} to ${toName}`);
+  };
+  dlg.returnValue = ''; dlg.showModal();
 }
 async function pairWith(address) {
   if ($('#modal').open) $('#modal').close();
@@ -1664,6 +1750,8 @@ const ACT = {
   pairAnswer: b => run(api(`cluster/requests/${encodeURIComponent(b.dataset.id)}/${b.dataset.answer}`, {method: 'POST', local: true}),
     b.dataset.answer === 'approve' ? 'Phone added to the cluster' : 'Request rejected'),
   manageNode(b) { setNode(b.dataset.id); location.hash = '#overview'; },
+  placeApp: b => placeApp(b.dataset.kind, b.dataset.id),
+  showJob(b) { setNode(b.dataset.id); $('#jobBox')._open = true; location.hash = '#modules'; },
   nodeHome: () => setNode(null),
   async renameNode() {
     const r = await ask({title: 'Rename this phone', confirm: 'Save', input: {label: 'Name shown to the other phones', value: cluster?.self.name}});

@@ -160,6 +160,13 @@ class Dashboard(private val ctx: Context) {
             r.method == "GET" && seg == listOf("settings") -> Response.json(settings())
             r.method == "POST" && seg == listOf("settings") -> saveSettings(r)
             r.method == "GET" && seg == listOf("modules") -> Response.json(modules())
+            r.method == "GET" && seg.size == 3 && seg[0] == "modules" && seg[2] == "export" -> exportApp(seg[1], r, peer)
+            r.method == "POST" && seg.size == 3 && seg[0] in setOf("modules", "deploys") && seg[2] == "move" -> startMove(seg[0], seg[1], r)
+            r.method == "GET" && seg.size == 3 && seg[0] == "deploys" && seg[2] == "config" -> {
+                // The full config includes secrets (env, repo token): only for a phone taking it over.
+                if (peer == null) return Response.error(403, "Only other phones in the cluster can read this")
+                deploys.get(seg[1])?.let { Response.json(it.toStored()) } ?: Response.error(404, "no deployment ${seg[1]}")
+            }
             r.method == "POST" && seg.size == 3 && seg[0] == "modules" -> moduleAction(seg[1], seg[2], r)
             r.method == "GET" && seg.size == 3 && seg[0] == "services" && seg[2] == "logs" -> logs(seg[1])
             r.method == "POST" && seg.size == 3 && seg[0] == "services" && seg[2] == "restart" -> restart(seg[1])
@@ -366,6 +373,48 @@ class Dashboard(private val ctx: Context) {
             }
             else -> return Response.error(400, "unknown action $action")
         }
+        return Response.ok()
+    }
+
+    // --- moving apps between phones ----------------------------------------------------------
+
+    /**
+     * An app's data for the phone taking it over (see [ServerService.move]); ?size=1 only
+     * measures it. The app must be off, so its database isn't copied mid-write.
+     */
+    private fun exportApp(id: String, r: Request, peer: Peer?): Response {
+        if (peer == null) return Response.error(403, "Only other phones in the cluster can copy an app's data")
+        val app = apps.catalog.firstOrNull { it.id == id } ?: return Response.error(404, "no module $id")
+        if (!apps.isInstalled(app)) return Response.error(409, "${app.name} isn't installed on ${cluster.name}")
+        val library = r.query["library"] == "1"
+        val roots = apps.archiveRoots(app, cfg, alpine, library)
+        if (r.query["size"] == "1") {
+            val lib = roots.firstOrNull { it.name == "library" }
+            return Response.json(JSONObject()
+                .put("bytes", AppArchive.size(roots.filter { it !== lib }))
+                .put("libraryBytes", lib?.let { AppArchive.size(listOf(it)) } ?: 0)
+                .put("sharedWith", jsonArray(apps.sharing(app).map { it.name })))
+        }
+        if (!cfg.isDisabled(app.id) || app.serviceNames.any { daemon(it) != null }) {
+            return Response.error(409, "Turn ${app.name} off on ${cluster.name} first")
+        }
+        return Response(200, ByteArray(0), "application/octet-stream", stream = { AppArchive.write(roots, it) })
+    }
+
+    /** Takes over app or deployment [id] from another phone; runs as a job on this phone. */
+    private fun startMove(kind: String, id: String, r: Request): Response {
+        val body = r.json()
+        val from = cluster.state.peer(body.optString("from")) ?: return Response.error(404, "Pick a phone in the cluster to move it from")
+        if (Jobs.running) return Response.error(409, "Another job is running on ${cluster.name}; wait for it to finish")
+        if (kind == "modules") {
+            val app = apps.catalog.firstOrNull { it.id == id } ?: return Response.error(404, "no module $id")
+            val arch = Oci.archFor(paths.libDir)
+            if (app.arches.isNotEmpty() && arch !in app.arches) return Response.error(409, "${app.name} isn't available for ${cluster.name}'s CPU ($arch)")
+        } else {
+            if (!Regex("[a-z0-9-]{1,64}").matches(id)) return Response.error(400, "invalid deployment")
+            if (deploys.get(id) != null) return Response.error(409, "${cluster.name} already has a deployment called $id")
+        }
+        ServerService.move(ctx, if (kind == "modules") "app" else "deploy", id, from.id, body.optBoolean("library"), body.optBoolean("removeSource"))
         return Response.ok()
     }
 

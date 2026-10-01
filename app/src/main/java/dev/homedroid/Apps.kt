@@ -91,6 +91,20 @@ class Apps(ctx: Context, private val paths: Paths) {
             ?: if (app.services.isEmpty()) File(alpine.root, path.trimStart('/')) else File(dataDir(app), "storage")
     }
 
+    /**
+     * What moves with [app] to another phone: its settings and database folders and, with
+     * [library], its library. The parts are named by position, so both phones must run the same
+     * catalog (the cluster requires the same Homedroid version).
+     */
+    fun archiveRoots(app: AppDef, cfg: Config, alpine: Alpine, library: Boolean): List<AppArchive.Root> {
+        val lib = libraryDir(app, cfg, alpine)
+        return buildList {
+            app.data.forEachIndexed { i, p -> add(AppArchive.Root("data$i", File(alpine.root, p.trim('/')), lib)) }
+            add(AppArchive.Root("appdata", dataDir(app), lib))
+            if (library && lib != null) add(AppArchive.Root("library", lib))
+        }
+    }
+
     /** Other installed apps using the same library as [app]. */
     fun sharing(app: AppDef) = installed().filter { it.id != app.id && app.storageShared != null && it.storageKey == app.storageKey }
 

@@ -12,6 +12,7 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -31,6 +32,9 @@ class ServerService : Service() {
         private const val EXTRA_DELETE_DATA = "deleteData"
         private const val EXTRA_DELETE_LIBRARY = "deleteLibrary"
         private const val EXTRA_DEPLOY = "deploy"
+        private const val ACTION_MOVE = "dev.homedroid.MOVE"
+        private const val EXTRA_KIND = "kind"
+        private const val EXTRA_FROM = "from"
         private const val AUTO_DEPLOY_MINUTES = 5L
         private const val CHANNEL = "server"
         private const val NOTIFICATION_ID = 1
@@ -65,6 +69,15 @@ class ServerService : Service() {
             ctx.startForegroundService(
                 Intent(ctx, ServerService::class.java).setAction(action).putExtra(EXTRA_APP, app.id)
                     .putExtra(EXTRA_DELETE_DATA, deleteData).putExtra(EXTRA_DELETE_LIBRARY, deleteLibrary)
+            )
+        }
+
+        /** Takes over app or deployment [id] ([kind] "app" or "deploy") from cluster member [from]. */
+        fun move(ctx: Context, kind: String, id: String, from: String, library: Boolean, removeSource: Boolean) {
+            ctx.startForegroundService(
+                Intent(ctx, ServerService::class.java).setAction(ACTION_MOVE).putExtra(EXTRA_KIND, kind)
+                    .putExtra(EXTRA_APP, id).putExtra(EXTRA_FROM, from)
+                    .putExtra(EXTRA_DELETE_LIBRARY, library).putExtra(EXTRA_DELETE_DATA, removeSource)
             )
         }
 
@@ -125,6 +138,15 @@ class ServerService : Service() {
                 val deleteData = intent.getBooleanExtra(EXTRA_DELETE_DATA, false)
                 val deleteLibrary = intent.getBooleanExtra(EXTRA_DELETE_LIBRARY, false)
                 installer.execute { runJob(id, action, deleteData, deleteLibrary) }
+            }
+            ACTION_MOVE -> {
+                val id = intent.getStringExtra(EXTRA_APP) ?: return START_STICKY
+                val from = intent.getStringExtra(EXTRA_FROM) ?: return START_STICKY
+                // Reusing the extras: library to copy, and whether to remove it from the source.
+                val library = intent.getBooleanExtra(EXTRA_DELETE_LIBRARY, false)
+                val removeSource = intent.getBooleanExtra(EXTRA_DELETE_DATA, false)
+                if (intent.getStringExtra(EXTRA_KIND) == "deploy") installer.execute { runMoveDeploy(id, from, removeSource) }
+                else installer.execute { runMoveApp(id, from, library, removeSource) }
             }
             ACTION_DEPLOY, ACTION_UNDEPLOY -> {
                 val id = intent.getStringExtra(EXTRA_DEPLOY)
@@ -241,19 +263,7 @@ class ServerService : Service() {
                 apps.markInstalled(app, true)
                 if (rc == 0) null else "install script exited with $rc"
             } else if (install) {
-                val arch = Oci.archFor(paths.libDir)
-                if (app.arches.isNotEmpty() && arch !in app.arches) {
-                    throw java.io.IOException("${app.name} isn't available for this phone's CPU ($arch)")
-                }
-                alpine.ensure(Jobs::line)
-                for ((key, ref) in app.images) {
-                    val dir = apps.imageDir(app, key)
-                    Oci(arch).pull(ref, dir, Jobs::line)
-                    alpine.prepareRootfs(dir)
-                }
-                val rc = alpine.run(app.install, Jobs::line)
-                if (rc == 0) apps.markInstalled(app, true)
-                if (rc == 0) null else "install script exited with $rc"
+                installApp(app, apps, alpine, paths)
             } else {
                 // Stop it before deleting its files.
                 apps.markInstalled(app, false)
@@ -270,6 +280,138 @@ class ServerService : Service() {
         Jobs.finish(error)
         if ((install || action == ACTION_CLEAR) && apps.isInstalled(app)) worker.execute { shutdown(); launch() }
     }
+
+    /** Pulls [app]'s images and runs its install script; returns an error, or null. */
+    private fun installApp(app: AppDef, apps: Apps, alpine: Alpine, paths: Paths): String? {
+        val arch = Oci.archFor(paths.libDir)
+        if (app.arches.isNotEmpty() && arch !in app.arches) {
+            throw java.io.IOException("${app.name} isn't available for this phone's CPU ($arch)")
+        }
+        alpine.ensure(Jobs::line)
+        for ((key, ref) in app.images) {
+            val dir = apps.imageDir(app, key)
+            Oci(arch).pull(ref, dir, Jobs::line)
+            alpine.prepareRootfs(dir)
+        }
+        val rc = alpine.run(app.install, Jobs::line)
+        if (rc == 0) apps.markInstalled(app, true)
+        return if (rc == 0) null else "install script exited with $rc"
+    }
+
+    private fun restartNow() = worker.submit { shutdown(); launch() }.get()
+
+    /**
+     * Takes over app [id] from cluster member [from]: installs it here if needed, turns it off
+     * there, copies its data (and with [library] its library) straight from that phone, and
+     * starts it here. If anything fails once it was turned off there, it's turned back on there.
+     */
+    private fun runMoveApp(id: String, from: String, library: Boolean, removeSource: Boolean) {
+        val paths = Paths(this)
+        val apps = Apps(this, paths)
+        val app = apps.catalog.firstOrNull { it.id == id } ?: return
+        val alpine = Alpine(this, paths)
+        val cfg = Config(this)
+        val cluster = Cluster.instance
+        val src = cluster?.state?.peer(from)
+        Jobs.begin("Moving ${app.name} from ${src?.name ?: "another phone"}")
+        var stoppedThere = false
+        val error = try {
+            if (cluster == null || src == null) throw java.io.IOException("That phone left the cluster")
+            fun call(method: String, path: String, body: org.json.JSONObject? = null): org.json.JSONObject {
+                val (status, o) = cluster.peerJson(src, method, path, body)
+                if (status != 200) throw java.io.IOException(o.optString("error", "${src.name} answered $status"))
+                return o
+            }
+            val size = call("GET", "/api/modules/${app.id}/export?size=1&library=${if (library) 1 else 0}")
+            val bytes = size.optLong("bytes")
+            val libraryBytes = if (library) size.optLong("libraryBytes") else 0
+            Jobs.line("${app.name} has ${mb(bytes)} of settings and data" + if (library) " and ${mb(libraryBytes)} in its library" else "")
+            val room = paths.root.usableSpace - (256L shl 20)
+            val libRoom = apps.libraryDir(app, cfg, alpine)?.let { generateSequence(it) { f -> f.parentFile }.firstOrNull(File::exists)?.usableSpace }
+            if (bytes + (if (libRoom == null) libraryBytes else 0) > room) throw java.io.IOException("Not enough space here: needs ${mb(bytes)}, ${mb(room)} free")
+            if (libRoom != null && libraryBytes > libRoom) throw java.io.IOException("Not enough space for the library here: needs ${mb(libraryBytes)}, ${mb(libRoom)} free")
+
+            if (!apps.isInstalled(app)) {
+                Jobs.line("Installing ${app.name} on this phone first")
+                installApp(app, apps, alpine, paths)?.let { throw java.io.IOException(it) }
+            }
+            // Off here too, so the copy doesn't race the fresh install.
+            cfg.setDisabled(app.id, true)
+            restartNow()
+
+            Jobs.line("Turning ${app.name} off on ${src.name}")
+            call("POST", "/api/modules/${app.id}/disable")
+            stoppedThere = true
+            val deadline = System.currentTimeMillis() + 120_000
+            while (true) {
+                val m = call("GET", "/api/modules").getJSONArray("apps").let { a -> (0 until a.length()).map(a::getJSONObject) }.first { it.getString("id") == app.id }
+                if (m.optString("state") == "stopped") break
+                if (System.currentTimeMillis() > deadline) throw java.io.IOException("${app.name} didn't stop on ${src.name}")
+                Thread.sleep(2000)
+            }
+
+            Jobs.line("Copying from ${src.name}…")
+            val roots = apps.archiveRoots(app, cfg, alpine, library)
+            // Replace this phone's settings and database; a library is merged, never emptied.
+            for (p in app.data) alpine.removeGuest(p)
+            val lib = apps.libraryDir(app, cfg, alpine)?.canonicalFile
+            apps.dataDir(app).listFiles().orEmpty().filter { lib == null || it.canonicalFile != lib }.forEach(alpine::removeGuestHost)
+            val total = bytes + libraryBytes
+            var shown = 0L
+            cluster.peerStream(src, "/api/modules/${app.id}/export?library=${if (library) 1 else 0}").use { res ->
+                if (res.status != 200) throw java.io.IOException(try { org.json.JSONObject(res.text()).optString("error") } catch (_: Exception) { "" }.ifEmpty { "${src.name} answered ${res.status}" })
+                AppArchive.read(roots, res.body) { done ->
+                    if (done - shown >= maxOf(total / 20, 32L shl 20)) { shown = done; Jobs.line("  ${mb(done)} of ${mb(total)}") }
+                }
+            }
+            Jobs.line("Copied ${mb(total)}")
+
+            cfg.setDisabled(app.id, false)
+            restartNow()
+            Jobs.line("${app.name} now runs on this phone")
+            if (removeSource) {
+                // Never empty a library another app on that phone still uses.
+                val deleteLibrary = library && (size.optJSONArray("sharedWith")?.length() ?: 0) == 0
+                Jobs.line("Removing ${app.name} from ${src.name}" + if (library && !deleteLibrary) " (its library stays: other apps there use it)" else "")
+                try { call("POST", "/api/modules/${app.id}/remove", org.json.JSONObject().put("deleteData", true).put("deleteLibrary", deleteLibrary)) }
+                catch (e: Exception) { Jobs.line("Couldn't remove it there: ${e.message}. Remove it from ${src.name}'s Modules page.") }
+            }
+            null
+        } catch (e: Exception) {
+            if (stoppedThere && cluster != null && src != null) {
+                Jobs.line("Turning ${app.name} back on on ${src.name}")
+                try { cluster.peerJson(src, "POST", "/api/modules/${app.id}/enable") } catch (_: Exception) {}
+            }
+            e.message ?: e.toString()
+        }
+        Jobs.finish(error)
+    }
+
+    /** Re-creates deployment [id] from cluster member [from] here (built from Git), then deletes it there. */
+    private fun runMoveDeploy(id: String, from: String, removeSource: Boolean) {
+        val paths = Paths(this)
+        val cluster = Cluster.instance
+        val src = cluster?.state?.peer(from)
+        val created = try {
+            if (cluster == null || src == null) throw java.io.IOException("That phone left the cluster")
+            val (status, o) = cluster.peerJson(src, "GET", "/api/deploys/$id/config")
+            if (status != 200) throw java.io.IOException(o.optString("error", "${src.name} answered $status"))
+            Deploys(this, paths).create(o)
+        } catch (e: Exception) {
+            Jobs.begin("Moving deployment $id")
+            Jobs.finish(e.message ?: e.toString())
+            return
+        }
+        runDeployJob(created.id, true)
+        if (Jobs.error == null && removeSource) {
+            try { cluster!!.peerJson(src!!, "DELETE", "/api/deploys/$id") } catch (e: Exception) {
+                Jobs.line("Couldn't delete it on ${src!!.name}: ${e.message}")
+            }
+            Jobs.line("${created.name} moved from ${src.name}")
+        }
+    }
+
+    private fun mb(bytes: Long) = if (bytes >= 1L shl 30) "%.1f GB".format(bytes / 1073741824.0) else "${(bytes shr 20).coerceAtLeast(if (bytes > 0) 1 else 0)} MB"
 
     /**
      * Deletes [app]'s settings and database (in Alpine and in appdata/) and, with
