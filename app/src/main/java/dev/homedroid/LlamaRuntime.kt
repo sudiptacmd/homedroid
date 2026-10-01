@@ -166,6 +166,14 @@ class LlamaRuntime(context: Context) {
     /** The GPU to use if the GPU is chosen: the benchmarked one, else the first found. */
     private fun gpu(): String? = benchmark?.optJSONObject("gpu")?.optString("device")?.takeIf { it.isNotEmpty() } ?: devices().firstOrNull()?.first
 
+    /** The benchmark's writing speed (tokens/s) where the model runs with the current choice, if measured. */
+    fun measuredSpeed(): Double? {
+        val b = benchmark ?: return null
+        val cpu = b.optJSONObject("cpu")?.optDouble("tg")?.takeIf { it > 0 }
+        val gpu = b.optJSONObject("gpu")?.optDouble("tg")?.takeIf { it > 0 }
+        return when (device) { "cpu" -> cpu; "gpu" -> gpu ?: cpu; else -> listOfNotNull(cpu, gpu).maxOrNull() }
+    }
+
     /** llama-server's device flags for the current choice. */
     fun deviceArgs(): List<String> {
         val useGpu = when (device) {
@@ -182,7 +190,7 @@ class LlamaRuntime(context: Context) {
      * (llama-bench, a short run). The model server must be stopped first, for the memory.
      */
     fun bench(model: File, log: (String) -> Unit): JSONObject {
-        val result = JSONObject().put("model", model.name).put("at", System.currentTimeMillis())
+        val result = JSONObject().put("model", model.name).put("bytes", model.length()).put("at", System.currentTimeMillis())
         fun one(label: String, args: List<String>): JSONObject? {
             log("Benchmarking on $label…")
             val (rc, out) = run("llama-bench", listOf("-m", model.path, "-p", "128", "-n", "48", "-r", "2", "-o", "json") + args, 900)

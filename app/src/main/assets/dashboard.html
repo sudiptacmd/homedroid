@@ -1952,6 +1952,7 @@ function aiWhere() {
   $('#aiWhere').innerHTML = !m ? '' : m.local ? `${icon('check')} On this phone: nothing leaves it` : `${icon('alert')} Cloud: messages go to ${esc(m.label)}`;
 }
 
+const FIT = {fits: ['plain', 'Fits'], tight: ['starting', 'Tight on memory'], 'too-big': ['backoff', 'Too big for this phone'], 'no-space': ['backoff', 'Not enough space']};
 const fits = (ramMb, total) => ramMb < total * 0.55 ? ['running', 'Fits this phone'] : ramMb < total * 0.75 ? ['starting', 'Tight on memory'] : ['backoff', 'Too big for this phone'];
 async function renderAi() {
   aiLoad();
@@ -1998,12 +1999,15 @@ async function renderAi() {
   if (!s.localSupported) return setHTML($('#aiCatalog'), ''), renderAiCloud(s);
   const busy = d && (d.state === 'running' || d.state === 'checking');
   const extra = s.files.filter(x => !s.catalog.some(c => c.file === x.file));
-  setHTML($('#aiCatalog'), `<div class="card" style="box-shadow:none">${s.catalog.map(c => {
-    const [cls, fit] = fits(c.ramMb, s.ramTotalMb);
-    return `<div class="item"><div class="grow"><div class="name">${esc(c.name)}</div><div class="hint">${bytes(c.bytes)} · ${esc(c.note)}</div></div>
-      <span class="badge ${cls}" title="Needs about ${(c.ramMb / 1024).toFixed(1)} GB of RAM">${fit}</span>
+  // The recommendation first: the best model this phone runs comfortably and quickly enough.
+  const catalog = [...s.catalog].sort((a, b) => b.recommended - a.recommended);
+  setHTML($('#aiCatalog'), `<div class="card" style="box-shadow:none">${catalog.map(c => {
+    const [cls, fit] = c.recommended ? ['running', 'Recommended for this phone'] : FIT[c.fit] || fits(c.ramMb, s.ramTotalMb);
+    const why = [bytes(c.bytes), c.reason || c.note].filter(Boolean).join(' · ');
+    return `<div class="item"${c.recommended ? ' style="background:var(--ok-soft)"' : ''}><div class="grow"><div class="name">${esc(c.name)}</div><div class="hint">${esc(why)}</div></div>
+      <span class="badge ${cls}" title="Needs about ${(c.ramMb / 1024).toFixed(1)} GB of RAM${c.wordsPerSecond ? `; about ${c.wordsPerSecond.toFixed(1)} words/s here` : ''}">${fit}</span>
       ${c.downloaded ? `<button class="btn ghost sm icon danger" data-act="aiDelete" data-file="${esc(c.file)}" title="Delete" aria-label="Delete">${icon('trash')}</button>`
-        : `<button class="btn sm" data-act="aiDownload" data-id="${esc(c.id)}" ${busy ? 'disabled' : ''}>${icon('download')}Download</button>`}</div>`;
+        : `<button class="btn ${c.recommended ? 'primary ' : ''}sm" data-act="aiDownload" data-id="${esc(c.id)}" ${busy || c.fit === 'no-space' ? 'disabled' : ''}>${icon('download')}Download</button>`}</div>`;
   }).join('')}${extra.map(x => `<div class="item"><div class="grow"><div class="name">${esc(x.file)}</div><div class="hint">${bytes(x.bytes)} · added by you</div></div>
       <button class="btn ghost sm icon danger" data-act="aiDelete" data-file="${esc(x.file)}" title="Delete" aria-label="Delete">${icon('trash')}</button></div>`).join('')}</div>`);
   renderAiCloud(s);

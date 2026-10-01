@@ -262,9 +262,14 @@ class Ai(context: Context) {
             })
             .put("files", JSONArray().apply { files.forEach { put(JSONObject().put("file", it.name).put("bytes", it.length())) } })
             .put("catalog", JSONArray().apply {
+                val advice = AiCore.advise(AiCore.CATALOG, dev.ramTotalMb, modelsDir.usableSpace, Runtime.getRuntime().availableProcessors(),
+                    llama.measuredSpeed(), llama.benchmark?.optLong("bytes")?.takeIf { it > 0 })
                 AiCore.CATALOG.forEach { m ->
+                    val a = advice.getValue(m.id)
                     put(JSONObject().put("id", m.id).put("name", m.name).put("bytes", m.bytes).put("ramMb", m.ramMb).put("note", m.note)
-                        .put("file", m.file).put("downloaded", File(modelsDir, m.file).isFile))
+                        .put("file", m.file).put("downloaded", File(modelsDir, m.file).isFile)
+                        .put("fit", a.fit).put("recommended", a.recommended).put("reason", a.reason)
+                        .put("wordsPerSecond", a.wordsPerSecond ?: JSONObject.NULL))
                 }
             })
             .put("download", download?.json() ?: JSONObject.NULL)
