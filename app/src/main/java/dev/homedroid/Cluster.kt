@@ -116,7 +116,10 @@ class Cluster(context: Context, private val route: (Request, Peer) -> Response) 
             .put("model", body.optString("model")).put("fingerprint", fp).put("address", r.remote)
             .put("port", body.optInt("port", ClusterState.PORT)))
             ?: return Response.error(400, "Invalid pairing request")
-        val code = state.request(peer, r.remote).getOrElse { return Response.error(429, it.message ?: "Try again later") }
+        // Too many requests is a rate limit; anything else (pairing with itself) is a bad request.
+        val code = state.request(peer, r.remote).getOrElse {
+            return Response.error(if (it is IllegalStateException) 429 else 400, it.message ?: "Try again later")
+        }
         notifyRequest(peer, code)
         return Response.json(self().put("state", "pending").put("code", code))
     }

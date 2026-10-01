@@ -127,6 +127,8 @@ class ServerService : Service() {
             }
         }
         scheduler.scheduleWithFixedDelay(::checkAutoDeploys, AUTO_DEPLOY_MINUTES, AUTO_DEPLOY_MINUTES, TimeUnit.MINUTES)
+        // Home-screen widgets, if any are placed. A failure must not cancel the schedule.
+        scheduler.scheduleWithFixedDelay({ runCatching { StatusWidget.refresh(this) } }, 5, 60, TimeUnit.SECONDS)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -167,6 +169,8 @@ class ServerService : Service() {
         scheduler.shutdownNow()
         CameraService.stop(this)
         dashboard?.stop()
+        val app = applicationContext
+        Thread({ runCatching { StatusWidget.refresh(app) } }, "widget").start()
         wifiLock?.release()
         wakeLock?.release()
         super.onDestroy()
