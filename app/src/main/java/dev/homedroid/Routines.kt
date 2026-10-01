@@ -125,7 +125,10 @@ class Routines(context: Context, private val ai: Ai) {
             "You write short personal briefings from the material given. Use only that material and say when something is missing. " +
                 "Now is ${now.format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy, HH:mm", Locale.ENGLISH))}. " +
                 "Write plain text: short paragraphs or bullet points, no tables.",
-            "${r.optString("instruction").ifEmpty { "Brief me on what matters." }}\n\n$material",
+            // Material first, the request last: small on-phone models follow what they read last, and
+            // with the request first a 0.5B model wrote only about the final section.
+            "$material\n\n---\nUsing every section above (${parts.joinToString { it.first }}): " +
+                r.optString("instruction").ifEmpty { "Brief me on what matters." },
         ), 700)
         if (text.isBlank()) throw IOException("The model returned no text")
         val brief = JSONObject().put("text", text).put("model", used.id).put("where", if (used.local) "local" else "cloud")
