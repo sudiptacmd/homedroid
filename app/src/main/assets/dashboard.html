@@ -431,6 +431,7 @@ dialog[open] { animation: pop .14s var(--ease); }
       <a href="#deploys" data-tab="deploys"><svg class="i"><use href="#i-deploy"/></svg>Deployments</a>
       <a href="#files" data-tab="files"><svg class="i"><use href="#i-folder"/></svg>Files</a>
       <a href="#ssh" data-tab="ssh"><svg class="i"><use href="#i-terminal"/></svg>Terminal &amp; SSH</a>
+      <a href="#network" data-tab="network" data-network-nav class="hidden"><svg class="i"><use href="#i-net"/></svg>Network</a>
       <a href="#ai" data-tab="ai"><svg class="i"><use href="#i-sparkle"/></svg>AI</a>
       <a href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg>IPCam</a>
       <a href="#cameras" data-tab="cameras" data-wall-nav class="hidden"><svg class="i"><use href="#i-eye"/></svg>All cameras</a>
@@ -602,6 +603,18 @@ dialog[open] { animation: pop .14s var(--ease); }
       <div class="card pad reach" id="ovReach"><div class="skeleton" style="width:40%"></div></div>
       <h2 id="ovSvcHead">Services</h2>
       <div class="card" id="ovServices"><div class="item"><div class="skeleton grow"></div></div></div>
+    </section>
+
+    <section data-view="network" class="hidden">
+      <div class="page-head"><h1>Network</h1><p class="hint">Diagnostics from the selected phone.</p></div>
+      <div class="card pad"><h2>This phone's network</h2><div id="netPhone"></div><div id="netTraffic"></div></div>
+      <div class="card pad" style="margin-top:16px">
+        <div class="job-head"><h2 class="grow">Devices on this network</h2><button class="btn primary sm" data-act="netDiscover" id="netDiscover">Discover</button><button class="btn sm" data-act="netDiscoveryCancel" id="netDiscoveryCancel" disabled>Cancel</button></div>
+        <p class="hint">mDNS, SSDP and TCP checks of the phone's local /24 or smaller. Devices that stay quiet may not be found.</p>
+        <div style="overflow:auto"><table class="ftable" style="min-width:600px"><thead><tr><th>IP / name</th><th>Found by</th><th>Open TCP ports</th><th>Last seen</th></tr></thead><tbody id="netDevices"></tbody></table></div>
+      </div>
+      <h2>Tools</h2><div class="grid" id="netTools"></div>
+      <div class="card pad" style="margin-top:16px"><div class="job-head"><h3 class="grow">iperf3 server :5201</h3><button class="switch" role="switch" aria-checked="false" aria-label="Run iperf3 server" data-act="netServer" id="netServer"></button></div><p class="hint">Runs while this page is open and asks for it. Other devices can connect to this phone on port 5201.</p><pre class="mono" id="netServerOutput" style="max-height:160px;overflow:auto;white-space:pre-wrap"></pre></div>
     </section>
 
     <section data-view="modules" class="hidden">
@@ -2485,6 +2498,108 @@ document.addEventListener('click', e => {
   ACT[t.dataset.act]?.(t, e);
 });
 
+// ---- Network ----
+POLL.network = 3000;
+const networkTools = [
+  ['ping', 'Ping', 'host'], ['tcp', 'TCP connect latency', 'host', 'port'],
+  ['traceroute', 'Traceroute (UDP)', 'host'], ['dns', 'DNS lookup', 'host', 'server', 'port', 'type'],
+  ['scan', 'Port scan', 'host', 'ports'], ['http', 'HTTP check', 'url'],
+  ['whois', 'Whois', 'host'], ['iperf', 'LAN speed test', 'host', 'port'], ['speed', 'Internet speed test']
+];
+const networkDefaults = {host: '', server: '', port: '443', type: 'A', ports: '', url: 'https://example.com'};
+const networkLabels = {host: 'Host / IP (scan also accepts /24 or smaller)', server: 'DNS server (optional)', port: 'Port', type: 'Record type', ports: 'Ports / ranges (empty: top 100)', url: 'HTTP / HTTPS URL'};
+$('#netTools').innerHTML = networkTools.map(([kind, title, ...fields]) => `<div class="card pad" data-network-tool="${kind}">
+  <h3>${title}</h3><form class="ipcam-stack" data-network-form="${kind}">${fields.map(key => `<label class="field">${networkLabels[key]}<input name="${key}" maxlength="${key === 'url' ? 2048 : 256}" value="${esc(key === 'port' ? (kind === 'dns' ? '53' : kind === 'iperf' ? '5201' : '443') : networkDefaults[key])}" ${['host', 'url', 'port', 'type'].includes(key) ? 'required' : ''}></label>`).join('')}
+  ${kind === 'speed' ? '<p class="hint">Downloads 10 MB and uploads 2 MB to Cloudflare. Connection latency includes DNS and TCP setup.</p>' : ''}
+  <div class="row"><button class="btn primary sm" type="submit">Run</button><button class="btn sm" type="button" data-act="netCancel" data-kind="${kind}" disabled>Cancel</button></div></form>
+  <div class="notice hidden" data-network-fallback>This phone doesn't allow ping from apps; use the TCP check instead. <button class="btn sm" data-act="netTcpOffer" data-kind="${kind}">Use TCP check</button></div>
+  <pre class="mono" data-network-output style="background:var(--bg);padding:12px;max-height:260px;overflow:auto;white-space:pre-wrap" aria-live="polite"></pre><div class="hint" data-network-status></div></div>`).join('');
+let networkServer = false, networkNode = null;
+async function renderNetwork() {
+  const target = node, d = await api('network');
+  if (target !== node || tab !== 'network') return;
+  $('[data-network-nav]').classList.toggle('hidden', !d.enabled);
+  if (!d.enabled) { networkServer = false; location.hash = '#modules'; return; }
+  if (networkNode !== node) {
+    networkServer = false; networkNode = node;
+    $$('[data-network-tool]').forEach(box => {
+      box.querySelector('[data-network-output]').textContent = '';
+      box.querySelector('[data-network-status]').textContent = '';
+      box.querySelector('[data-network-fallback]').classList.add('hidden');
+      box.querySelector('[type="submit"]').disabled = false;
+      box.querySelector('[data-act="netCancel"]').disabled = true;
+    });
+    $('#netServerOutput').textContent = '';
+  }
+  if (networkServer && d.jobs.some(j => j.kind === 'server' && !j.running)) networkServer = false;
+  if (networkServer) await api('network/server', {method: 'POST', body: {enabled: true}});
+  setHTML($('#netPhone'), `${d.ssid ? '<p>Wi-Fi: ' + esc(d.ssid) + '</p>' : ''}
+    ${d.interfaces.map(i => '<p><b>' + esc(i.name) + '</b> <span class="mono">' + i.addresses.map(esc).join(' · ') + '</span></p>').join('')}
+    <p>Default gateway: ${esc(d.gateway.join(', ') || 'Unavailable')}</p><p>DNS: ${esc(d.dns.join(', ') || 'Unavailable')}</p>`);
+  push('rx', d.metrics.rxBps); push('tx', d.metrics.txBps);
+  setHTML($('#netTraffic'), `<p>Whole phone: ↓ ${rate(d.metrics.rxBps)} · ↑ ${rate(d.metrics.txBps)}</p>${spark([hist.rx, hist.tx], 10240, ['', 'b'])}`);
+  $('#netDiscover').disabled = d.discovery.running; $('#netDiscoveryCancel').disabled = !d.discovery.running;
+  setHTML($('#netDevices'), d.discovery.devices.map(x => `<tr><td><span class="mono">${esc(x.ip)}</span><div class="hint">${esc(x.name || '')}${x.found ? '' : ' · not found in this scan'}</div></td><td>${esc(x.sources.join(', '))}</td><td>${esc(x.ports.join(', ') || 'None observed')}</td><td>${esc(new Date(x.lastSeen).toLocaleString())}</td></tr>`).join('') || '<tr><td colspan="4">No devices found yet.</td></tr>');
+  for (const j of d.jobs) {
+    if (j.kind === 'server') { $('#netServerOutput').textContent = j.output; continue; }
+    const box = $(`[data-network-tool="${j.kind}"]`); if (!box) continue;
+    const pre = box.querySelector('[data-network-output]'), atEnd = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 24;
+    pre.textContent = j.output; if (atEnd) pre.scrollTop = pre.scrollHeight;
+    box.querySelector('[type="submit"]').disabled = j.running;
+    box.querySelector('[data-act="netCancel"]').disabled = !j.running;
+    box.querySelector('[data-network-fallback]').classList.toggle('hidden', !j.tcpFallback);
+    const status = j.running ? 'Running…' : j.cancelled ? 'Stopped' : j.error ? 'Failed: ' + j.error : 'Finished';
+    box.querySelector('[data-network-status]').textContent = status + networkResult(j);
+  }
+  $('#netServer').setAttribute('aria-checked', String(networkServer));
+}
+function networkResult(j) {
+  const r = j.result;
+  if (!r || j.running || j.cancelled || j.error) return '';
+  if (j.kind === 'iperf') return ` · Sent ${r.sentMbps.toFixed(2)} Mbps · received ${r.receivedMbps.toFixed(2)} Mbps${r.error ? ' · ' + r.error : ''}`;
+  if (j.kind === 'http') {
+    const ms = n => (Math.max(0, n || 0) * 1000).toFixed(1) + ' ms';
+    return ` · Status ${r.Status || 'unavailable'} · DNS ${ms(r.DNS)} · connect ${ms(r.Connect - r.DNS)} · TLS ${r.TLS ? ms(r.TLS - r.Connect) : 'unavailable'} · first byte ${ms(r.FirstByte)} · total ${ms(r.Total)} · certificate expiry: ${r.certExpiry || 'unavailable'}`;
+  }
+  return '';
+}
+$$('[data-network-form]').forEach(form => form.onsubmit = e => {
+  e.preventDefault();
+  run(api('network/run/' + form.dataset.networkForm, {method: 'POST', body: Object.fromEntries(new FormData(form))}));
+});
+Object.assign(ACT, {
+  netDiscover: () => run(api('network/discover', {method: 'POST'})),
+  netDiscoveryCancel: () => run(api('network/discover/cancel', {method: 'POST'})),
+  netCancel: b => run(api('network/cancel/' + b.dataset.kind, {method: 'POST'})),
+  async netServer() {
+    const on = !networkServer;
+    try { await api('network/server', {method: 'POST', body: {enabled: on}}); networkServer = on; refresh(); }
+    catch (e) { toast(e.message, true); }
+    $('#netServer').setAttribute('aria-checked', String(networkServer));
+  },
+  netTcpOffer(b) {
+    const host = $(`[data-network-form="${b.dataset.kind}"] [name="host"]`).value;
+    $('[data-network-form="tcp"] [name="host"]').value = host;
+    $('[data-network-form="tcp"]').scrollIntoView({behavior: 'smooth', block: 'center'});
+  }
+});
+const refreshBeforeNetwork = refresh;
+refresh = async function() {
+  if (!authed) return;
+  if (tab !== 'network') {
+    networkServer = false;
+    const target = node;
+    api('network/enabled').then(d => { if (target === node) $('[data-network-nav]').classList.toggle('hidden', !d.enabled); }).catch(() => {});
+    return refreshBeforeNetwork();
+  }
+  clearTimeout(pollTimer);
+  const my = ++seq;
+  try { await renderNetwork(); noteNodeError(null); }
+  catch (e) { noteNodeError(e); }
+  finally { if (my === seq && authed && tab === 'network' && !document.hidden) pollTimer = setTimeout(refresh, POLL.network); }
+};
+// ---- End Network ----
+
 // ---- IPCam and settings ----------------------------------------------------------------
 function syncCameraNavigation(settings) {
   const enabled = !!settings.cameraEnabled;
@@ -2986,6 +3101,7 @@ $('#announceForm').onsubmit = async e => {
   await cameraAction('camera/announce', {body: {text: $('#announcement').value}}, 'Announcement requested');
   await renderCamera();
 };
+
 
 api('status', {local: true}).then(showApp).catch(showLogin);
 </script>
