@@ -106,6 +106,9 @@ class Alpine(private val ctx: Context, private val paths: Paths) {
             if (!partial.renameTo(root)) throw IOException("could not move Alpine into place")
             log("Alpine $VERSION installed")
         }
+        // Alpine's /media is the default media library, which shouldn't open on the empty mount
+        // points the base layout ships. delete() leaves them alone once anything is inside.
+        for (d in listOf("cdrom", "floppy", "usb")) File(root, "media/$d").delete()
         refresh()
     }
 
