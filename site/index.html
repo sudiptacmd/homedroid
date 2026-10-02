@@ -6,6 +6,7 @@
 <title>Homedroid – Turn your old Android phone into a home server (no root)</title>
 <meta name="description" content="Homedroid turns an old Android phone into a self-hosted home server: Jellyfin with hardware transcoding, a NAS for USB drives and SD cards, Immich, qBittorrent, Home Assistant, AdGuard Home ad blocking, Wake on LAN, network tools, on-phone AI, SSH and a web dashboard. No root, one free APK.">
 <meta name="keywords" content="android home server, old phone server, self-hosted, adguard home android, wake on lan android, android network tools, jellyfin android, android nas, no root, home server app, raspberry pi alternative, immich android, qbittorrent android, llama.cpp android, homelab">
+<meta name="author" content="Sudipta Goswami">
 <link rel="canonical" href="https://sudiptacmd.github.io/homedroid/">
 <meta name="theme-color" content="#07090d">
 <link rel="icon" href="img/homedroid-mark.svg" type="image/svg+xml">
@@ -33,6 +34,7 @@
   "operatingSystem": "Android 10+",
   "softwareVersion": "0.9.4-beta",
   "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+  "author": { "@type": "Person", "name": "Sudipta Goswami", "url": "https://github.com/sudiptacmd" },
   "url": "https://sudiptacmd.github.io/homedroid/",
   "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases",
   "codeRepository": "https://github.com/sudiptacmd/homedroid",
@@ -307,6 +309,7 @@ footer a { color: var(--text-2); }
           <h3>Jellyfin, transcoded by the phone's video chip</h3>
           <p>Your movies and shows on every TV, laptop and phone. Homedroid routes Jellyfin's hardware encoding to Android's MediaCodec, so the dedicated video hardware does the heavy lifting while the CPU stays cool.</p>
           <ul><li>qBittorrent downloads straight into the library</li><li>Watch while it's still downloading</li><li>Immich for Google Photos-style backup</li></ul>
+          <p style="font-size:12.5px;color:var(--muted)">Shown: <i>Sintel</i> © Blender Foundation, <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
         </div>
         <div class="vid"><span class="tag">LIVE · JELLYFIN</span><video data-src="media/jellyfin.mp4" poster="media/jellyfin.jpg" muted loop playsinline preload="none" aria-label="Signing in to Jellyfin on the phone and playing Sintel"></video></div>
       </article>
@@ -388,7 +391,7 @@ footer a { color: var(--text-2); }
         <source src="media/homedroid-walkthrough.mp4" type="video/mp4">
       </video>
     </div>
-    <p style="color:var(--muted);font-size:14px;margin-top:12px">Can't play it here? <a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4">Download the MP4 (13 MB)</a>. Demo films: Blender Foundation open movies, CC BY.</p>
+    <p style="color:var(--muted);font-size:14px;margin-top:12px">Can't play it here? <a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4">Download the MP4 (13 MB)</a>. Made by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.</p>
   </section>
 
   <section id="how" class="wrap">
@@ -473,9 +476,8 @@ rootfs   → runs under proot</pre>
 
 <footer>
   <div class="wrap">
-    <span>© Homedroid contributors · <a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0</a></span>
+    <span>Made by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a> · <a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0</a></span>
     <span><a href="https://github.com/sudiptacmd/homedroid">GitHub</a> · <a href="https://github.com/sudiptacmd/homedroid/releases">Releases</a> · <a href="https://github.com/sudiptacmd/homedroid#readme">Documentation</a> · <a href="https://github.com/sudiptacmd/homedroid/issues">Issues</a></span>
-    <span>Demo films © Blender Foundation, <a href="https://creativecommons.org/licenses/by/3.0/">CC BY</a></span>
   </div>
 </footer>
 
