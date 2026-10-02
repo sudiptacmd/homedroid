@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Homedroid – Turn your old Android phone into a home server (no root)</title>
-<meta name="description" content="Homedroid turns an old Android phone into a self-hosted home server: Jellyfin with hardware transcoding, a NAS for USB drives and SD cards, Immich, qBittorrent, Home Assistant, on-phone AI, SSH and a web dashboard. No root, one free APK.">
-<meta name="keywords" content="android home server, old phone server, self-hosted, jellyfin android, android nas, no root, home server app, raspberry pi alternative, immich android, qbittorrent android, llama.cpp android, homelab">
+<meta name="description" content="Homedroid turns an old Android phone into a self-hosted home server: Jellyfin with hardware transcoding, a NAS for USB drives and SD cards, Immich, qBittorrent, Home Assistant, AdGuard Home ad blocking, Wake on LAN, network tools, on-phone AI, SSH and a web dashboard. No root, one free APK.">
+<meta name="keywords" content="android home server, old phone server, self-hosted, adguard home android, wake on lan android, android network tools, jellyfin android, android nas, no root, home server app, raspberry pi alternative, immich android, qbittorrent android, llama.cpp android, homelab">
 <link rel="canonical" href="https://sudiptacmd.github.io/homedroid/">
 <meta name="theme-color" content="#07090d">
 <link rel="icon" href="img/homedroid-mark.svg" type="image/svg+xml">
@@ -31,7 +31,7 @@
   "description": "Turn an old Android phone into a home server: Jellyfin with hardware transcoding, a NAS for USB drives and SD cards, Immich, qBittorrent, Home Assistant, on-phone AI, SSH and a web dashboard. No root.",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "Android 10+",
-  "softwareVersion": "0.9.3-beta",
+  "softwareVersion": "0.9.4-beta",
   "license": "https://www.gnu.org/licenses/gpl-3.0.html",
   "url": "https://sudiptacmd.github.io/homedroid/",
   "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases",
@@ -88,20 +88,37 @@ nav .links a:hover { color: var(--text); text-decoration: none; }
 .star-count { font: 500 12.5px var(--mono); color: var(--text-2); padding-left: 8px; border-left: 1px solid var(--line-2); }
 
 /* Hero */
-.hero { padding: clamp(48px, 9vw, 110px) 0 60px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
+.hero { overflow-x: clip; padding: clamp(40px, 6vw, 72px) 0 60px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
 .hero h1 { font-size: clamp(42px, 6.6vw, 82px); margin: 18px 0 22px; }
 .hero .cta { display: flex; gap: 12px; flex-wrap: wrap; margin: 30px 0 18px; }
 .hero .meta { font: 13px var(--mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 18px; }
 .hero .meta span::before { content: "▹ "; color: var(--green); }
-.device { position: relative; justify-self: center; width: min(330px, 78vw); }
-.device .frame { position: relative; border-radius: 42px; padding: 11px; background: linear-gradient(160deg, #222b37, #0d1218 55%, #1b232d); box-shadow: 0 0 0 1px rgba(126, 231, 135, .35), 0 0 60px rgba(126, 231, 135, .25), 0 40px 90px -20px rgba(0, 0, 0, .9); }
-.device video { border-radius: 32px; aspect-ratio: 1080 / 2400; width: 100%; object-fit: cover; background: #e9f2ec; }
-.device .chip { position: absolute; font: 500 12.5px var(--mono); padding: 9px 13px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(10px); color: var(--text); white-space: nowrap; box-shadow: 0 12px 30px -12px rgba(0, 0, 0, .8); animation: float 6s ease-in-out infinite; }
-.device .chip b { color: var(--green); font-weight: 500; }
-.device .c1 { left: -44%; top: 14%; }
-.device .c2 { right: -34%; top: 46%; animation-delay: -2s; }
-.device .c3 { left: -30%; bottom: 12%; animation-delay: -4s; }
-@keyframes float { 50% { transform: translateY(-10px); } }
+.device { position: relative; justify-self: center; width: min(310px, 74vw, calc((100vh - 150px) / 2.3)); filter: drop-shadow(0 40px 60px rgba(0, 0, 0, .7)); }
+.device::before { content: ""; position: absolute; inset: 8% -18% 4%; background: radial-gradient(closest-side, rgba(126, 231, 135, .28), transparent 75%); filter: blur(30px); z-index: -1; }
+/* Galaxy S9, front: curved-edge display, slim top and bottom bezels, side buttons. */
+.s9 { position: relative; border-radius: 15% / 7.2%; padding: 1.1%; background: linear-gradient(90deg, #4a515b, #1a1e23 6%, #101317 50%, #1a1e23 94%, #4a515b); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12), 0 0 0 1px rgba(0, 0, 0, .6); }
+.s9 .key { position: absolute; width: 1.2%; border-radius: 2px; background: linear-gradient(90deg, #3a4048, #15181c); }
+.s9 .vol { left: -1%; top: 17%; height: 10.5%; }
+.s9 .bixby { left: -1%; top: 31%; height: 5.5%; }
+.s9 .power { right: -1%; top: 23%; height: 7%; background: linear-gradient(270deg, #3a4048, #15181c); }
+.s9 .glass { position: relative; border-radius: 14% / 6.9%; background: #040506; padding: 9.4% 0 7.6%; overflow: hidden; }
+.s9 .glass::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(115deg, rgba(255, 255, 255, .10), transparent 28%, transparent 70%, rgba(255, 255, 255, .05)); }
+.s9 .top { position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 100 / 9.4; z-index: 4; }
+.s9 .top span { position: absolute; top: 50%; transform: translateY(-50%); border-radius: 50%; }
+.s9 .ear { left: 50%; width: 20%; height: 0; padding-top: 1.7%; border-radius: 99px !important; transform: translate(-50%, -50%) !important; background: linear-gradient(#0c0e11, #2c323b); box-shadow: 0 1px 0 rgba(255, 255, 255, .10), inset 0 1px 2px rgba(0, 0, 0, .9); }
+.s9 .iris { left: 14%; width: 4.4%; aspect-ratio: 1; background: radial-gradient(circle at 38% 35%, #9a5a6c 0 6%, #4a2432 22%, #241018 60%, #140a0f); box-shadow: 0 0 0 1px #22262d; }
+.s9 .led { left: 21%; width: 2.8%; aspect-ratio: 1; background: radial-gradient(circle at 40% 35%, #6b3a4a, #1f1016 70%); }
+.s9 .prox { right: 29%; width: 2.6%; aspect-ratio: 1; background: radial-gradient(circle at 40% 35%, #3b424d, #15181d 70%); }
+.s9 .cam { right: 18%; width: 6.4%; aspect-ratio: 1; background: radial-gradient(circle at 38% 34%, #b9c8ff 0 5%, #3a55b8 12%, #142048 26%, #05070c 48%, #2a303a 62%, #12151a 74%); box-shadow: 0 0 0 1px #2e343e, 0 0 6px rgba(80, 110, 255, .25); }
+.s9 .screen { position: relative; margin: 0 .9%; border-radius: 7.6% / 3.6%; overflow: hidden; background: #e9f2ec; }
+.s9 video { width: 100%; aspect-ratio: 1080 / 2400; object-fit: cover; }
+/* The display bends round the sides: shade and catch light along both long edges. */
+.s9 .screen::before, .s9 .screen::after { content: ""; position: absolute; top: 0; bottom: 0; width: 8%; pointer-events: none; z-index: 1; }
+.s9 .screen::before { left: 0; background: linear-gradient(90deg, rgba(0, 0, 0, .72), rgba(0, 0, 0, .32) 30%, rgba(0, 0, 0, .08) 65%, transparent); }
+.s9 .screen::after { right: 0; background: linear-gradient(270deg, rgba(0, 0, 0, .72), rgba(0, 0, 0, .32) 30%, rgba(0, 0, 0, .08) 65%, transparent); }
+/* Light running along the bent glass on both sides. */
+.s9 .glass::before { content: ""; position: absolute; inset: 4% 0; pointer-events: none; z-index: 3; background: linear-gradient(90deg, rgba(255, 255, 255, .0) 0, rgba(255, 255, 255, .55) .5%, rgba(255, 255, 255, .0) 1.6%, transparent 98.4%, rgba(255, 255, 255, .4) 99.5%, transparent 100%); -webkit-mask: linear-gradient(transparent, #000 12%, #000 88%, transparent); mask: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
+.s9 .glare { position: absolute; inset: 0; pointer-events: none; z-index: 2; background: linear-gradient(118deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 26%); }
 
 /* Ticker */
 .ticker { border-block: 1px solid var(--line-2); background: rgba(12, 16, 22, .6); overflow: hidden; }
@@ -181,7 +198,6 @@ footer a { color: var(--text-2); }
 
 @media (max-width: 960px) {
   .hero { grid-template-columns: 1fr; }
-  .device .c1 { left: -18%; } .device .c2 { right: -16%; } .device .c3 { left: -12%; }
   .feat, .feat:nth-child(even) { grid-template-columns: 1fr; }
   .feat:nth-child(even) .txt { order: 0; }
   .feat .vid, .feat:nth-child(even) .vid { border: 0; border-top: 1px solid var(--line-2); aspect-ratio: 16 / 10; min-height: 0; }
@@ -192,7 +208,6 @@ footer a { color: var(--text-2); }
 }
 @media (max-width: 560px) {
   .steps { grid-template-columns: 1fr; }
-  .device .chip { display: none; }
   .hero .cta .btn { flex: 1 1 100%; }
   nav .wrap { gap: 12px; }
   nav .btn.gh .label { display: none; }
@@ -238,19 +253,23 @@ footer a { color: var(--text-2); }
       <div class="meta"><span>Android 10+</span><span>~50 MB APK</span><span>arm64 · armv7 · x86_64</span><span>GPL-3.0</span></div>
     </div>
     <div class="device">
-      <div class="frame">
-        <video src="media/phone.mp4" poster="media/phone.jpg" autoplay muted loop playsinline aria-label="The Homedroid app on a phone: server status, app library and settings"></video>
+      <div class="s9">
+        <span class="key vol"></span><span class="key bixby"></span><span class="key power"></span>
+        <div class="glass">
+          <div class="top" aria-hidden="true"><span class="iris"></span><span class="led"></span><span class="ear"></span><span class="prox"></span><span class="cam"></span></div>
+          <div class="screen">
+            <video src="media/phone.mp4" poster="media/phone.jpg" autoplay muted loop playsinline aria-label="The Homedroid app on a phone: server status, app library and settings"></video>
+            <span class="glare"></span>
+          </div>
+        </div>
       </div>
-      <div class="chip c1"><b>●</b> Jellyfin · running</div>
-      <div class="chip c2">SD card · <b>510 MB free</b></div>
-      <div class="chip c3">llama.cpp · <b>on device</b></div>
     </div>
   </header>
 
   <div class="ticker" aria-hidden="true">
     <div class="row">
-      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>Phone clusters</span>
-      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>Phone clusters</span>
+      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>AdGuard Home ad blocking</span><span>Wake on LAN</span><span>Network tools</span><span>Gemma 4 on device</span><span>Phone clusters</span>
+      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>AdGuard Home ad blocking</span><span>Wake on LAN</span><span>Network tools</span><span>Gemma 4 on device</span><span>Phone clusters</span>
     </div>
   </div>
 
@@ -351,6 +370,9 @@ footer a { color: var(--text-2); }
       <div class="mod"><div class="ic">☁️</div><b>Cloudflare Tunnel</b><span>Public HTTPS without opening a port.</span><code>tunnel</code></div>
       <div class="mod"><div class="ic">🛰️</div><b>Tailscale</b><span>Private access from anywhere, no VPN slot.</span><code>tailnet</code></div>
       <div class="mod"><div class="ic">📱</div><b>Cluster</b><span>Several phones, one dashboard.</span><code>:8801 mTLS</code></div>
+      <div class="mod"><div class="ic">🛡️</div><b>AdGuard Home</b><span>Ad blocking for your whole tailnet, even on mobile data.</span><code>DNS :1053</code></div>
+      <div class="mod"><div class="ic">🔎</div><b>Network tools</b><span>Discovery, port scans, DNS, ping and speed tests.</span><code>dashboard</code></div>
+      <div class="mod"><div class="ic">⚡</div><b>Wake on LAN</b><span>Turn on your PC at home from anywhere.</span><code>/api/wol</code></div>
       <div class="mod"><div class="ic">🧩</div><b>Your app?</b><span>Apps are just JSON. <a href="https://github.com/sudiptacmd/homedroid/blob/main/CONTRIBUTING.md">Add one.</a></span><code>apps.json</code></div>
     </div>
   </section>
@@ -366,7 +388,7 @@ footer a { color: var(--text-2); }
         <source src="media/homedroid-walkthrough.mp4" type="video/mp4">
       </video>
     </div>
-    <p style="color:var(--muted);font-size:14px;margin-top:12px">Can't play it here? <a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.3-beta/homedroid-walkthrough.mp4">Download the MP4 (13 MB)</a>. Demo films: Blender Foundation open movies, CC BY.</p>
+    <p style="color:var(--muted);font-size:14px;margin-top:12px">Can't play it here? <a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4">Download the MP4 (13 MB)</a>. Demo films: Blender Foundation open movies, CC BY.</p>
   </section>
 
   <section id="how" class="wrap">
@@ -477,7 +499,7 @@ document.querySelectorAll('.reveal').forEach(el => reveal.observe(el));
 // The full walkthrough is fetched from the release at deploy time; fall back to the release link.
 const wt = document.getElementById('walkthrough');
 wt.querySelector('source').addEventListener('error', () => {
-  wt.querySelector('source').src = 'https://github.com/sudiptacmd/homedroid/releases/download/v0.9.3-beta/homedroid-walkthrough.mp4';
+  wt.querySelector('source').src = 'https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4';
   wt.load();
 });
 

@@ -25,7 +25,7 @@
 That phone in your drawer has an 8-core CPU, a hardware video encoder, gigabytes of RAM, Wi-Fi,
 a battery that works as a built-in UPS, and it sips about as much power as an LED bulb.
 **Homedroid turns it into a self-hosted home server**: a media server, a NAS for your USB drive
-or microSD card, a photo backup, a torrent box, a web host, a private AI and a smart-home hub,
+or microSD card, a photo backup, a torrent box, a web host, a network-wide ad blocker, a private AI and a smart-home hub,
 all managed from a beautiful web dashboard. **No root, no Termux, no Linux skills needed:
 one APK.**
 
@@ -37,6 +37,10 @@ one APK.**
   other apps.
 - 🌍 **Online in minutes.** Cloudflare Tunnel or Tailscale, so it works behind CGNAT with no
   port forwarding.
+- 🛡️ **Ad blocking everywhere.** AdGuard Home filters ads and trackers for every device on your
+  tailnet, at home or on mobile data.
+- ⚡ **Wake on LAN from anywhere.** Turn on your desktop from the other side of the world.
+- 🔎 **Network tools.** See who's on your network, scan ports, look up DNS and run speed tests.
 - 🚀 **Deploy from GitHub.** Node.js, Python and static sites, rebuilt when you push.
 - 📱 **Several phones, one dashboard.** Pair old phones into a cluster and move apps between them.
 
@@ -46,11 +50,11 @@ one APK.**
 
 ## Walkthrough
 
-<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.3-beta/homedroid-walkthrough.mp4"><img src="docs/walkthrough-preview.gif" alt="Homedroid walkthrough: the phone app, the web dashboard, files on an SD card, Alpine Linux in the browser, Jellyfin, on-phone AI, deploying from GitHub and a phone cluster" width="720"></a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4"><img src="docs/walkthrough-preview.gif" alt="Homedroid walkthrough: the phone app, the web dashboard, files on an SD card, Alpine Linux in the browser, Jellyfin, on-phone AI, deploying from GitHub and a phone cluster" width="720"></a>
 
-A 4½-minute tour of 0.9.3: the phone app, the dashboard, files on an SD card, a Linux shell in
+A 4½-minute tour: the phone app, the dashboard, files on an SD card, a Linux shell in
 the browser, Jellyfin, AI on the phone, a deployment from GitHub and two phones working as
-one. [Watch the full video (MP4, 13 MB)](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.3-beta/homedroid-walkthrough.mp4)
+one. [Watch the full video (MP4, 13 MB)](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4)
 or see the clips on the [website](https://sudiptacmd.github.io/homedroid/).
 
 <p align="center">
@@ -62,7 +66,7 @@ or see the clips on the [website](https://sudiptacmd.github.io/homedroid/).
 
 ## Download
 
-Homedroid is in **beta (0.9.3)** and free. Get the APK from the
+Homedroid is in **beta (0.9.4)** and free. Get the APK from the
 [latest release](https://github.com/sudiptacmd/homedroid/releases):
 
 | Your phone | APK |
@@ -96,6 +100,9 @@ after the first install without a prompt). The server comes back on the new vers
 | **Home Assistant** | Home automation (network and cloud integrations) | 8123 |
 | **IPCam** | Live view from any camera, photos, video, motion recording, the microphone, and spoken announcements | 8800 |
 | **AI** | Chat and an OpenAI-compatible API, with models **on the phone** (llama.cpp, GPU or CPU) or cloud services; scheduled **routines** that brief you by voice or push | 8090 |
+| **AdGuard Home** | Network-wide ad and tracker blocking, with blocklists, statistics and a query log; tailnet devices can use the phone as their DNS server | 3000 (DNS 1053) |
+| **Network tools** | This phone's network, device discovery, ping, traceroute, DNS lookups, port scans, HTTP checks, LAN and internet speed tests | 8800 |
+| **Wake on LAN** | Wake computers at home from anywhere the dashboard reaches; also from scripts and phone shortcuts | 8800 |
 | **Cluster** | Several phones, one dashboard: pick which phone runs each app, move apps with their data, every camera on one page | 8801 |
 
 - **Everything is a module.** Add, remove, turn on or off at any time. Nothing you don't use runs.
@@ -202,7 +209,7 @@ never shown back in the dashboard.
 Turn on **AI** in Modules, then open the AI page:
 
 - **On this phone:** install llama.cpp (built for Android by this project, about 17 MB) and
-  download a model (Qwen2.5, Llama 3.2 or Gemma 3), paste any Hugging Face `.gguf` link, or
+  download a model (Gemma 4 E2B, Qwen2.5, Llama 3.2 or Gemma 3), paste any Hugging Face `.gguf` link, or
   upload one. The page **recommends** the best model your phone runs well, from its memory, free
   space and measured speed. Nothing leaves the phone.
 - **GPU or CPU:** the **Benchmark** measures both and *Auto* uses the faster: Vulkan on most
@@ -234,6 +241,38 @@ to or record the microphone, and **Announce** a typed message with the phone's v
 - Android requires camera and microphone services to start while the app is visible, so after a
   reboot tap **Enable camera access** again. Android's privacy indicators stay on while IPCam is
   active, and its notification has a **Stop** button.
+
+### Ad blocking with AdGuard Home
+
+Install **AdGuard Home** from Modules and it filters ads and trackers out of DNS lookups for
+every device you point at it, with blocklists, statistics and a query log in its web UI (port
+3000; the login is on the app card).
+
+Android won't let an app use port 53, the port every device asks for DNS on, so AdGuard Home
+listens on **1053**. The easiest way round that is Tailscale: Homedroid's Tailscale passes port
+53 on the phone's tailnet address to 1053, so in the Tailscale admin console you add the phone
+as a custom nameserver, turn on **Override DNS servers**, and every device on your tailnet is
+filtered, at home or on mobile data. Routers that can forward DNS to a port (OpenWrt, pfSense,
+anything with dnsmasq) can send the whole home network there too. The **Setup guide** on the
+card walks through both.
+
+### Network tools
+
+Turn on **Network tools** and a **Network** page shows this phone's addresses, gateway, DNS
+servers and live throughput, and finds the devices around it (mDNS, SSDP/UPnP and quick TCP
+probes of the local network). Its tools run on the phone and stream their output to the page:
+ping, traceroute, DNS lookups (handy for testing AdGuard Home), port scans with nmap, HTTP
+checks with timings and certificate expiry, whois, LAN speed tests with iperf3 (the phone can be
+the server too) and an internet speed test. Live packet capture needs root, so there's no
+Wireshark capture; everything else works as an app.
+
+### Wake on LAN
+
+Turn on **Wake on LAN**, add your computers with their MAC addresses, and wake them with one
+click from anywhere the dashboard reaches: over Tailscale, through a Cloudflare tunnel, or from
+another phone in your cluster. Homedroid sends the magic packet on every network the phone is
+on, and shows whether a computer is on when you give it an address. Scripts and phone shortcuts
+can call `POST /api/wol/wake` with the dashboard password as a Bearer token.
 
 ### Cluster: several phones, one dashboard
 
@@ -368,6 +407,9 @@ Homedroid does a lot inside an ordinary app, and a few things follow from that:
 - **CPU figures.** Android doesn't let apps read system-wide CPU load or most temperature
   sensors, so the dashboard shows Homedroid's own load (which is all the servers), the battery
   temperature and Android's thermal status, plus the CPU temperature on phones that expose it.
+- **No port 53, no packet capture.** Without root an app can't listen on ports below 1024 or
+  sniff traffic, so AdGuard Home answers on 1053 (Tailscale and capable routers bridge that) and
+  the network tools work with ordinary connections.
 - **Plain HTTP on your LAN.** The dashboard and apps speak HTTP on your home network (traffic
   between cluster phones is encrypted). From outside, use Tailscale, the Cloudflare tunnel or
   `ssh -L`.
@@ -408,7 +450,7 @@ The individual scripts take ABIs as arguments (`native/build-ffmpeg.sh arm64-v8a
 versions can be overridden (`CADDY_VERSION=… CLOUDFLARED_VERSION=… native/build.sh`). To sign
 release builds with your own key, copy `keystore.properties.example` to `keystore.properties`;
 without it they use the debug key. Releases are built by CI: pushing a tag such as
-`v0.9.3-beta` builds every ABI, signs the APKs and publishes them with `SHA256SUMS`.
+`v0.9.4-beta` builds every ABI, signs the APKs and publishes them with `SHA256SUMS`.
 
 ### Adding an app
 
@@ -435,7 +477,8 @@ and tell us how it went**:
 
 - Cluster failover: restart an app on another phone when its phone goes away
 - Root mode: chroot at native speed, ports below 1024, charge limiting
-- More apps: Vaultwarden, Syncthing, Pi-hole/AdGuard
+- More apps: Vaultwarden, Syncthing
+- Capture this phone's own traffic for Wireshark (through Android's VPN service)
 - Hostname routing for deployments through Caddy
 - Verify hardware transcoding on more chips (Exynos, Snapdragon, MediaTek)
 

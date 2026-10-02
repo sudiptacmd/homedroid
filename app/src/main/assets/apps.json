@@ -167,5 +167,27 @@
       "path": "/data",
       "label": "Photo library"
     }
+  },
+  {
+    "id": "adguard",
+    "name": "AdGuard Home",
+    "description": "Network-wide ad and tracker blocking. DNS on port 1053; devices on your tailnet can use the phone as their DNS server directly. Blocklists, statistics and a query log in its web UI.",
+    "port": 3000,
+    "size": "≈ 40 MB",
+    "install": "apk add --no-cache adguardhome apache2-utils\nmkdir -p /var/lib/adguardhome\n# Only on first install, so the user's own settings are kept. An app can't listen below\n# port 1024: plain DNS is on 1053 (Tailscale devices reach it on 53, see Tailscale.kt) and\n# encrypted DNS, once set up, on 8443 (DoH) and 8853 (DoT). All clients may arrive from one\n# address (the router or the Tailscale relay), so there is no per-client rate limit.\nif [ ! -e /var/lib/adguardhome/AdGuardHome.yaml ]; then\n  pw=$(tr -dc A-Za-z0-9 < /dev/urandom | head -c 16)\n  printf '%s' \"$pw\" > /var/lib/adguardhome/.initial-password\n  hash=$(htpasswd -nbB -C 10 admin \"$pw\" | cut -d: -f2-)\n  cat > /var/lib/adguardhome/AdGuardHome.yaml <<YAML\nhttp:\n  address: 0.0.0.0:3000\n  session_ttl: 720h\nusers:\n  - name: admin\n    password: '$hash'\nauth_attempts: 5\nblock_auth_min: 15\ndns:\n  bind_hosts:\n    - 0.0.0.0\n  port: 1053\n  upstream_dns:\n    - https://dns.quad9.net/dns-query\n    - https://cloudflare-dns.com/dns-query\n  bootstrap_dns:\n    - 9.9.9.9\n    - 1.1.1.1\n  ratelimit: 0\ntls:\n  enabled: false\n  port_https: 8443\n  port_dns_over_tls: 8853\n  port_dns_over_quic: 8853\nfilters:\n  - enabled: true\n    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt\n    name: AdGuard DNS filter\n    id: 1\n  - enabled: true\n    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_2.txt\n    name: AdAway Default Blocklist\n    id: 2\ndhcp:\n  enabled: false\nschema_version: 29\nYAML\nfi",
+    "uninstall": "apk del adguardhome apache2-utils",
+    "data": [
+      "/var/lib/adguardhome"
+    ],
+    "run": [
+      "/bin/sh",
+      "-c",
+      "[ -e /var/lib/adguardhome/.initial-password ] && echo \"AdGuard Home login: admin / $(cat /var/lib/adguardhome/.initial-password)\"; exec /usr/bin/adguardhome --work-dir /var/lib/adguardhome --config /var/lib/adguardhome/AdGuardHome.yaml --no-check-update --no-permcheck"
+    ],
+    "env": {},
+    "notice": {
+      "pattern": "AdGuard Home login: admin / (\\S+)",
+      "text": "Web UI login: admin / $1 · DNS on port 1053; open the setup guide to point your devices at it"
+    }
   }
 ]
