@@ -90,11 +90,11 @@ class DeployState(val commit: String?, val runtime: String?, val root: String?, 
 class Deploys(private val ctx: Context, private val paths: Paths) {
     private val file = File(paths.root, "deploys.json")
 
-    @Synchronized
-    fun all(): List<Deploy> {
-        if (!file.exists()) return emptyList()
-        val arr = JSONArray(file.readText())
-        return (0 until arr.length()).map { parse(arr.getJSONObject(it)) }
+    // One lock for every instance: the dashboard, the hooks and the job queue each hold their own
+    // Deploys, and they all read-modify-write the same file.
+    fun all(): List<Deploy> = synchronized(LOCK) {
+        if (!file.exists()) emptyList()
+        else JSONArray(file.readText()).let { arr -> (0 until arr.length()).map { parse(arr.getJSONObject(it)) } }
     }
 
     fun get(id: String) = all().firstOrNull { it.id == id }
@@ -103,42 +103,39 @@ class Deploys(private val ctx: Context, private val paths: Paths) {
      * Adds a deployment from the dashboard's settings, or with [imported] from another phone's
      * stored config (keeping its hook secrets, so CI keeps working after a move).
      */
-    @Synchronized
-    fun create(o: JSONObject, imported: Boolean = false): Deploy {
+    fun create(o: JSONObject, imported: Boolean = false): Deploy = synchronized(LOCK) {
         val name = o.optString("name").trim()
         val id = name.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
         require(id.isNotEmpty()) { "give the deployment a name" }
         require(get(id) == null) { "a deployment called $id already exists" }
         val d = validate(o, id, name, imported)
         save(all() + d)
-        return d
+        d
     }
 
     /** Changes the settings in [o] that may change after creation. */
-    @Synchronized
-    fun update(id: String, o: JSONObject): Deploy {
+    fun update(id: String, o: JSONObject): Deploy = synchronized(LOCK) {
         val d = get(id) ?: throw IllegalArgumentException("no deployment $id")
         require(!d.replica) { "this is a copy of another phone's deployment: change it there" }
         val merged = d.toStored()
         for (k in EDITABLE) if (o.has(k)) merged.put(k, o.get(k))
         val next = validate(merged, d.id, d.name, imported = true)
         save(all().map { if (it.id == id) next else it })
-        return next
+        next
     }
 
     /**
      * Saves a copy of another phone's deployment [o] here, replacing an earlier copy; a
      * deployment of this phone's own with the same name is never replaced.
      */
-    @Synchronized
-    fun saveReplica(o: JSONObject): Deploy {
+    fun saveReplica(o: JSONObject): Deploy = synchronized(LOCK) {
         val id = o.optString("id")
         require(Regex("[a-z0-9-]{1,64}").matches(id)) { "invalid deployment" }
         val old = get(id)
         require(old == null || old.replica) { "this phone has its own deployment called $id" }
         val d = validate(o, id, o.optString("name").trim().ifEmpty { id }, imported = true, replica = true)
         save(all().filterNot { it.id == id } + d)
-        return d
+        d
     }
 
     private fun validate(o: JSONObject, id: String, name: String, imported: Boolean, replica: Boolean = false): Deploy {
@@ -188,16 +185,14 @@ class Deploys(private val ctx: Context, private val paths: Paths) {
     /** A new GitHub webhook secret for [id], returned this once. */
     fun issueWebhookSecret(id: String): String = DeployHooksCore.newSecret("whsec_").also { s -> change(id) { it.put("webhookSecret", s) } }
 
-    @Synchronized
-    private fun change(id: String, edit: (JSONObject) -> JSONObject) {
+    private fun change(id: String, edit: (JSONObject) -> JSONObject) = synchronized(LOCK) {
         val list = all()
         val d = list.firstOrNull { it.id == id } ?: throw IllegalArgumentException("no deployment $id")
         require(!d.replica) { "this is a copy of another phone's deployment: change it there" }
         save(list.map { if (it.id == id) parse(edit(it.toStored())) else it })
     }
 
-    @Synchronized
-    fun remove(id: String) = save(all().filterNot { it.id == id })
+    fun remove(id: String) = synchronized(LOCK) { save(all().filterNot { it.id == id }) }
 
     fun state(d: Deploy, alpine: Alpine): DeployState {
         fun read(name: String) = File(alpine.root, "srv/.homedroid/${d.id}.$name").takeIf { it.exists() }?.readText()?.trim()
@@ -347,6 +342,8 @@ class Deploys(private val ctx: Context, private val paths: Paths) {
 
     companion object {
         fun serviceName(id: String) = "deploy-$id"
+
+        private val LOCK = Any()
 
         private val ENV_NAME = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
