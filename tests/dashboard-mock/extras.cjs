@@ -449,9 +449,247 @@ function macroRoute(x, H, route, method, b, res, send) {
   return false;
 }
 
+// ---- Mail (Stalwart) and the Wi-Fi repeater --------------------------------------------------------------------
+// The Mail page's phases follow the module: install Stalwart from Modules (the same job as any app), answer the setup, then it "starts" for
+// a few seconds and is ready. Nothing listens, resolves or sends: DNS records and checks are made up from the saved setup.
+// Mock-only: POST /api/mail/_mock {phase: not_installed|needs_setup|starting|ready|stopped} and POST /api/repeater/_mock {state, ...} set
+// a state directly (the screenshots use them); the real phone has no such routes.
+function dashboardPageHelpers() {
+  const html = fs.readFileSync(path.join(F.ASSETS, 'dashboard.html'), 'utf8');
+  const a = html.indexOf('// ---- Mail and repeater helpers'), b = html.indexOf('// ---- End mail and repeater helpers');
+  const ctx = vm.createContext({});
+  vm.runInContext(html.slice(a, b) + '\nthis.api = {mailAllErrors, mailFormFrom, mailPemProblem, mailChunks, repeaterName, repeaterPassOk};', ctx);
+  return ctx.api;
+}
+const MAIL_PORT_LIST = [['SMTP: mail from other servers', 'smtp', 2525, 25], ['Submission (STARTTLS): sending from mail apps', 'smtp', 2587, 587], ['Submission over TLS: sending from mail apps', 'smtp', 4650, 465],
+  ['IMAP over TLS: reading mail in apps', 'imap', 9930, 993], ['Web admin, JMAP and auto-setup (plain HTTP)', 'http', 8825, 8825]];
+const MAIL_MODES = [
+  {id: 'direct', title: 'Directly from my home internet', summary: 'Other mail servers connect to your phone through your router. You forward ports to the phone and your internet provider must allow it.',
+    needs: ['Router port forwarding: 25 to 2525, 465 to 4650, 587 to 2587, 993 to 9930', 'A public IP address (not behind carrier-grade NAT), fixed or kept up to date with dynamic DNS', 'Port 25 open in both directions. Most home providers block it.']},
+  {id: 'relay', title: 'Send through a relay (smarthost)', summary: 'Incoming mail still needs your router, but all outgoing mail goes through a provider\'s SMTP server, which avoids blocked port 25 and most spam-filter trouble.',
+    needs: ['An account with an SMTP service: server, port, user name and password', 'The SPF include value the provider tells you (like spf.provider.com)', 'Port forwarding for incoming mail, as for direct delivery']},
+  {id: 'receive_only', title: 'Receive only, through a small server (VPS)', summary: 'A cheap server with a public address accepts mail on port 25 and forwards it to the phone over a private link such as Tailscale or an SSH tunnel. Nothing needs to be opened at home.',
+    needs: ['A VPS (or any machine with a public address) that forwards its port 25 to the phone\'s port 2525', 'The VPS\'s public address as the mail server\'s address, and its name as the hostname', 'A relay as well if you also want to send mail']}];
+const MAIL_LIMITS = ['Most home internet providers block port 25. If they do, direct delivery cannot work: use a relay for sending and a VPS for receiving.',
+  'Phones behind carrier-grade NAT (many mobile and some home connections) have no public address. Nothing can reach them from outside without a VPS or a tunnel.',
+  'Reverse DNS (the PTR record for your IP) is set by your internet provider, not by you. Without one that matches your mail hostname, big providers often send your mail to spam.',
+  'A home IP address is often on spam lists. Even with perfect setup, mail to Gmail, Outlook and others may land in spam. A relay is the reliable fix.',
+  'Mail is only received while the phone is on, charged and connected. Other servers retry for a few days, then give up and bounce the mail.',
+  'Nothing here is backed up by itself. Copy the mail data off the phone regularly (see the guide).',
+  'The certificate is self-signed until you install a real one. Mail apps ask you to accept it once.'];
+const MAIL_LAN = '192.168.1.23';
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const fakeKey = () => { let s = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA'; for (let i = 0; s.length < 392; i++) s += B64[(i * 31 + i * i * 7 + 11) % 64]; return s + 'IDAQAB'; };
+function mailState() {
+  return {setup: null, readyAt: 0, forced: null, certInstalled: false, accounts: [], password: 'Zq4mT8vN2hKx7RpL',
+    log: ['Starting Stalwart 1.2.0', 'Listening on 0.0.0.0:2525 (smtp)', 'Listening on 0.0.0.0:2587 (submission)', 'Listening on 0.0.0.0:4650 (submissions)', 'Listening on 0.0.0.0:9930 (imaps)', 'Listening on 0.0.0.0:8825 (http)']};
+}
+const mailApp = p => p.apps.find(a => a.def.id === 'stalwart');
+function mailPhase(x, p) {
+  const app = mailApp(p), m = x.mail;
+  if (!app || !app.installed) return 'not_installed';
+  if (!m.setup) return 'needs_setup';
+  if (m.forced === 'stopped' || !app.enabled) return 'stopped';
+  if (m.forced === 'starting' || Date.now() < m.readyAt) return 'starting';
+  return 'ready';
+}
+const mailDemoSetup = () => ({domain: 'example.com', hostname: 'mail.example.com', mode: 'relay', address: '203.0.113.42', spfInclude: ['spf.mailgun.org'], dmarcPolicy: 'none', reportEmail: 'postmaster@example.com',
+  relay: {host: 'smtp.mailgun.org', port: 587, username: 'postmaster@mg.example.com', password: 'key-demo-1234', implicitTls: false}});
+function mailStatus(x, p) {
+  const phase = mailPhase(x, p), m = x.mail, app = mailApp(p), up = phase === 'ready', s = m.setup;
+  return {installed: !!app?.installed, enabled: !!app?.enabled, phase, state: up ? 'running' : phase === 'starting' ? 'starting' : 'stopped', version: app?.installed ? '1.2.0' : null,
+    setup: s ? {...s, relay: s.relay ? {...s.relay, password: s.relay.password ? '***' : ''} : null} : null,
+    admin: s && (up || phase === 'stopped') ? {user: 'admin@' + s.domain, password: m.password, url: `http://${MAIL_LAN}:8825/admin`} : null,
+    ports: MAIL_PORT_LIST.map(([name, protocol, local, pub]) => ({name, protocol, local, public: pub, listening: up})), lan: [MAIL_LAN], modes: MAIL_MODES, limits: MAIL_LIMITS.map(text => ({text})),
+    log: phase === 'not_installed' || phase === 'needs_setup' ? [] : phase === 'starting' ? m.log.slice(0, 2) : m.log};
+}
+const zoneTxt = v => { const parts = (v.match(/[\s\S]{1,255}/g) || ['']).map(c => '"' + c.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'); return parts.length === 1 ? parts[0] : '(' + parts.join(' ') + ')'; };
+function mailRecords(s, dkim) {
+  const d = s.domain, h = s.hostname, rel = n => n === d ? '@' : n.endsWith('.' + d) ? n.slice(0, -d.length - 1) : n, out = [];
+  const rec = (id, type, name, host, value, o = {}) => out.push({id, type, name, host, value, priority: o.priority ?? null, group: o.group || 'essential', title: o.title, note: o.note, pending: !!o.pending, extra: o.extra ?? null});
+  const v4 = /^\d+\.\d+\.\d+\.\d+$/.test(s.address);
+  if (h === d || h.endsWith('.' + d)) {
+    if (!s.address) rec('address', 'A', h, rel(h), '<your public IP address>', {title: 'Address of the mail server', pending: true, note: 'Type your home\'s public IP address, or fill in the address in the setup. If it changes now and then, use a dynamic DNS name instead.'});
+    else if (v4) rec('address', 'A', h, rel(h), s.address, {title: 'Address of the mail server', note: 'Your public IPv4 address. Must stay the same, or be updated by dynamic DNS.'});
+    else if (s.address.includes(':')) rec('address', 'AAAA', h, rel(h), s.address, {title: 'Address of the mail server', note: 'Your public IPv6 address.'});
+    else if (s.address !== h) rec('address', 'CNAME', h, rel(h), s.address + '.', {title: 'Address of the mail server', note: 'Points the mail hostname at your dynamic DNS name, which keeps your changing IP up to date.'});
+  }
+  rec('mx', 'MX', d, '@', h + '.', {priority: 10, title: `Where mail for ${d} is delivered`, note: `Tells other mail servers to deliver mail for @${d} to ${h}.`});
+  const sends = s.mode !== 'receive_only' || s.relay, spf = !sends ? 'v=spf1 -all' : ['v=spf1', ...(s.mode === 'direct' ? ['mx', ...(v4 ? ['ip4:' + s.address] : [])] : []), ...s.spfInclude.map(i => 'include:' + i), '~all'].join(' ');
+  rec('spf', 'TXT', d, '@', spf, {group: 'authentication', title: `SPF: who may send as ${d}`, note: s.mode === 'relay' && !s.spfInclude.length ? 'Your relay provider will tell you the include: value to put here. Without it, mail may be rejected.' : 'Starts as soft fail (~all). Change to -all once mail flows and you\'ve checked the results.'});
+  if (s.mode === 'direct') rec('spf-helo', 'TXT', h, rel(h), 'v=spf1 a -all', {group: 'authentication', title: 'SPF for the server\'s own name', note: 'Some servers check the name this phone introduces itself with.'});
+  if (!dkim) rec('dkim', 'TXT', `<selector>._domainkey.${d}`, '<selector>._domainkey', 'v=DKIM1; k=rsa; h=sha256; p=<key made by the server>', {group: 'authentication', title: 'DKIM: signature key', pending: true, note: 'Created when the mail server first starts. Start it, then reload this list.'});
+  else rec('dkim-rsa', 'TXT', `rsa._domainkey.${d}`, 'rsa._domainkey', 'v=DKIM1; k=rsa; h=sha256; p=' + fakeKey(), {group: 'authentication', title: 'DKIM: signature key', note: 'Long keys are split into 255-character strings in a zone file; most DNS panels want the whole value in one box.'});
+  rec('dmarc', 'TXT', '_dmarc.' + d, '_dmarc', `v=DMARC1; p=${s.dmarcPolicy}${s.reportEmail ? '; rua=mailto:' + s.reportEmail : ''}`, {group: 'authentication', title: 'DMARC: what to do with mail that fails',
+    note: s.dmarcPolicy === 'none' ? 'Starts by only watching (p=none). Move to quarantine, then reject, once your mail passes.' : `Receivers will ${s.dmarcPolicy === 'reject' ? 'reject' : 'put in spam'} mail from your domain that fails SPF and DKIM.`});
+  rec('autoconfig', 'CNAME', 'autoconfig.' + d, 'autoconfig', h + '.', {group: 'optional', title: 'Mail app auto-setup (Thunderbird)', note: 'Only works if port 80 reaches the phone (forward 80 to 8825). Skip it otherwise; set up mail apps by hand.'});
+  rec('autodiscover', 'CNAME', 'autodiscover.' + d, 'autodiscover', h + '.', {group: 'optional', title: 'Mail app auto-setup (Outlook)', note: 'Outlook needs HTTPS with a trusted certificate. Skip unless you installed one.'});
+  rec('srv-imaps', 'SRV', '_imaps._tcp.' + d, '_imaps._tcp', `1 993 ${h}.`, {priority: 0, group: 'optional', title: 'Finds the IMAP server', note: 'Lets mail apps find the server from the address alone. 993 is the public port; forward it to 9930.'});
+  rec('srv-submissions', 'SRV', '_submissions._tcp.' + d, '_submissions._tcp', `1 465 ${h}.`, {priority: 0, group: 'optional', title: 'Finds the sending server', note: 'Public port 465, forwarded to 4650.'});
+  rec('tlsrpt', 'TXT', '_smtp._tls.' + d, '_smtp._tls', `v=TLSRPTv1; rua=mailto:${s.reportEmail || 'postmaster@' + d}`, {group: 'optional', title: 'TLS reports', pending: !s.reportEmail, note: 'Other servers email you if they can\'t deliver securely. Needs a mailbox that exists.'});
+  rec('mta-sts', 'TXT', '_mta-sts.' + d, '_mta-sts', 'v=STSv1; id=1', {group: 'optional', title: 'MTA-STS: require encrypted delivery', note: `Only useful with a trusted HTTPS certificate on mta-sts.${d} (port 443), which a phone usually can't get. Skip it unless you have that.`,
+    extra: `version: STSv1\nmode: testing\nmx: ${h}\nmax_age: 86400\n`});
+  return out.map(r => ({...r, zone: `${r.name}. IN ${r.type} ${r.type === 'TXT' ? zoneTxt(r.value) : r.type === 'MX' || r.type === 'SRV' ? (r.priority ?? 0) + ' ' + r.value : r.value}`, chunks: r.type === 'TXT' ? (r.value.match(/[\s\S]{1,255}/g) || ['']) : null}));
+}
+function mailDns(x, p) {
+  const s = x.mail.setup || fail(409, 'Answer the setup questions first'), ready = mailPhase(x, p) === 'ready', records = mailRecords(s, ready);
+  return {domain: s.domain, hostname: s.hostname, dkimReady: ready, records, zone: records.filter(r => !r.pending && r.group !== 'optional').map(r => r.zone).join('\n'),
+    groups: [{id: 'essential', title: 'Needed to receive mail'}, {id: 'authentication', title: 'Needed so your mail isn\'t treated as spam'}, {id: 'optional', title: 'Optional'}]};
+}
+function mailCheck(x, p) {
+  const s = x.mail.setup || fail(409, 'Answer the setup questions first'), up = mailPhase(x, p) === 'ready', c = [];
+  const add = (id, group, title, status, detail, fix = '') => c.push({id, group, title, status, detail, fix});
+  if (up) add('server', 'server', 'Mail server is running', 'ok', 'Stalwart answers on port 8825.'); else add('server', 'server', 'Mail server is running', 'fail', 'Stalwart isn\'t answering yet (starting). The first start takes a minute or two.', 'Make sure the server is started in the Homedroid app and the Mail server module is on. Look at its log for errors.');
+  for (const [port, name, pub] of [[2525, 'SMTP', 25], [2587, 'Submission', 587], [4650, 'Submission over TLS', 465], [9930, 'IMAP over TLS', 993]]) add('port-' + port, 'ports', `${name} on port ${port} (public ${pub})`, up ? 'ok' : 'fail', up ? 'Listening on the phone.' : 'Nothing is listening.', up ? '' : 'Wait for the server to finish starting, or check its log.');
+  if (x.mail.certInstalled) add('tls', 'tls', 'Certificate on the IMAP port', 'ok', `Issued for ${s.hostname}, valid until 2027-02-14.`);
+  else add('tls', 'tls', 'Certificate on the IMAP port', 'warn', 'Self-signed. Mail apps will ask you to trust it, and other mail servers can\'t verify it (most accept that).', `Install a certificate for ${s.hostname} with the Mail page's certificate form.`);
+  if (s.mode === 'direct') add('out25', 'network', 'Sending directly (outbound port 25)', 'fail', 'Port 25 is blocked or unreachable from here. Most home providers do this.', 'Use "Send through a relay" in the setup. Receiving mail can still work.');
+  if (s.relay) add('relay', 'network', `Relay ${s.relay.host}:${s.relay.port}`, 'ok', 'The relay\'s server answers.');
+  add('public-ip', 'network', 'Public address', 'info', 'The internet sees this phone\'s connection as 203.0.113.42.', 'If your router\'s own WAN address differs from 203.0.113.42 (or starts with 100.64 to 100.127), your provider shares addresses between customers (CGNAT) and incoming mail can\'t reach you.');
+  if (s.mode === 'receive_only') add('host-ip', 'network', `${s.hostname} address`, 'info', `In receive-only mode ${s.hostname} should lead to your VPS: 198.51.100.20.`);
+  else if (s.address === '203.0.113.42') add('host-ip', 'network', `${s.hostname} points to this connection`, 'ok', `${s.hostname} leads to 203.0.113.42.`);
+  else add('host-ip', 'network', `${s.hostname} points to this connection`, 'fail', `${s.hostname} has no address in DNS yet.`, 'Add the address record from the DNS list.');
+  if (s.mode === 'direct') add('ptr', 'network', 'Reverse DNS (PTR) of 203.0.113.42', 'warn', 'No reverse DNS is set. Big mail providers may reject or junk your mail.', `Ask your internet provider to set the PTR record of 203.0.113.42 to ${s.hostname}. Only they can.`);
+  for (const r of mailRecords(s, up)) {
+    const title = `${r.type} ${r.name}`, opt = r.group === 'optional';
+    if (r.pending) add('dns-' + r.id, 'dns', title, opt ? 'info' : 'warn', 'Not ready yet: ' + r.note);
+    else if (r.id === 'mx') add('dns-mx', 'dns', title, 'fail', 'Not found yet. DNS changes can take from a few minutes to a few hours to show up.', 'Add the record from the DNS list.');
+    else if (r.id === 'spf') add('dns-spf', 'dns', title, 'warn', 'There is an SPF record but it differs from the suggested one. That\'s fine if you changed it on purpose; there must be only one SPF record.', 'Compare it with the suggested record.');
+    else if (opt) add('dns-' + r.id, 'dns', title, 'info', 'Not found yet. DNS changes can take from a few minutes to a few hours to show up.');
+    else add('dns-' + r.id, 'dns', title, 'ok', 'Found, and it matches.');
+  }
+  const n = k => c.filter(i => i.status === k).length;
+  return {checks: c, summary: {ok: n('ok'), warn: n('warn'), fail: n('fail')}, note: 'These checks run from the phone. Whether the internet can reach it can only be tested from outside: send a message to this domain from another provider\'s mailbox.'};
+}
+function mailClients(x, user) {
+  const s = x.mail.setup || fail(409, 'Answer the setup questions first'), name = (user.includes('@') ? user.split('@')[0] : user).trim().toLowerCase(), email = (/^[a-z0-9]([a-z0-9._-]{0,62}[a-z0-9])?$/.test(name) ? name : 'you') + '@' + s.domain;
+  const server = (host, imap, tls, start) => ({incoming: {protocol: 'IMAP', server: host, port: imap, security: 'SSL/TLS', authentication: 'Normal password', username: email},
+    outgoing: {protocol: 'SMTP', server: host, port: tls, security: 'SSL/TLS', authentication: 'Normal password', username: email, alternative: {port: start, security: 'STARTTLS'}}});
+  return {email, away: {...server(s.hostname, 993, 465, 587), when: 'From anywhere, once the router forwards 993, 465 and 587 to the phone.'}, home: {...server(MAIL_LAN, 9930, 4650, 2587), when: 'On your home Wi-Fi, straight to the phone. No router setup needed.'},
+    webAdmin: `http://${MAIL_LAN}:8825/admin`, jmap: `http://${MAIL_LAN}:8825/jmap/session`,
+    certificate: 'The mail server starts with a self-signed certificate. Your mail app will warn about it once; accept it, or install your own certificate (see the guide).',
+    steps: ['Add an account of type IMAP (not Gmail or Exchange).', `Incoming: the server and port above, security SSL/TLS, user name ${email}.`, 'Outgoing: the same user name and password, security SSL/TLS (or STARTTLS on the alternative port).', 'Accept the certificate warning if you see one.']};
+}
+const mailPassword = () => Array.from({length: 16}, () => B64[crypto.randomInt(52 + 10)]).join('');
+function mailRoute(x, p, rest, method, b, res, send, ctx) {
+  const m = x.mail, H = x.pageHelpers, phase = () => mailPhase(x, p), one = rest.join('/');
+  if (one === '' && method === 'GET') return send(res, mailStatus(x, p));
+  if (one === '_mock' && method === 'POST') {
+    const app = mailApp(p), ph = b.phase;
+    if (!['not_installed', 'needs_setup', 'starting', 'ready', 'stopped'].includes(ph)) fail(400, 'Unknown phase');
+    if (ph === 'not_installed') { app.installed = app.enabled = false; m.setup = null; } else { app.installed = app.enabled = true; if (ph === 'needs_setup') m.setup = null; else if (!m.setup) m.setup = b.setup || mailDemoSetup(); }
+    if (m.setup && b.setup) m.setup = b.setup;
+    m.forced = ph === 'starting' || ph === 'stopped' ? ph : null; m.readyAt = 0; m.certInstalled = false;
+    if (m.setup && !m.accounts.length) m.accounts = [{id: 'd0a1', name: 'admin', email: 'admin@' + m.setup.domain, admin: true}, {id: 'a17c', name: 'alice', email: 'alice@' + m.setup.domain, admin: false}, {id: 'b29f', name: 'bob', email: 'bob@' + m.setup.domain, admin: false}];
+    return send(res, mailStatus(x, p));
+  }
+  if (one === 'setup' && method === 'POST') {
+    if (phase() === 'not_installed') fail(409, 'Install the Mail server (Stalwart) from Modules first');
+    const old = m.setup, relay = b.relay && String(b.relay.host || '').trim() ? {...b.relay} : null;
+    if (relay && (!relay.password || relay.password === '***')) relay.password = old?.relay?.password || '';
+    const body = {domain: String(b.domain || ''), hostname: String(b.hostname || ''), mode: b.mode, address: b.address || '', spfInclude: b.spfInclude || [], dmarcPolicy: b.dmarcPolicy || 'none', reportEmail: b.reportEmail || '', relay};
+    const errs = H.mailAllErrors(H.mailFormFrom({...body, hostname: body.hostname || 'mail.' + body.domain}));
+    if (!errs.valid) fail(400, Object.values(errs.steps.find(s => Object.keys(s).length))[0]);
+    const first = !old;
+    m.setup = {...body, domain: body.domain.trim().toLowerCase(), hostname: (body.hostname || 'mail.' + body.domain).trim().toLowerCase()};
+    m.forced = null; m.readyAt = Date.now() + (first ? 4500 : 2500);
+    return send(res, mailStatus(x, p));
+  }
+  if (one === 'dns' && method === 'GET') return send(res, mailDns(x, p));
+  if (one === 'check' && method === 'POST') return new Promise(done => setTimeout(() => { try { done(send(res, mailCheck(x, p))); } catch (e) { done(send(res, {error: e.message}, e.code || 500)); } }, 900));
+  if (one === 'clients' && method === 'GET') return send(res, mailClients(x, ctx.url.searchParams.get('user') || ''));
+  if (rest[0] === 'accounts') {
+    if (phase() !== 'ready') fail(409, 'The mail server isn\'t running');
+    if (rest.length === 1 && method === 'GET') return send(res, {accounts: m.accounts.map(a => ({id: a.id, name: a.name, email: a.email, admin: a.admin}))});
+    if (rest.length === 1 && method === 'POST') {
+      const name = String(b.name || '').trim().toLowerCase(), pw = String(b.password || '');
+      if (!/^[a-z0-9]([a-z0-9._-]{0,62}[a-z0-9])?$/.test(name)) fail(400, 'Use letters, digits, dots, dashes or underscores for the name, like alice');
+      if (pw && (pw.length < 8 || pw.length > 128)) fail(400, 'The password needs 8 to 128 characters');
+      if (m.accounts.some(a => a.name === name)) fail(409, `${name}@${m.setup.domain} already exists`);
+      const a = {id: hex(8), name, email: `${name}@${m.setup.domain}`, admin: false}; m.accounts.push(a);
+      return send(res, {id: a.id, email: a.email, password: pw || mailPassword(), generated: !pw});
+    }
+    const acct = m.accounts.find(a => a.id === rest[1]);
+    if (rest.length === 3 && rest[2] === 'password' && method === 'POST') {
+      if (!acct) fail(404, 'No such account');
+      const pw = String(b.password || ''); if (pw && (pw.length < 8 || pw.length > 128)) fail(400, 'The password needs 8 to 128 characters');
+      return send(res, {password: pw || mailPassword(), generated: !pw});
+    }
+    if (rest.length === 2 && method === 'DELETE') {
+      if (!acct) fail(404, 'No such account'); if (acct.admin) fail(409, 'The admin account can\'t be deleted here');
+      m.accounts = m.accounts.filter(a => a !== acct); return send(res, ok);
+    }
+    return false;
+  }
+  if (one === 'certificate' && method === 'POST') {
+    const problem = H.mailPemProblem(b.certificate, b.privateKey); if (problem) fail(400, problem);
+    m.certInstalled = true; m.readyAt = Date.now() + 2000; return send(res, ok);
+  }
+  return false;
+}
+
+const RP_INSTRUCTIONS = (addr, ssid, pass) => {
+  const pac = `http://${addr}:8283/proxy.pac`, join = `Join the Wi-Fi network "${ssid}" with the passphrase shown here (or scan its QR code).`, os = (name, ...steps) => ({os: name, steps});
+  return [os('Android', join, 'Wi-Fi settings: tap the network (or the gear next to it) > Advanced > Proxy > Manual.', `Proxy hostname ${addr}, port 8282. Save. (Or choose Proxy auto-config and enter ${pac}.)`, 'If Android says "no internet", choose to stay connected.'),
+    os('iPhone and iPad', join, 'Settings > Wi-Fi > the (i) next to the network > Configure Proxy > Manual.', `Server ${addr}, port 8282, authentication off. (Or choose Automatic and enter ${pac}.)`, 'Tap Save. If iOS offers to leave a network without internet, stay.'),
+    os('Windows 11', join, 'Settings > Network & internet > Proxy.', `Under Manual proxy setup, Set up: on, address ${addr}, port 8282, Save.`, `Or turn on "Use setup script", Script address ${pac}, and Save.`),
+    os('macOS', join, 'System Settings > Network > Wi-Fi > Details > Proxies.', `Turn on Web Proxy (HTTP) and Secure Web Proxy (HTTPS): server ${addr}, port 8282. Or turn on Automatic Proxy Configuration with URL ${pac}.`, 'Click OK, then Apply.'),
+    os('Linux (GNOME)', join, `Settings > Network > Network Proxy > Manual: HTTP and HTTPS proxy ${addr} port 8282; Socks host ${addr} port 8284.`, `Or Automatic with Configuration URL ${pac}.`),
+    os('Command line and apps with their own setting', `export http_proxy=http://${addr}:8282 https_proxy=http://${addr}:8282`, `curl --socks5-hostname ${addr}:8284 https://example.com`, 'Firefox: Settings > Network Settings > Manual proxy, or SOCKS Host ' + addr + ' port 8284 with SOCKS v5 and "Proxy DNS when using SOCKS v5" on.')];
+};
+function repeaterState() {
+  return {enabled: false, state: 'off', message: '', name: 'DIRECT-hd-Homedroid', passphrase: 'k3Fm-9tQw-Zx7R', band: 'auto', allowLan: false, permission: true, supported: true, stationKept: true,
+    clients: [], traffic: {bytesUp: 0, bytesDown: 0, connections: 0, totalConnections: 0}, timer: null};
+}
+const escapeWifi = s => s.replace(/([\;,:"])/g, '\\$1');
+function repeaterJson(x) {
+  const r = x.repeater, running = r.state === 'running', addr = running ? '192.168.49.1' : '';
+  if (running) { const t = r.traffic, n = r.clients.length; t.bytesUp += n * (30000 + crypto.randomInt(90000)); t.bytesDown += n * (200000 + crypto.randomInt(900000)); t.connections = n ? 3 + crypto.randomInt(9) : 0; t.totalConnections += n ? crypto.randomInt(6) : 0; }
+  return {enabled: r.enabled, state: r.state, message: r.message, supported: r.supported, permission: {granted: r.permission, name: 'NEARBY_WIFI_DEVICES', label: 'Nearby devices'},
+    network: {name: r.name, passphrase: r.passphrase, band: r.band, interface: running ? 'p2p-wlan0-0' : '', address: addr}, wifiQr: `WIFI:T:WPA;S:${escapeWifi(r.name)};P:${escapeWifi(r.passphrase)};;`,
+    clients: {count: running ? r.clients.length : 0, devices: running ? r.clients : []}, traffic: {...r.traffic},
+    proxy: {http: `${addr}:8282`, socks: `${addr}:8284`, pac: `http://${addr}:8283/proxy.pac`, allowLan: r.allowLan},
+    concurrent: {stationKept: running ? r.stationKept : null, note: !running || r.stationKept === null ? 'Whether the phone can stay on its Wi-Fi while hosting is checked a few seconds after the network starts.'
+      : r.stationKept ? 'The phone stayed connected to its own Wi-Fi while hosting the network.' : 'The phone\'s own Wi-Fi dropped when the network started: this phone can\'t do both at once, so it has no internet source other than mobile data.'},
+    instructions: RP_INSTRUCTIONS(addr || '192.168.49.1', r.name, r.passphrase),
+    limits: ['Only apps that follow the device\'s proxy settings are carried. Many games, VoIP and streaming apps ignore them.', 'TCP goes through the HTTP proxy or SOCKS5. UDP (some games, calls, QUIC) works only in apps that speak SOCKS5 UDP.',
+      'Speed is limited to what Wi-Fi Direct and the phone\'s single radio can share with its own Wi-Fi; expect a fraction of the line speed.', 'The phone\'s radio and battery work harder: keep it charging.']};
+}
+function repeaterRoute(x, rest, method, b, res, send, ctx) {
+  const r = x.repeater, H = x.pageHelpers, later = ctx.later;
+  if (rest[0] === '_mock' && method === 'POST') {
+    const {state, clients, ...more} = b; Object.assign(r, more);
+    if (state) { r.state = state; r.enabled = !['off', 'unsupported'].includes(state); r.message = {needs_permission: 'Allow "Nearby devices" in the Homedroid app (Settings, Wi-Fi repeater) so the phone can create the network.', unsupported: 'This phone doesn\'t support Wi-Fi Direct, which the repeater needs.',
+      error: 'Android couldn\'t create the network. Make sure Wi-Fi is on.', waiting: 'Android closed the Wi-Fi network (Wi-Fi was turned off, or another app took Wi-Fi Direct).', starting: 'Creating the Wi-Fi network…'}[state] || ''; if (state === 'unsupported') r.supported = false; if (state === 'needs_permission') r.permission = false; }
+    if (clients !== undefined) r.clients = clients; else if (state === 'running') r.clients = [{name: 'Sudipta\'s Pixel 7', mac: '9a:3f:21:c4:7b:08'}, {name: 'MacBook Air', mac: '4e:11:b9:60:d2:5c'}];
+    if (state === 'off' || state === 'running') r.traffic = {bytesUp: 0, bytesDown: 0, connections: 0, totalConnections: 0};
+    return send(res, repeaterJson(x));
+  }
+  if (rest.length) return false;
+  if (method === 'GET') return send(res, repeaterJson(x));
+  if (method !== 'POST') fail(405, 'GET or POST only');
+  if (['name', 'passphrase', 'band', 'allowLan'].some(k => k in b) || b.regenerate) {
+    const pass = b.regenerate ? Array.from({length: 3}, () => Array.from({length: 4}, () => 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'[crypto.randomInt(54)]).join('')).join('-') : ('passphrase' in b && b.passphrase ? b.passphrase : null);
+    if (pass && !H.repeaterPassOk(pass)) fail(400, 'The passphrase needs 8 to 63 letters, digits or symbols');
+    if ('band' in b && !['', 'auto', '2.4', '5'].includes(String(b.band).toLowerCase())) fail(400, 'Band must be auto, 2.4 or 5');
+    if ('name' in b) r.name = H.repeaterName(b.name); if (pass) r.passphrase = pass; if ('band' in b) r.band = b.band || 'auto'; if ('allowLan' in b) r.allowLan = !!b.allowLan;
+  }
+  if ('enabled' in b) {
+    clearTimeout(r.timer);
+    if (b.enabled) {
+      r.enabled = true;
+      if (!r.supported) { r.state = 'unsupported'; fail(409, 'This phone doesn\'t support Wi-Fi Direct, which the repeater needs.'); }
+      if (!r.permission) { r.state = 'needs_permission'; fail(409, 'Allow "Nearby devices" in the Homedroid app (Settings, Wi-Fi repeater) so the phone can create the network.'); }
+      r.state = 'starting'; r.message = 'Creating the Wi-Fi network…';
+      r.timer = later(() => { r.state = 'running'; r.message = ''; r.traffic = {bytesUp: 0, bytesDown: 0, connections: 0, totalConnections: 0}; r.clients = [{name: 'Sudipta\'s Pixel 7', mac: '9a:3f:21:c4:7b:08'}, {name: 'MacBook Air', mac: '4e:11:b9:60:d2:5c'}]; }, 1500);
+    } else { r.enabled = false; r.state = 'off'; r.message = ''; r.clients = []; }
+  }
+  return send(res, repeaterJson(x));
+}
+
 function createExtras() {
   return {docs: docState(), domains: domainsState(), domainsError: null, verifyTries: {}, logs: logsState(), ddns: ddnsState(), firewall: [{action: 'allow', cidr: '192.168.0.0/16', scope: 'all', note: 'Home network'}, {action: 'deny', cidr: '203.0.113.0/24', scope: 'web', note: 'Scanner'}],
-    mcp: mcpState(), runs: {}, desktop: desktopState(), helpers: dashboardHelpers()};
+    mcp: mcpState(), runs: {}, desktop: desktopState(), helpers: dashboardHelpers(), pageHelpers: dashboardPageHelpers(), mail: mailState(), repeater: repeaterState()};
 }
 /** Handles a console-page request, or returns false. [s] is the path after /api/ (node prefix removed). */
 function route(x, p, s, method, b, raw, url, res, send, ctx) {
@@ -469,6 +707,8 @@ function route(x, p, s, method, b, raw, url, res, send, ctx) {
   if (area === 'firewall') return firewallRoute(x, rest, method, b, res, send);
   if (area === 'mcp') { x.auditLimit = url.searchParams.get('limit'); return mcpRoute(x, p, rest, method, b, res, send); }
   if (area === 'deploys' && s.length >= 3 && ['settings', 'token', 'upload', 'pipeline', 'runs'].includes(s[2])) return deployExtras(x, p, s, method, b, raw, url, res, send, ctx.later, ctx.stepMs);
+  if (area === 'mail') return mailRoute(x, p, rest, method, b, res, send, {...ctx, url});
+  if (area === 'repeater') return repeaterRoute(x, rest, method, b, res, send, ctx);
   if (area === 'macropads' || area === 'desktop') return macroRoute(x, x.helpers, s.join('/'), method, b, res, send);
   return false;
 }

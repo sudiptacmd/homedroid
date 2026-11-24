@@ -27,7 +27,7 @@ try {
   --ff-geometric: Avenir, "Avenir Next", Montserrat, "Century Gothic", "URW Gothic", "Segoe UI", system-ui, sans-serif;
   --ff-rounded: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", Nunito, Quicksand, "Varela Round", system-ui, sans-serif;
   --ff-serif: Charter, "Bitstream Charter", "Iowan Old Style", "Sitka Text", Cambria, Georgia, serif;
-  --ff-mono: var(--font-mono);
+  --ff-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
   --font-sans: var(--ff-system); --font-head: var(--font-sans); --font-mono: var(--ff-mono);
   --duration-fast: 120ms; --duration-normal: 200ms; --radius-lg: 16px; --r: 12px; --r-sm: 8px; --ease: cubic-bezier(.2,.7,.3,1);
 }
@@ -935,6 +935,78 @@ textarea.jsoned { min-height: 220px; resize: vertical; white-space: pre; overflo
 .fwerr:empty { display: none; }
 @media (max-width: 760px) { .fwhead { display: none; } .fwrule { grid-template-columns: 1fr 1fr; padding: 12px 0; border-top: 1px solid var(--line); } .fwrule:first-child { border-top: 0; } .fw-addr { grid-column: 1 / -1; order: 3; } .fwrule > input[data-input="fwNote"] { grid-column: 1 / -1; order: 4; } .fwrule > .btn { order: 2; justify-self: end; } }
 @media (max-width: 640px) { .dbfile { flex-wrap: wrap; } .dbfile .grow { flex: 1 1 calc(100% - 60px); } .dbfile .dbsize { margin-left: 42px; } }
+/* Mail and Wi-Fi repeater */
+.stepper { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.stepper button { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 5px 14px 5px 6px; font-weight: 600; font-size: var(--text-sm); color: var(--muted); cursor: pointer; }
+.stepper button:disabled { cursor: default; opacity: .75; }
+.stepper .num { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--code); font-size: 12px; flex: none; }
+.stepper .num svg.i { width: 13px; height: 13px; }
+.stepper [aria-current="step"] { color: var(--text); border-color: var(--accent); }
+.stepper [aria-current="step"] .num { background: var(--accent); color: var(--on-accent); }
+.stepper .done { color: var(--text-2); } .stepper .done .num { background: var(--ok-soft); color: var(--ok); }
+.wizfoot { margin-top: 16px; gap: 10px; }
+.subhead { padding-top: 6px; border-top: 1px solid var(--line); }
+.ferr { color: var(--bad); font-size: var(--text-xs); font-weight: 500; }
+.ferr:empty { display: none; }
+input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--bad); }
+.modegrid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); }
+.mode { text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 2px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--text); cursor: pointer; font: inherit; }
+.mode:hover { border-color: var(--line-2); }
+.mode[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.mode-title { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: var(--text-base); }
+.mode-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-2); flex: none; background: var(--surface); }
+.mode[aria-checked="true"] .mode-dot { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 4px, var(--surface) 5px); }
+.mode-sum { color: var(--text-2); font-size: var(--text-sm); line-height: 1.55; }
+.mode-need { font-size: var(--text-xs); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+.plainlist { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--text-2); font-size: var(--text-sm); line-height: 1.55; }
+.mode .plainlist { font-size: var(--text-xs); }
+.grid2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); align-items: start; }
+.mrow { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 5px 0; border-top: 1px solid var(--line); min-height: 40px; }
+.mrow:first-of-type { border-top: 0; }
+.mrow .ml { color: var(--muted); font-size: var(--text-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.mrow .mv { overflow-wrap: anywhere; min-width: 0; user-select: all; }
+.mrow .mv.masked { letter-spacing: .12em; color: var(--muted); user-select: none; }
+.mrow .mv:has(.seg) { user-select: none; }
+.ports { display: grid; }
+.portrow { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: var(--text-sm); min-width: 0; }
+.portrow.phead { border-top: 0; font-size: var(--text-xs); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; padding-top: 0; }
+.portrow .dot { flex: none; width: 9px; height: 9px; }
+.portrow.phead::before { content: ""; width: 9px; flex: none; }
+.pn { white-space: nowrap; flex: none; }
+.todo { margin: 0; padding: 0; list-style: none; counter-reset: todo; display: grid; }
+.todo li { counter-increment: todo; display: flex; gap: 12px; align-items: flex-start; padding: 12px 0 12px 36px; border-top: 1px solid var(--line); position: relative; }
+.todo li:first-child { border-top: 0; }
+.todo li::before { content: counter(todo); position: absolute; left: 0; top: 12px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: var(--text-xs); display: grid; place-items: center; }
+.todo li > div { flex: 1; min-width: 0; } .todo li .btn { flex: none; }
+.dnsgrid { grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); align-items: start; }
+.dnsrec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.dnsrec.wide { grid-column: 1 / -1; }
+.dnsrec.pend { border-style: dashed; border-color: var(--line-2); }
+.rtype { display: inline-grid; place-items: center; min-width: 44px; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font: 700 calc(11.5px * var(--fs)) var(--font-mono); letter-spacing: .04em; flex: none; }
+.chk-head { padding: 10px 16px; font-weight: 650; background: var(--surface-2); border-bottom: 1px solid var(--line); border-radius: var(--r) var(--r) 0 0; }
+.chk { display: flex; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--line); }
+.chk-head + .chk { border-top: 0; }
+.chk-ic { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--code); color: var(--muted); }
+.chk-ic svg.i { width: 14px; height: 14px; }
+.chk-ic.ok { background: var(--ok-soft); color: var(--ok); } .chk-ic.warn { background: var(--warn-soft); color: var(--warn); } .chk-ic.bad { background: var(--bad-soft); color: var(--bad); }
+.chk-title { font-weight: 600; }
+.chk-fix { margin-top: 6px; font-size: var(--text-sm); color: var(--text-2); background: var(--surface-2); border-radius: var(--r-sm); padding: 7px 10px; }
+.setgroup { display: flex; flex-direction: column; }
+.steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--text-2); line-height: 1.6; }
+.steps .codeblock { margin-top: 6px; }
+textarea.pem { min-height: 130px; resize: vertical; white-space: pre; overflow: auto; }
+.rpgrid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(430px, 100%), 1fr)); align-items: start; }
+.rpgrid > .stack { gap: 16px; }
+.qrbox { background: #fff; border-radius: 14px; padding: 6px; width: min(260px, 100%); line-height: 0; box-shadow: 0 0 0 1px var(--line); }
+.qrbox svg { width: 100%; height: auto; }
+.qrbox.dim { opacity: .35; }
+.minis { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); }
+.mini { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 12px; min-width: 0; }
+.mini-k { font-size: var(--text-xs); color: var(--muted); font-weight: 600; }
+.mini-v { font-size: var(--text-xl); font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.rule { border-top: 1px solid var(--line); }
+.max { max-width: 70ch; }
+@media (max-width: 640px) { .mrow { grid-template-columns: minmax(0, 1fr) auto; } .mrow .ml { grid-column: 1 / -1; } .todo li { flex-wrap: wrap; } .todo li .btn { margin-left: 0; } }
 </style>
 </head>
 <body>
@@ -1001,6 +1073,8 @@ textarea.jsoned { min-height: 220px; resize: vertical; white-space: pre; overflo
   <symbol id="i-db" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/></symbol>
   <symbol id="i-docs" viewBox="0 0 24 24"><path d="M8 4c-2 0-3 1-3 3v2c0 1-1 3-2 3 1 0 2 2 2 3v2c0 2 1 3 3 3M16 4c2 0 3 1 3 3v2c0 1 1 3 2 3-1 0-2 2-2 3v2c0 2-1 3-3 3"/></symbol>
   <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2.5 9a15 15 0 0 1 19 0M5.5 12.5a10.5 10.5 0 0 1 13 0M8.5 16a6 6 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor"/></symbol>
   <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.5-7.97A6 6 0 0 1 18 9a4.5 4.5 0 0 1 0 9z"/></symbol>
   <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
   <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></symbol>
@@ -1038,6 +1112,7 @@ textarea.jsoned { min-height: 220px; resize: vertical; white-space: pre; overflo
       <div class="ng" data-group="apps"><div class="nav-group" id="ng-apps">Apps &amp; Services</div><div class="ng-items" role="group" aria-labelledby="ng-apps">
         <a title="Modules" href="#modules" data-tab="modules"><svg class="i"><use href="#i-modules"/></svg><span class="nav-label">Modules</span><span class="count hidden" data-jobdot title="A job is running"></span></a>
         <a title="Deployments" href="#deploys" data-tab="deploys"><svg class="i"><use href="#i-deploy"/></svg><span class="nav-label">Deployments</span></a>
+        <a title="Mail" href="#mail" data-tab="mail"><svg class="i"><use href="#i-mail"/></svg><span class="nav-label">Mail</span></a>
         <!-- Pipelines live inside each deployment (Deployments, Pipelines tab); a top-level slot stays free: href="#pipelines" data-tab="pipelines" -->
       </div></div>
       <div class="ng" data-group="data"><div class="nav-group" id="ng-data">Files &amp; Data</div><div class="ng-items" role="group" aria-labelledby="ng-data">
@@ -1052,6 +1127,7 @@ textarea.jsoned { min-height: 220px; resize: vertical; white-space: pre; overflo
         <a title="Request logs" href="#request-logs" data-tab="request-logs"><svg class="i"><use href="#i-logs"/></svg><span class="nav-label">Request logs</span></a>
         <a title="Dynamic DNS" href="#ddns" data-tab="ddns"><svg class="i"><use href="#i-cloud"/></svg><span class="nav-label">Dynamic DNS</span></a>
         <a title="Firewall" href="#firewall" data-tab="firewall"><svg class="i"><use href="#i-shield"/></svg><span class="nav-label">Firewall</span></a>
+        <a title="Wi-Fi repeater" href="#repeater" data-tab="repeater"><svg class="i"><use href="#i-wifi"/></svg><span class="nav-label">Wi-Fi repeater</span></a>
       </div></div>
       <div class="ng" data-group="devices"><div class="nav-group" id="ng-devices">Devices</div><div class="ng-items" role="group" aria-labelledby="ng-devices">
         <a title="IPCam" href="#camera" data-tab="camera" data-camera-nav class="hidden"><svg class="i"><use href="#i-camera"/></svg><span class="nav-label">IPCam</span></a>
@@ -1506,6 +1582,20 @@ textarea.jsoned { min-height: 220px; resize: vertical; white-space: pre; overflo
         <div class="hint" style="margin-top:4px">Pair a computer, then on the phone open <b>MacroPads</b> → <b>Your computers</b> and choose <b>Enable Desktop webcam</b> (it asks for camera permission and keeps a notification while it is ready). Then pick the phone as the camera in Homedroid Desktop. Stop IPCam capture first: only one of them can use the camera at a time. The webcam can’t be turned on from this dashboard because the phone has to grant camera access itself.</div></div></div></div>
       <h2>MacroPads deck</h2>
       <div id="mpEditor"><div class="card pad"><div class="skeleton" style="height:240px"></div></div></div>
+    </section>
+
+    <section data-view="mail" class="hidden">
+      <div class="page-head"><div class="grow"><h1>Mail</h1><div class="sub">Your own email on this phone: a mail server for your domain, with the DNS records, accounts and mail app settings to go with it.</div></div>
+        <a class="btn" href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg>Guide</a></div>
+      <div id="mailBody"><div class="grid"><div class="card pad"><div class="skeleton" style="height:18px;width:50%"></div><div class="skeleton" style="height:14px;width:80%;margin-top:12px"></div></div></div></div>
+    </section>
+
+    <section data-view="repeater" class="hidden">
+      <div class="page-head"><div class="grow"><h1>Wi-Fi repeater</h1><div class="sub">Share this phone’s internet with other devices through its own Wi-Fi network and a built-in proxy. No root needed.</div></div>
+        <a class="btn" href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg>Guide</a></div>
+      <div class="stack"><div id="rpHead"><div class="card pad"><div class="skeleton" style="height:18px;width:50%"></div></div></div>
+        <div class="rpgrid"><div class="stack"><div id="rpNet"></div><div id="rpProxy"></div></div><div class="stack"><div id="rpQr"></div><div id="rpClients"></div></div></div>
+        <div id="rpHow"></div><div id="rpLimits"></div></div>
     </section>
   </main>
 
@@ -6116,6 +6206,762 @@ Object.assign(ACT, {
 });
 registerPage('desktop', renderDesktop, 5000);
 // ---- End Desktop & MacroPads -----------------------------------------------------------
+
+// ---- Mail and repeater helpers -------------------------------------------------------------
+// Pure logic for the Mail and Wi-Fi repeater pages (no DOM): the setup wizard's checks, which mirror MailCore.kt so
+// a mistake is caught before saving; the PEM checks; and a small QR code encoder (byte mode, error correction M,
+// versions 1 to 10, so up to 213 bytes). tests/mail-repeater.test.cjs runs this section on its own.
+const MAIL_MODE_IDS = ['direct', 'relay', 'receive_only'];
+const MAIL_STEPS = [['domain', 'Your domain'], ['mode', 'How mail arrives'], ['details', 'Details'], ['review', 'Review']];
+/** A lowercase DNS name with at least two labels, or ''. */
+function mailDnsName(raw) {
+  const s = String(raw ?? '').trim().toLowerCase().replace(/\.$/, '');
+  if (!s || s.length > 253 || !s.includes('.')) return '';
+  const labels = s.split('.');
+  if (!labels.every(l => /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(l)) || /^\d+$/.test(labels[labels.length - 1])) return '';
+  return s;
+}
+const mailIsIpv4 = s => /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/.test(s);
+const mailIsIpv6 = s => s.includes(':') && s.length <= 45 && /^[0-9a-fA-F:.]+$/.test(s) && (s.match(/:/g) || []).length >= 2 && (s.match(/:/g) || []).length <= 7 && !s.includes(':::');
+const mailValidEmail = s => /^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}$/.test(s) && s.split('@')[1].includes('.');
+/** The text of an SPF "include" list ("include:spf.x.net, spf.y.net") as an array of names. */
+const mailSplitSpf = text => (Array.isArray(text) ? text : String(text ?? '').split(/[,\s]+/)).map(s => String(s).trim().toLowerCase().replace(/^include:/, '')).filter(Boolean);
+const mailBlankForm = () => ({domain: '', hostname: '', hostnameEdited: false, mode: '', address: '', spf: '', dmarc: 'none', report: '',
+  relay: {host: '', port: '587', username: '', password: '', saved: false, tls: 'starttls'}});
+/** The wizard's fields from what GET /api/mail returned as `setup`. */
+function mailFormFrom(setup) {
+  const f = mailBlankForm();
+  if (!setup) return f;
+  const r = setup.relay;
+  Object.assign(f, {domain: setup.domain || '', hostname: setup.hostname || '', hostnameEdited: !!setup.hostname && setup.hostname !== 'mail.' + setup.domain, mode: setup.mode || '',
+    address: setup.address || '', spf: (setup.spfInclude || []).join(', '), dmarc: setup.dmarcPolicy || 'none', report: setup.reportEmail || ''});
+  if (r) f.relay = {host: r.host || '', port: String(r.port || 587), username: r.username || '', password: '', saved: !!r.password, tls: r.implicitTls ? 'tls' : 'starttls'};
+  return f;
+}
+/** Problems with one wizard step, as {field: message}. An empty object means the step is fine. */
+function mailStepErrors(step, f) {
+  const e = {}, domain = mailDnsName(f.domain);
+  if (step === 0) {
+    if (!domain) e.domain = 'Enter your domain, like example.com. It needs a dot and only letters, digits and dashes.';
+    const host = String(f.hostname || '').trim();
+    if (host && !mailDnsName(host)) e.hostname = 'Enter a host name like mail.' + (domain || 'example.com') + '.';
+  } else if (step === 1) {
+    if (!MAIL_MODE_IDS.includes(f.mode)) e.mode = 'Choose how mail will reach the phone.';
+  } else if (step === 2) {
+    const address = String(f.address || '').trim().toLowerCase().replace(/\.$/, '');
+    if (address && !mailIsIpv4(address) && !mailIsIpv6(address) && !mailDnsName(address)) e.address = 'Use your public IP address (like 203.0.113.7) or a dynamic DNS name (like myhome.duckdns.org).';
+    const spf = mailSplitSpf(f.spf);
+    if (spf.length > 5 || spf.some(s => !mailDnsName(s))) e.spf = 'Use domain names like spf.example.net, separated by commas. At most five.';
+    if (!['none', 'quarantine', 'reject'].includes(f.dmarc)) e.dmarc = 'Choose none, quarantine or reject.';
+    if (String(f.report || '').trim() && !mailValidEmail(f.report.trim())) e.report = 'Use an address like postmaster@' + (domain || 'example.com') + '.';
+    const r = f.relay, host = String(r.host || '').trim();
+    if (f.mode === 'relay' && !host) e.relayHost = 'Enter the relay’s server name, like smtp.example.net.';
+    else if (host && !mailDnsName(host) && !mailIsIpv4(host)) e.relayHost = 'Enter the relay’s server name, like smtp.example.net.';
+    if (host) {
+      const port = Number(r.port);
+      if (!/^\d+$/.test(String(r.port).trim()) || port < 1 || port > 65535) e.relayPort = 'The port is a number from 1 to 65535. Providers usually use 587, 465 or 2525.';
+      if (/[\x00-\x1f\x7f]/.test(r.username || '') || String(r.username || '').length > 256) e.relayUser = 'That user name has characters that aren’t allowed.';
+      if (/[\x00-\x1f\x7f]/.test(r.password || '') || String(r.password || '').length > 512) e.relayPass = 'That password has characters that aren’t allowed.';
+      if (f.mode === 'relay' && !String(r.username || '').trim()) e.relayUser = 'Almost every relay needs a user name. Enter the one from your provider.';
+      if (f.mode === 'relay' && !r.password && !r.saved) e.relayPass = 'Enter the relay password from your provider.';
+    }
+  }
+  return e;
+}
+/** Every step's problems; the first step with any is `first` (or -1). */
+function mailAllErrors(f) {
+  const steps = [0, 1, 2].map(i => mailStepErrors(i, f));
+  return {steps, first: steps.findIndex(s => Object.keys(s).length), valid: steps.every(s => !Object.keys(s).length)};
+}
+/** The body for POST /api/mail/setup. A relay is only sent when a server name was given; a saved password stays as ***. */
+function mailSetupBody(f) {
+  const domain = mailDnsName(f.domain), r = f.relay, host = String(r.host || '').trim();
+  const relay = f.mode !== 'direct' && host ? {host: host.toLowerCase(), port: Number(r.port) || 587, username: String(r.username || '').trim(), password: r.password || (r.saved ? '***' : ''), implicitTls: r.tls === 'tls'} : null;
+  return {domain, hostname: mailDnsName(f.hostname) || 'mail.' + domain, mode: f.mode, address: String(f.address || '').trim().toLowerCase().replace(/\.$/, ''),
+    spfInclude: mailSplitSpf(f.spf), dmarcPolicy: f.dmarc, reportEmail: String(f.report || '').trim(), relay};
+}
+/** Mirrors MailCore.certificate: what is wrong with the pasted PEM text, or ''. */
+function mailPemProblem(cert, key) {
+  const pem = (s, kind) => new RegExp(`-----BEGIN ${kind}-----[\\s\\S]+?-----END ${kind}-----`).test(s);
+  if (!pem(String(cert || ''), 'CERTIFICATE')) return 'Paste the certificate: the text that starts with -----BEGIN CERTIFICATE-----.';
+  if (!['PRIVATE KEY', 'RSA PRIVATE KEY', 'EC PRIVATE KEY'].some(k => pem(String(key || ''), k))) return 'Paste the private key: the text that starts with -----BEGIN PRIVATE KEY-----.';
+  if (String(cert).trim().length > 65536 || String(key).trim().length > 16384) return 'That is too long to be a certificate.';
+  return '';
+}
+const MAIL_CHECK_GROUPS = [['server', 'Mail server'], ['ports', 'Ports on the phone'], ['tls', 'Certificate'], ['network', 'Your connection'], ['dns', 'DNS records, as the internet sees them']];
+/** Check results in the order above, then anything unknown; empty groups dropped. */
+function mailGroupChecks(checks) {
+  const known = MAIL_CHECK_GROUPS.map(([id, title]) => ({id, title, items: (checks || []).filter(c => c.group === id)}));
+  const other = (checks || []).filter(c => !MAIL_CHECK_GROUPS.some(([id]) => id === c.group));
+  if (other.length) known.push({id: 'other', title: 'Other', items: other});
+  return known.filter(g => g.items.length);
+}
+/** DNS records for each of the groups the phone names, in its order. */
+function mailGroupRecords(dns) {
+  const groups = (dns?.groups || []).map(g => ({...g, items: (dns.records || []).filter(r => r.group === g.id)}));
+  const rest = (dns?.records || []).filter(r => !(dns.groups || []).some(g => g.id === r.group));
+  if (rest.length) groups.push({id: 'other', title: 'Other', items: rest});
+  return groups.filter(g => g.items.length);
+}
+/** A long TXT value in the 255-character strings a zone file wants. */
+const mailChunks = (value, n = 255) => value ? String(value).match(new RegExp(`[\\s\\S]{1,${n}}`, 'g')) : [''];
+const MAIL_PORT_NOTES = {smtp: 'Mail', imap: 'Mail apps', http: 'Web admin'};
+
+// Wi-Fi repeater: a name the phone accepts, and the figures the traffic card shows.
+/** What the phone will make of a typed network name: Android needs DIRECT-xy- in front. */
+function repeaterName(raw) {
+  const given = String(raw ?? '').trim();
+  if (/^DIRECT-[A-Za-z0-9]{2}-.{1,21}$/.test(given) && given.length <= 32 && /^[\x20-\x7e]*$/.test(given)) return given;
+  let tail = given.replace(/^DIRECT-/, '').replace(/[^\x20-\x7e]/g, '').trim().replace(/^[A-Za-z0-9]{2}-(?=.)/, '');
+  tail = (tail || 'Homedroid').slice(0, 22).trim() || 'Homedroid';
+  return 'DIRECT-hd-' + tail;
+}
+const repeaterPassOk = p => /^[\x20-\x7e]{8,63}$/.test(String(p ?? ''));
+/** Bytes per second between two traffic readings [ms] apart; 0 when the counters went back (a restart). */
+function repeaterRates(prev, cur, ms) {
+  if (!prev || !cur || ms <= 0) return {up: 0, down: 0};
+  const f = (a, b) => b >= a ? Math.round((b - a) * 1000 / ms) : 0;
+  return {up: f(prev.bytesUp, cur.bytesUp), down: f(prev.bytesDown, cur.bytesDown)};
+}
+/** How each state of GET /api/repeater is shown: a badge class, its label, and the tone of the message under it. */
+const REPEATER_STATES = {
+  off: {badge: '', label: 'Off', tone: ''}, waiting: {badge: 'starting', label: 'Waiting', tone: 'warn'}, starting: {badge: 'starting', label: 'Starting', tone: ''},
+  running: {badge: 'running', label: 'Running', tone: ''}, needs_permission: {badge: 'failed', label: 'Needs permission', tone: 'warn'},
+  unsupported: {badge: 'failed', label: 'Not supported', tone: 'bad'}, error: {badge: 'failed', label: 'Problem', tone: 'bad'},
+};
+
+// QR code: byte mode, error correction M, versions 1 to 10. Follows ISO/IEC 18004; the layout tables are the M rows for those versions.
+const QR_M = [null, [10, [[1, 16]]], [16, [[1, 28]]], [26, [[1, 44]]], [18, [[2, 32]]], [24, [[2, 43]]], [16, [[4, 27]]], [18, [[4, 31]]], [22, [[2, 38], [2, 39]]], [22, [[3, 36], [2, 37]]], [26, [[4, 43], [1, 44]]]];
+const QR_ALIGN = [null, [], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34], [6, 22, 38], [6, 24, 42], [6, 26, 46], [6, 28, 50]];
+const QR_EXP = new Uint8Array(512), QR_LOG = new Uint8Array(256);
+for (let i = 0, x = 1; i < 255; i++) { QR_EXP[i] = x; QR_LOG[x] = i; x <<= 1; if (x & 256) x ^= 0x11d; }
+for (let i = 255; i < 512; i++) QR_EXP[i] = QR_EXP[i - 255];
+const qrMul = (a, b) => a && b ? QR_EXP[QR_LOG[a] + QR_LOG[b]] : 0;
+/** The Reed-Solomon check codewords for [data]: [n] of them. */
+function qrEcc(data, n) {
+  let g = [1];
+  for (let i = 0; i < n; i++) { const next = new Array(g.length + 1).fill(0); g.forEach((c, j) => { next[j] ^= c; next[j + 1] ^= qrMul(c, QR_EXP[i]); }); g = next; }
+  const rem = new Array(n).fill(0);
+  for (const b of data) { const f = b ^ rem.shift(); rem.push(0); if (f) for (let i = 0; i < n; i++) rem[i] ^= qrMul(g[i + 1], f); }
+  return rem;
+}
+const qrData = v => QR_M[v][1].reduce((s, [n, d]) => s + n * d, 0);
+/** How many bytes version [v] holds in byte mode at level M. */
+const qrCapacity = v => qrData(v) - (v < 10 ? 2 : 3);
+function qrUtf8(s) {
+  const out = [];
+  for (const ch of String(s)) {
+    const c = ch.codePointAt(0);
+    if (c < 0x80) out.push(c);
+    else if (c < 0x800) out.push(0xc0 | c >> 6, 0x80 | c & 63);
+    else if (c < 0x10000) out.push(0xe0 | c >> 12, 0x80 | c >> 6 & 63, 0x80 | c & 63);
+    else out.push(0xf0 | c >> 18, 0x80 | c >> 12 & 63, 0x80 | c >> 6 & 63, 0x80 | c & 63);
+  }
+  return out;
+}
+/** The 15 format bits (level M, mask 0 to 7), already masked with 0x5412. */
+function qrFormatBits(mask) {
+  const data = mask; // level M is 00
+  let rem = data;
+  for (let i = 0; i < 10; i++) rem = rem << 1 ^ (rem >>> 9) * 0x537;
+  return (data << 10 | rem) ^ 0x5412;
+}
+/** The 18 version bits for versions 7 and up. */
+function qrVersionBits(v) {
+  let rem = v;
+  for (let i = 0; i < 12; i++) rem = rem << 1 ^ (rem >>> 11) * 0x1f25;
+  return v << 12 | rem;
+}
+/** The codewords of [bytes] in version [v]: data blocks and their check words, interleaved. */
+function qrCodewords(bytes, v) {
+  const bits = [], put = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push(val >>> i & 1); };
+  put(4, 4); put(bytes.length, v < 10 ? 8 : 16); bytes.forEach(b => put(b, 8));
+  const total = qrData(v) * 8;
+  for (let i = 0; i < 4 && bits.length < total; i++) bits.push(0);
+  while (bits.length % 8) bits.push(0);
+  const data = [];
+  for (let i = 0; i < bits.length; i += 8) data.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+  for (let pad = 0xec; data.length < qrData(v); pad ^= 0xec ^ 0x11) data.push(pad);
+  const [eccLen, groups] = QR_M[v], blocks = [];
+  let at = 0;
+  for (const [count, size] of groups) for (let i = 0; i < count; i++) { const d = data.slice(at, at + size); at += size; blocks.push({d, e: qrEcc(d, eccLen)}); }
+  const out = [], longest = Math.max(...blocks.map(b => b.d.length));
+  for (let i = 0; i < longest; i++) blocks.forEach(b => { if (i < b.d.length) out.push(b.d[i]); });
+  for (let i = 0; i < eccLen; i++) blocks.forEach(b => out.push(b.e[i]));
+  return out;
+}
+const QR_MASKS = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, (x, y) => x % 3 === 0, (x, y) => (x + y) % 3 === 0, (x, y) => (Math.floor(y / 2) + Math.floor(x / 3)) % 2 === 0,
+  (x, y) => x * y % 2 + x * y % 3 === 0, (x, y) => (x * y % 2 + x * y % 3) % 2 === 0, (x, y) => ((x + y) % 2 + x * y % 3) % 2 === 0];
+function qrPenalty(m) {
+  const n = m.length; let score = 0;
+  const runs = line => { let s = 0, run = 1; for (let i = 1; i <= line.length; i++) { if (i < line.length && line[i] === line[i - 1]) run++; else { if (run >= 5) s += 3 + run - 5; run = 1; } } return s; };
+  const finder = line => { const t = line.map(b => b ? 1 : 0).join(''); let s = 0; for (const p of ['10111010000', '00001011101']) { let i = -1; while ((i = t.indexOf(p, i + 1)) >= 0) s += 40; } return s; };
+  for (let y = 0; y < n; y++) { score += runs(m[y]) + finder(m[y]); }
+  for (let x = 0; x < n; x++) { const col = m.map(r => r[x]); score += runs(col) + finder(col); }
+  for (let y = 0; y < n - 1; y++) for (let x = 0; x < n - 1; x++) if (m[y][x] === m[y][x + 1] && m[y][x] === m[y + 1][x] && m[y][x] === m[y + 1][x + 1]) score += 3;
+  const dark = m.reduce((s, r) => s + r.filter(Boolean).length, 0);
+  return score + (Math.ceil(Math.abs(dark * 20 - n * n * 10) / (n * n)) - 1) * 10;
+}
+/** Encodes [text] (UTF-8, byte mode, level M). Returns {version, size, mask, modules} with modules[y][x] true for dark. Throws when it is too long. */
+function qrEncode(text) {
+  const bytes = qrUtf8(text);
+  let v = 1; while (v <= 10 && qrCapacity(v) < bytes.length) v++;
+  if (v > 10) throw new Error('That is too long for the QR code (' + bytes.length + ' bytes; the most is ' + qrCapacity(10) + ').');
+  const size = 17 + 4 * v, mod = Array.from({length: size}, () => new Array(size).fill(false)), fn = Array.from({length: size}, () => new Array(size).fill(false));
+  const set = (x, y, dark) => { if (x >= 0 && y >= 0 && x < size && y < size) { mod[y][x] = !!dark; fn[y][x] = true; } };
+  for (let i = 0; i < size; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+  for (const [cx, cy] of [[3, 3], [size - 4, 3], [3, size - 4]]) for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const d = Math.max(Math.abs(dx), Math.abs(dy)); set(cx + dx, cy + dy, d !== 2 && d !== 4); }
+  const al = QR_ALIGN[v];
+  al.forEach((cy, i) => al.forEach((cx, j) => {
+    if ((i === 0 && j === 0) || (i === 0 && j === al.length - 1) || (i === al.length - 1 && j === 0)) return;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(cx + dx, cy + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+  }));
+  const formatAt = mask => {
+    const b = qrFormatBits(mask), bit = i => (b >>> i & 1) === 1;
+    for (let i = 0; i <= 5; i++) set(8, i, bit(i));
+    set(8, 7, bit(6)); set(8, 8, bit(7)); set(7, 8, bit(8));
+    for (let i = 9; i < 15; i++) set(14 - i, 8, bit(i));
+    for (let i = 0; i < 8; i++) set(size - 1 - i, 8, bit(i));
+    for (let i = 8; i < 15; i++) set(8, size - 15 + i, bit(i));
+    set(8, size - 8, true);
+  };
+  formatAt(0);
+  if (v >= 7) { const b = qrVersionBits(v); for (let i = 0; i < 18; i++) { const dark = (b >>> i & 1) === 1, a = size - 11 + i % 3, c = Math.floor(i / 3); set(a, c, dark); set(c, a, dark); } }
+  const words = qrCodewords(bytes, v);
+  let at = 0;
+  for (let right = size - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;
+    for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
+      const x = right - j, y = ((right + 1) & 2) === 0 ? size - 1 - vert : vert;
+      if (!fn[y][x] && at < words.length * 8) { mod[y][x] = (words[at >>> 3] >>> 7 - (at & 7) & 1) === 1; at++; }
+    }
+  }
+  let best = null;
+  for (let mask = 0; mask < 8; mask++) {
+    const m = mod.map(r => r.slice());
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (!fn[y][x] && QR_MASKS[mask](x, y)) m[y][x] = !m[y][x];
+    const keep = mod.map(r => r.slice());
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) mod[y][x] = m[y][x];
+    formatAt(mask);
+    const candidate = mod.map(r => r.slice()), p = qrPenalty(candidate);
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) mod[y][x] = keep[y][x];
+    if (!best || p < best.penalty) best = {version: v, size, mask, penalty: p, modules: candidate};
+  }
+  return best;
+}
+/** The code as an SVG string: black on a white square with a quiet zone, which scanners need whatever the page's theme. */
+function qrSvg(qr, label = 'QR code', quiet = 4) {
+  const n = qr.size + quiet * 2; let d = '';
+  qr.modules.forEach((row, y) => { for (let x = 0; x < row.length;) { if (!row[x]) { x++; continue; } let w = 1; while (row[x + w]) w++; d += `M${x + quiet},${y + quiet}h${w}v1h-${w}z`; x += w; } });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n} ${n}" role="img" aria-label="${String(label).replace(/[&<>"']/g, '')}" shape-rendering="crispEdges"><rect width="${n}" height="${n}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+}
+// ---- End mail and repeater helpers ---------------------------------------------------------
+
+// ---- Mail ------------------------------------------------------------------------------
+// Stalwart, the mail server app. The page follows `phase` from GET /api/mail: install it, answer the setup questions,
+// then the working page (status, DNS records, health check, accounts, mail app settings, certificate).
+const MAIL_GUIDE = 'https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md';
+const extLink = (url, text) => `<a href="${url}" target="_blank" rel="noopener">${esc(text)}</a>`;
+const mail = {s: null, mods: null, view: '', tab: 'overview', reveal: false, editing: false,
+  form: mailBlankForm(), step: 0, touched: {}, tried: false, saving: false, error: '',
+  dns: null, dnsErr: '', check: null, checking: false, checkErr: '', accounts: null, accountsErr: '', clientUser: null, client: null, clientErr: '', cert: {cert: '', key: ''}, certErr: '', certBusy: false};
+const mailMode = id => (mail.s?.modes || []).find(m => m.id === id);
+async function renderMail() {
+  const s = await api('mail'), before = mail.s?.phase;
+  mail.s = s;
+  POLL.mail = s.phase === 'ready' ? 10000 : s.phase === 'starting' || s.phase === 'stopped' ? 3000 : 0;
+  const view = s.phase === 'not_installed' ? 'install' : s.phase === 'needs_setup' || mail.editing ? 'wizard' : 'main', box = $('#mailBody');
+  if (view !== mail.view) {
+    mail.view = view; box._html = null;
+    if (view === 'wizard') { mail.form = mailFormFrom(s.setup); mail.step = 0; mail.touched = {}; mail.tried = false; mail.error = ''; }
+    if (view === 'main') { box.innerHTML = '<div id="mailStatus"></div><div id="mailTabs"></div><div id="mailPane"></div>'; mail.dns = mail.check = mail.accounts = mail.client = null; mail.dnsErr = mail.accountsErr = mail.clientErr = ''; }
+    if (view === 'wizard') drawMailWizard();
+  }
+  if (view === 'install') {
+    mail.mods = await api('modules').catch(() => mail.mods);
+    const app = mail.mods?.apps?.find(a => a.id === 'stalwart');
+    setHTML(box, mailInstallHtml(app, !!mail.mods?.job?.running));
+    if (mail.mods?.job) renderJob(mail.mods.job, $('#mailJob'));
+  } else if (view === 'main') {
+    setHTML($('#mailStatus'), mailStatusHtml());
+    setHTML($('#mailTabs'), tabsHtml('mailTab', [['overview', 'Overview'], ['dns', 'DNS records'], ['health', 'Health check'], ['accounts', 'Accounts'], ['apps', 'Mail apps'], ['cert', 'Certificate']], mail.tab, 'Mail sections'));
+    if (before !== s.phase || !$('#mailPane').firstChild) { drawMailPane(); mailEnterTab(); }
+    else if (mail.tab === 'overview') mailDrawLog();
+  }
+}
+const mailBullets = items => `<ul class="plainlist">${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
+function mailInstallHtml(app, installing) {
+  const s = mail.s, size = app?.size ? ` It needs about ${esc(app.size.replace('≈', '').trim())} of space.` : '';
+  return `<div class="card pad stack">
+    <div class="row" style="align-items:flex-start;gap:14px"><div class="avatar" style="background:var(--accent-soft);color:var(--accent)">${icon('mail')}</div>
+      <div><h2 style="margin:0 0 6px">Your own email address, on this phone</h2>
+      <p style="margin:0;max-width:70ch">This installs <b>Stalwart</b>, a mail server, into the phone’s Linux system.${size} A short setup follows: you give it your domain and say how mail should reach the phone. After that you can make accounts like <span class="mono">you@yourdomain.com</span> and read them in any mail app.</p></div></div>
+    <div class="guide-cols" style="margin-top:0"><div><h4>What you get</h4>${mailBullets(['Mailboxes on your own domain, read over IMAP and sent over SMTP.', 'A web admin page on the phone.', 'The DNS records to copy into your domain provider, and a health check that says what is still wrong.', 'Mail on your home Wi-Fi straight away, with no router setup.'])}</div>
+      <div><h4>What you need</h4>${mailBullets(['A domain you own, and access to its DNS settings.', 'A phone that stays on, charged and connected.', 'To receive mail from the internet: a router where you can forward ports and a public IP address, or a small VPS that passes mail on.', 'To send mail reliably: an account with an SMTP relay service.'])}</div></div></div>
+    <div class="card pad" style="margin-top:16px"><h3 style="margin:0 0 4px">The limits, before you install</h3><p class="hint" style="margin:0 0 8px">A phone on a home connection is not a mail provider. Read these first:</p>
+      ${mailBullets((s.limits || []).map(l => esc(l.text)))}</div>
+    <div class="row" style="margin-top:16px;gap:10px;flex-wrap:wrap"><button class="btn primary" data-act="mailInstall" ${installing ? 'disabled' : ''}>${icon('download')}${installing ? 'Installing…' : 'Install the mail server'}</button>
+      <a class="btn" href="${MAIL_GUIDE}" target="_blank" rel="noopener">${icon('book')}Read the mail guide</a></div>
+    <div id="mailJob" style="margin-top:16px"></div>`;
+}
+
+// The setup wizard: four steps, each checked before moving on.
+function drawMailWizard() {
+  const f = mail.form, i = mail.step, last = i === MAIL_STEPS.length - 1;
+  const body = [wizDomain, wizMode, wizDetails, wizReview][i]();
+  $('#mailBody').innerHTML = `<div class="stepper" role="list" aria-label="Setup steps">${MAIL_STEPS.map(([id, name], n) => `<button type="button" role="listitem" class="${n < i ? 'done' : ''}" ${n === i ? 'aria-current="step"' : ''} data-act="mailGoto" data-i="${n}" ${n > i ? 'disabled' : ''}><span class="num">${n < i ? icon('check') : n + 1}</span>${esc(name)}</button>`).join('')}</div>
+    ${mail.editing ? `<div class="hint" style="margin-bottom:12px">You are changing the saved settings. Nothing changes until you save on the last step.</div>` : ''}
+    <div class="card pad stack">${body}</div>
+    <div id="mailWizErr" style="margin-top:12px"></div>
+    <div class="row wizfoot"><button type="button" class="btn" data-act="mailBack" ${i === 0 && !mail.editing ? 'disabled' : ''}>${icon('back')}${i === 0 && mail.editing ? 'Cancel' : 'Back'}</button><div class="grow"></div>
+      ${last ? `<button type="button" class="btn primary" data-act="mailSave" ${mail.saving ? 'disabled' : ''}>${icon('check')}${mail.saving ? 'Saving…' : mail.editing ? 'Save changes' : 'Save and start the mail server'}</button>`
+        : `<button type="button" class="btn primary" data-act="mailNext">Next${icon('chev-right')}</button>`}</div>`;
+  if (mail.error) setHTML($('#mailWizErr'), notice('bad', esc(mail.error)));
+  mailShowErrors();
+  const first = $('#mailBody input:not([type=hidden]), #mailBody select'); if (first && !narrowScreen.matches && i !== 1 && i !== 3) first.focus();
+}
+const wizField = (label, path, errKey, {value = '', hint = '', ph = '', type = 'text', attrs = ''} = {}) => `<label class="field">${esc(label)}
+  <input data-input="mailF" data-f="${path}" data-e="${errKey}" type="${type}" value="${esc(value)}" placeholder="${esc(ph)}" spellcheck="false" autocomplete="${type === 'password' ? 'new-password' : 'off'}" ${attrs}>
+  ${hint ? `<span class="hint">${hint}</span>` : ''}<span class="ferr" data-err="${errKey}" role="alert"></span></label>`;
+function wizDomain() {
+  const f = mail.form;
+  return `<div><h2 style="margin:0 0 4px">Which domain will your mail use?</h2>
+    <p class="hint" style="margin:0;max-width:70ch">Addresses will look like <span class="mono">alice@example.com</span>. You need to own the domain and be able to edit its DNS records, because you add a few of them later.</p></div>
+    ${wizField('Domain', 'domain', 'domain', {value: f.domain, ph: 'example.com', hint: 'Only the domain, without “www.” or an address in front.'})}
+    ${wizField('Mail server host name', 'hostname', 'hostname', {value: f.hostname, ph: f.domain ? 'mail.' + mailDnsName(f.domain) : 'mail.example.com', hint: 'The name other mail servers and your mail apps connect to. <span class="mono">mail.example.com</span> is the usual choice. It needs its own DNS record, which the next pages give you.'})}`;
+}
+function wizMode() {
+  const modes = mail.s.modes || [];
+  return `<div><h2 style="margin:0 0 4px">How will mail reach this phone?</h2>
+    <p class="hint" style="margin:0;max-width:70ch">This decides which DNS records you get and what you set up at home. You can change it later.</p></div>
+    <div class="modegrid" role="radiogroup" aria-label="How mail reaches the phone">${modes.map(m => `<button type="button" role="radio" class="mode" aria-checked="${m.id === mail.form.mode}" data-act="mailMode" data-id="${esc(m.id)}">
+      <span class="mode-title"><span class="mode-dot"></span>${esc(m.title)}</span><span class="mode-sum">${esc(m.summary)}</span>
+      <span class="mode-need">You’ll need</span>${mailBullets((m.needs || []).map(esc))}</button>`).join('')}</div>
+    <div class="ferr" data-err="mode" role="alert"></div>
+    ${notice('info', '<b>Not sure?</b> Choose the first if your provider lets port 25 through and gives you a public address. Choose the second if you want outgoing mail to reach inboxes reliably. Choose the third if you can’t open anything at home. If you only want to try it on your home Wi-Fi, any choice works: mail apps on the same network connect straight to the phone.')}`;
+}
+function wizDetails() {
+  const f = mail.form, r = f.relay, m = f.mode, relay = m !== 'direct', dom = mailDnsName(f.domain) || 'example.com';
+  const dm = {none: ['Only watch', 'Receivers report problems to you but still deliver everything. Start here.'], quarantine: ['Send failures to spam', 'Mail that fails SPF and DKIM goes to the spam folder.'], reject: ['Reject failures', 'Mail that fails is refused. Use it once your mail passes reliably.']};
+  return `<div><h2 style="margin:0 0 4px">${m === 'relay' ? 'Relay and' : m === 'receive_only' ? 'The VPS and' : 'Address and'} authentication details</h2>
+    <p class="hint" style="margin:0;max-width:70ch">Everything on this page can be changed later. Fields marked optional can stay empty.</p></div>
+    <div class="subhead"><b>Where mail is delivered to</b></div>
+    ${wizField(m === 'receive_only' ? 'Public address of your VPS' : 'Your public IP address or dynamic DNS name', 'address', 'address', {value: f.address, ph: m === 'receive_only' ? '198.51.100.20' : '203.0.113.7 or myhome.duckdns.org',
+      hint: m === 'receive_only' ? 'Optional now. The host name from step 1 should lead to the VPS. Leave it empty to fill in the DNS record yourself.'
+        : 'Optional now. Find your IP at a “what is my IP” site or in your router. If it changes from time to time, use a dynamic DNS name: <a href="#ddns">Dynamic DNS</a> can keep one current. Leave it empty to fill in the DNS record yourself.'})}
+    ${relay ? `<div class="subhead"><b>${m === 'relay' ? 'The relay that sends your mail' : 'A relay for sending (optional)'}</b>
+      <div class="hint">${m === 'relay' ? 'Your relay provider shows these values on its SMTP or “connect” page.' : 'The VPS only receives. To send mail too, add a relay here, or leave this empty.'}</div></div>
+      <div class="fgrid">${wizField('Relay server', 'relay.host', 'relayHost', {value: r.host, ph: 'smtp.example.net'})}
+        ${wizField('Port', 'relay.port', 'relayPort', {value: r.port, ph: '587', attrs: 'inputmode="numeric"', hint: 'Usually 587 or 2525, or 465.'})}</div>
+      <label class="field">Encryption<select data-change="mailF" data-f="relay.tls"><option value="starttls" ${r.tls === 'starttls' ? 'selected' : ''}>STARTTLS (ports 587 and 2525)</option><option value="tls" ${r.tls === 'tls' ? 'selected' : ''}>TLS from the start (port 465)</option></select></label>
+      <div class="fgrid">${wizField('User name', 'relay.username', 'relayUser', {value: r.username, ph: 'from your provider', attrs: 'autocapitalize="off"'})}
+        ${wizField('Password', 'relay.password', 'relayPass', {value: r.password, type: 'password', ph: r.saved ? 'Saved. Leave empty to keep it' : '', hint: 'Stored on the phone and never shown again.'})}</div>
+      ${wizField('SPF include' + (m === 'relay' ? '' : ' (optional)'), 'spf', 'spf', {value: f.spf, ph: 'spf.example.net', hint: 'The value your relay provider tells you to add to your SPF record, like <span class="mono">spf.mailgun.org</span>. Several can be separated by commas. Without it, mail sent through the relay may fail the spam checks.'})}` : ''}
+    <div class="subhead"><b>DMARC policy</b><div class="hint">What other mail servers do with mail that claims to be from ${esc(dom)} but fails the checks.</div></div>
+    <div class="seg" role="group" aria-label="DMARC policy" style="align-self:flex-start;flex-wrap:wrap">${['none', 'quarantine', 'reject'].map(k => `<button type="button" data-act="mailDmarc" data-v="${k}" aria-pressed="${f.dmarc === k}">${esc(dm[k][0])}</button>`).join('')}</div>
+    <div class="hint" id="mailDmarcHint">${esc(dm[f.dmarc]?.[1] || '')}</div><div class="ferr" data-err="dmarc" role="alert"></div>
+    ${wizField('Report address (optional)', 'report', 'report', {value: f.report, ph: 'postmaster@' + dom, hint: 'Other servers email their DMARC and TLS reports here. It has to be a mailbox that exists, so make that account first or use an address elsewhere.'})}`;
+}
+const MAIL_DMARC_HINT = {none: 'Receivers report problems to you but still deliver everything. Start here.', quarantine: 'Mail that fails SPF and DKIM goes to the spam folder.', reject: 'Mail that fails is refused. Use it once your mail passes reliably.'};
+function wizReview() {
+  const f = mail.form, b = mailSetupBody(f), m = mailMode(f.mode), r = b.relay;
+  const row = (k, v) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`;
+  return `<div><h2 style="margin:0 0 4px">Check your answers</h2><p class="hint" style="margin:0">Press Back to change anything.</p></div>
+    <dl class="facts">${row('Domain', esc(b.domain))}${row('Mail server host name', esc(b.hostname))}${row('How mail arrives', esc(m?.title || b.mode))}
+      ${row(f.mode === 'receive_only' ? 'VPS address' : 'Public address', b.address ? `<span class="mono">${esc(b.address)}</span>` : '<span class="muted">Not set. You will type it into the DNS record.</span>')}
+      ${f.mode !== 'direct' ? row('Relay', r ? `<span class="mono">${esc(r.host)}:${r.port}</span>, ${r.implicitTls ? 'TLS from the start' : 'STARTTLS'}<br>User ${r.username ? `<span class="mono">${esc(r.username)}</span>` : 'none'}, password ${r.password ? (f.relay.password ? 'entered' : 'kept as saved') : 'none'}` : '<span class="muted">None</span>') : ''}
+      ${row('SPF include', b.spfInclude.length ? b.spfInclude.map(s => `<span class="mono">${esc(s)}</span>`).join(', ') : '<span class="muted">None</span>')}
+      ${row('DMARC policy', esc({none: 'Only watch', quarantine: 'Send failures to spam', reject: 'Reject failures'}[b.dmarcPolicy]))}
+      ${row('Report address', b.reportEmail ? `<span class="mono">${esc(b.reportEmail)}</span>` : '<span class="muted">Not set</span>')}</dl>
+    ${notice('info', mail.editing ? 'Saving restarts the mail server for a moment so it picks up the new settings. Then check the DNS records again: some of them may have changed.'
+      : 'Saving writes these settings to the phone and starts the mail server. The first start creates its database and takes a minute or two. After that you get the DNS records to add, a health check, and accounts.')}`;
+}
+function mailShowErrors() {
+  const errs = mailStepErrors(mail.step, mail.form);
+  $$('[data-err]').forEach(el => {
+    const k = el.dataset.err, msg = mail.tried || mail.touched[k] ? errs[k] || '' : '';
+    el.textContent = msg; el.closest('label')?.querySelector('input, select')?.setAttribute('aria-invalid', msg ? 'true' : 'false');
+  });
+  return errs;
+}
+function mailSetField(path, value) {
+  const f = mail.form; if (path.startsWith('relay.')) f.relay[path.slice(6)] = value; else f[path] = value;
+}
+INP.mailF = t => {
+  const f = mail.form, path = t.dataset.f; mailSetField(path, t.value); mail.touched[t.dataset.e] = true;
+  if (path === 'domain' && !f.hostnameEdited) { const d = mailDnsName(t.value); f.hostname = d ? 'mail.' + d : ''; const h = $('[data-f="hostname"]'); if (h) { h.value = f.hostname; h.placeholder = d ? 'mail.' + d : 'mail.example.com'; } }
+  if (path === 'hostname') { f.hostnameEdited = t.value.trim() !== ''; if (!f.hostnameEdited) { const d = mailDnsName(f.domain); f.hostname = d ? 'mail.' + d : ''; } }
+  if (path === 'relay.port' && !f.relay.tlsTouched) { f.relay.tls = t.value.trim() === '465' ? 'tls' : 'starttls'; const s = $('[data-f="relay.tls"]'); if (s) s.value = f.relay.tls; }
+  mailShowErrors();
+};
+CHG.mailF = t => { mailSetField(t.dataset.f, t.value); if (t.dataset.f === 'relay.tls') mail.form.relay.tlsTouched = true; };
+function mailGoStep(n) { mail.step = n; mail.tried = false; mail.touched = {}; mail.error = ''; drawMailWizard(); window.scrollTo({top: 0}); }
+Object.assign(ACT, {
+  mailInstall(b) { b.disabled = true; run(api('modules/stalwart/install', {method: 'POST'}), 'Installing the mail server'); },
+  mailNext() {
+    const errs = mailStepErrors(mail.step, mail.form);
+    if (Object.keys(errs).length) { mail.tried = true; mailShowErrors(); const k = Object.keys(errs)[0]; ($(`[data-err="${k}"]`)?.closest('label')?.querySelector('input, select') || $(`[data-err="${k}"]`))?.focus(); return; }
+    mailGoStep(mail.step + 1);
+  },
+  mailBack() { if (mail.step === 0) { mail.editing = false; refresh(); } else mailGoStep(mail.step - 1); },
+  mailGoto: b => +b.dataset.i < mail.step && mailGoStep(+b.dataset.i),
+  mailMode(b) { mail.form.mode = b.dataset.id; $$('.mode').forEach(x => x.setAttribute('aria-checked', x === b)); mailShowErrors(); },
+  mailDmarc(b) { mail.form.dmarc = b.dataset.v; setSeg(b); $('#mailDmarcHint').textContent = MAIL_DMARC_HINT[b.dataset.v]; },
+  async mailSave() {
+    const all = mailAllErrors(mail.form);
+    if (!all.valid) { mail.error = 'Some answers need fixing first.'; mailGoStep(all.first); mail.tried = true; mailShowErrors(); return; }
+    mail.saving = true; mail.error = ''; drawMailWizard();
+    try { await api('mail/setup', {method: 'POST', body: mailSetupBody(mail.form)}); toast(mail.editing ? 'Settings saved; restarting the mail server' : 'Settings saved; starting the mail server'); mail.editing = false; mail.view = ''; mail.tab = 'overview'; mail.saving = false; refresh(); }
+    catch (e) { mail.saving = false; mail.error = e.message; drawMailWizard(); }
+  },
+  mailEdit() { mail.editing = true; refresh(); },
+  mailTab(b) { mail.tab = b.dataset.t; setHTML($('#mailTabs'), tabsHtml('mailTab', [['overview', 'Overview'], ['dns', 'DNS records'], ['health', 'Health check'], ['accounts', 'Accounts'], ['apps', 'Mail apps'], ['cert', 'Certificate']], mail.tab, 'Mail sections')); drawMailPane(); mailEnterTab(); },
+});
+
+// The working page.
+const MAIL_STATE = {ready: ['running', 'Running'], starting: ['starting', 'Starting'], stopped: ['', 'Stopped']};
+function mailStatusHtml() {
+  const s = mail.s, st = s.setup || {}, [cls, label] = MAIL_STATE[s.phase] || ['', s.phase], m = mailMode(st.mode);
+  const banner = s.phase === 'starting' ? `<div class="notice info wrap"><span class="spinner"></span><span>The mail server is starting. The first start creates its database and can take a minute or two. This page updates by itself.</span></div>`
+    : s.phase === 'stopped' ? notice('', `<b>The mail server isn’t running.</b> ${s.enabled ? 'It stopped, or hasn’t started yet. The log on the Overview tab says why.' : 'It is turned off in Modules.'}`, '<a class="btn sm" href="#modules">Open Modules</a>') : '';
+  return `<div class="card pad stack" style="margin-bottom:16px"><div class="row" style="gap:12px;flex-wrap:wrap"><div class="avatar" style="background:var(--accent-soft);color:var(--accent)">${icon('mail')}</div>
+    <div class="grow" style="flex:1 1 180px"><div class="title ellipsis" style="font-size:var(--text-lg);font-weight:650">${esc(st.domain || '')}</div><div class="hint">${esc(st.hostname || '')}${m ? ' · ' + esc(m.title) : ''}${s.version ? ' · Stalwart ' + esc(s.version) : ''}</div></div>
+    <span class="badge ${cls}">${esc(label)}</span><button class="btn sm" data-act="mailEdit">${icon('edit')}Change setup</button></div>
+    ${banner}
+    <div class="ports" role="table" aria-label="Ports"><div class="portrow phead" role="row"><span role="columnheader"></span><span class="grow" role="columnheader">What it is for</span><span class="pn" role="columnheader" title="The port on the phone, then the port your router should forward from">Phone → public port</span></div>
+      ${(s.ports || []).map(p => `<div class="portrow" role="row"><span class="dot ${p.listening ? 'running' : 'backoff'}" aria-hidden="true"></span><span class="grow" role="cell">${esc(p.name)}<span class="sr">, ${p.listening ? 'listening' : 'not listening'}</span></span><span class="pn mono" role="cell">${p.local} → ${p.public}</span></div>`).join('')}</div>
+    <div class="hint">A green dot means the phone is listening on that port. Whether the internet can reach it depends on your router, so the health check can’t see that: send a test message from another provider.</div></div>`;
+}
+const MAIL_STEPS_TODO = s => {
+  const m = s.setup?.mode, ports = (s.ports || []).filter(p => p.protocol === 'smtp' || p.protocol === 'imap').map(p => `${p.public} → ${p.local}`).join(', ');
+  return [['dns', 'Add the DNS records', 'At your domain provider. Mail can’t arrive until the first group is there.', 'Open the records'],
+    m === 'receive_only' ? ['', 'Pass mail on from the VPS', `Make the VPS forward its port 25 to the phone’s port ${(s.ports || [])[0]?.local || 2525}, over Tailscale or an SSH tunnel.`, '']
+      : ['', 'Forward the ports on your router', `Public port → phone port: ${esc(ports)}. Only needed for mail from outside your home. Skip it to use the phone on your home Wi-Fi only.`, ''],
+    ['health', 'Run the health check', 'It looks at the server, the certificate, your connection and your DNS records, and says how to fix what is wrong.', 'Run it'],
+    ['accounts', 'Create an account', 'One for each person, like alice@' + (s.setup?.domain || 'example.com') + '.', 'Add an account'],
+    ['apps', 'Set up your mail app', 'The exact server names, ports and settings to type in, for at home and away.', 'Show the settings']];
+};
+function mailPaneOverview() {
+  const s = mail.s, a = s.admin, adminUrl = a?.url || (s.lan?.[0] ? `http://${s.lan[0]}:${(s.ports || []).find(p => p.protocol === 'http')?.local || 8825}/admin` : '');
+  return `<div class="stack">
+    <div class="card pad"><h3 style="margin:0 0 8px">What to do now</h3><ol class="todo">${MAIL_STEPS_TODO(s).map(([t, h, d, b]) => `<li><div><b>${esc(h)}</b><div class="hint">${d}</div></div>${t ? `<button class="btn sm" data-act="mailTab" data-t="${t}">${esc(b)}</button>` : ''}</li>`).join('')}</ol></div>
+    <div class="card pad stack"><div><h3 style="margin:0 0 2px">Admin login</h3><div class="hint">For the web admin page only. Make mailboxes for people in the Accounts tab, and don’t use this login in a mail app.</div></div>
+      ${a ? `<div class="mrow"><span class="ml">User name</span><span class="mv mono">${esc(a.user)}</span>${copyBtn(a.user, 'User name copied')}</div>
+        <div class="mrow"><span class="ml">Password</span><span class="mv mono ${mail.reveal ? '' : 'masked'}">${mail.reveal ? esc(a.password) : '••••••••••••'}</span>
+          <span class="row" style="gap:0"><button type="button" class="btn ghost sm icon" data-act="mailReveal" aria-pressed="${mail.reveal}" title="${mail.reveal ? 'Hide' : 'Show'} the password" aria-label="${mail.reveal ? 'Hide' : 'Show'} the password">${icon(mail.reveal ? 'eyeoff' : 'eye')}</button>
+          <button type="button" class="btn ghost sm icon" data-act="mailCopyAdmin" title="Copy the password" aria-label="Copy the password">${icon('copy')}</button></span></div>
+        <div class="row" style="gap:8px;flex-wrap:wrap">${adminUrl ? `<a class="btn sm" href="${esc(adminUrl)}" target="_blank" rel="noopener">${icon('external')}Open the web admin</a><span class="hint mono">${esc(adminUrl)}</span>` : '<span class="hint">The phone’s address isn’t known yet. Open port 8825 on the phone’s address, at /admin.</span>'}</div>
+        <div class="hint">The web admin is plain HTTP, so open it only from your home network.</div>`
+      : `<div class="hint">The login is made when the server starts for the first time. It shows up here then.</div>`}</div>
+    <div class="card pad"><h3 style="margin:0 0 6px">Limits to keep in mind</h3>${mailBullets((s.limits || []).map(l => esc(l.text)))}
+      <p class="hint" style="margin:10px 0 0">More in ${extLink(MAIL_GUIDE, 'the mail guide')}.</p></div>
+    <details class="card pad"><summary>Server log</summary><pre id="mailLogPre" style="margin-top:10px;max-height:320px"></pre></details></div>`;
+}
+function mailDrawLog() {
+  const pre = $('#mailLogPre'); if (!pre) return;
+  const text = (mail.s.log || []).join('\n') || 'The log is empty.';
+  if (pre.textContent !== text) { const end = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 24; pre.textContent = text; if (end) pre.scrollTop = pre.scrollHeight; }
+}
+function drawMailPane() {
+  const el = $('#mailPane'); if (!el) return;
+  const html = {overview: mailPaneOverview, dns: mailPaneDns, health: mailPaneHealth, accounts: mailPaneAccounts, apps: mailPaneApps, cert: mailPaneCert}[mail.tab]();
+  if (setHTML(el, html) !== false && mail.tab === 'overview') mailDrawLog();
+}
+function mailEnterTab() {
+  if (mail.tab === 'dns' && !mail.dns && !mail.dnsErr) mailLoadDns();
+  if (mail.tab === 'accounts' && !mail.accounts && !mail.accountsErr) mailLoadAccounts();
+  if (mail.tab === 'apps') mailLoadAccounts().then(() => { if (mail.client === null && !mail.clientErr) mailLoadClient(); });
+}
+CHG.mailClientUser = t => { mail.clientUser = t.value.trim(); mailLoadClient(); };
+
+// DNS records.
+async function mailLoadDns() {
+  mail.dnsErr = ''; if (mail.tab === 'dns') drawMailPane();
+  try { mail.dns = await api('mail/dns'); } catch (e) { mail.dnsErr = e.message; }
+  if (mail.tab === 'dns') drawMailPane();
+}
+const mrow = (label, value, what, copy = true) => `<div class="mrow"><span class="ml">${esc(label)}</span><span class="mv mono">${esc(value)}</span>${copy ? copyBtn(value, what || label + ' copied') : '<span></span>'}</div>`;
+function dnsRecord(r) {
+  const chunks = r.type === 'TXT' && r.value.length > 255 ? mailChunks(r.value) : null;
+  return `<div class="dnsrec ${r.pending ? 'pend' : ''} ${chunks || r.extra ? 'wide' : ''}"><div class="row" style="gap:8px;align-items:flex-start"><span class="rtype">${esc(r.type)}</span><b class="grow">${esc(r.title)}</b>${r.pending ? '<span class="badge starting">Needs your input</span>' : ''}</div>
+    ${mrow('Host', r.host, 'Host copied')}
+    ${r.priority != null ? mrow('Priority', String(r.priority), 'Priority copied') : ''}
+    ${r.pending ? `<div class="mrow"><span class="ml">Value</span><span class="mv mono muted">${esc(r.value)}</span><span></span></div>` : mrow('Value', r.value, 'Value copied')}
+    ${chunks ? `<div class="hint">This value is ${r.value.length} characters long. Most DNS panels take it in one box and split it for you. If yours wants separate strings, enter these ${chunks.length} in order:</div>
+      ${chunks.map((c, i) => mrow('Part ' + (i + 1), c, 'Part ' + (i + 1) + ' copied')).join('')}` : ''}
+    <div class="hint">${esc(r.note)}${r.host === '@' ? '' : ` Full name: <span class="mono">${esc(r.name)}</span>.`}</div>
+    ${r.extra ? `<div class="hint">Serve this text at <span class="mono">https://mta-sts.${esc(mail.s.setup?.domain || '')}/.well-known/mta-sts.txt</span>:</div>${codeBlock(r.extra, 'Policy copied')}` : ''}</div>`;
+}
+function mailPaneDns() {
+  if (mail.dnsErr) return errCard({message: mail.dnsErr}, false);
+  if (!mail.dns) return skeletons(2);
+  const d = mail.dns, groups = mailGroupRecords(d), pending = d.records.filter(r => r.pending).length;
+  return `<div class="stack"><div class="card pad stack"><div class="row" style="gap:12px;flex-wrap:wrap"><div class="grow" style="min-width:240px"><h3 style="margin:0 0 2px">DNS records for ${esc(d.domain)}</h3>
+      <div class="hint" style="max-width:70ch">Add these where ${esc(d.domain)}’s DNS is managed: your domain registrar, Cloudflare, or wherever you changed its name servers. Start with the first group. Changes can take from a few minutes to a day to spread. Then run the health check to see what other servers see.</div></div>
+      <button class="btn" data-act="mailZone">${icon('copy')}Copy whole zone</button><button class="btn" data-act="mailDnsReload">${icon('sync')}Reload</button></div>
+      ${d.dkimReady ? '' : notice('', '<b>The signing key (DKIM) isn’t made yet.</b> The mail server creates it when it first starts. Reload this list in a minute.')}
+      ${pending ? notice('info', `${pending} ${pending === 1 ? 'record needs' : 'records need'} something from you, shown in grey. Fill in your public IP address in the setup, or type it into the record yourself.`) : ''}
+      ${notice('info', 'If your DNS is on Cloudflare, set the mail host’s <b>A record</b> to “DNS only” (grey cloud). Cloudflare’s proxy carries web traffic, not mail.')}</div>
+    ${groups.map(g => `<section><h3 style="margin:8px 0 8px">${esc(g.title)}</h3><div class="grid dnsgrid">${g.items.map(dnsRecord).join('')}</div></section>`).join('')}
+    <details class="card pad"><summary>Zone file view</summary><p class="hint" style="margin:8px 0">For providers that can import a zone file. It leaves out records that still need your input and the optional ones.</p>${codeBlock(d.zone || '', 'Zone copied')}</details></div>`;
+}
+Object.assign(ACT, {
+  mailZone() { copyText(mail.dns?.zone || '', 'Zone copied'); },
+  mailDnsReload() { mail.dns = null; mail.dnsErr = ''; mailLoadDns(); },
+  mailReveal() { mail.reveal = !mail.reveal; drawMailPane(); },
+  mailCopyAdmin() { copyText(mail.s.admin.password, 'Password copied'); },
+});
+
+// Health check.
+const CHECK_ICON = {ok: ['check', 'ok', 'Fine'], warn: ['alert', 'warn', 'Warning'], fail: ['x', 'bad', 'Problem'], info: ['info', 'muted', 'Note']};
+function mailPaneHealth() {
+  const c = mail.check, groups = c ? mailGroupChecks(c.checks) : [];
+  return `<div class="stack"><div class="card pad stack"><div class="row" style="gap:12px;flex-wrap:wrap"><div class="grow" style="min-width:240px"><h3 style="margin:0 0 2px">Health check</h3>
+      <div class="hint" style="max-width:70ch">Looks at the mail server, its ports and certificate, your internet connection and your DNS records. It can take up to 40 seconds.</div></div>
+      <button class="btn primary" data-act="mailCheck" ${mail.checking ? 'disabled' : ''}>${mail.checking ? '<span class="spinner"></span>Checking…' : icon('play') + (c ? 'Run it again' : 'Run the health check')}</button></div>
+      ${mail.checkErr ? notice('bad', esc(mail.checkErr)) : ''}
+      ${c ? `<div class="chips"><span class="badge running">${c.summary.ok} fine</span><span class="badge ${c.summary.warn ? 'starting' : ''}">${c.summary.warn} to look at</span><span class="badge ${c.summary.fail ? 'failed' : ''}">${c.summary.fail} to fix</span></div>` : ''}</div>
+    ${groups.map(g => `<section class="card"><div class="chk-head">${esc(g.title)}</div>${g.items.map(i => { const [ic, tone, word] = CHECK_ICON[i.status] || CHECK_ICON.info; return `<div class="chk"><span class="chk-ic ${tone}" title="${word}">${icon(ic)}<span class="sr">${word}: </span></span>
+      <div class="grow"><div class="chk-title">${esc(i.title)}</div><div class="hint">${esc(i.detail)}</div>${i.fix ? `<div class="chk-fix"><b>To fix:</b> ${esc(i.fix)}</div>` : ''}</div></div>`; }).join('')}</section>`).join('')}
+    ${c ? `<div class="hint">${esc(c.note)}</div>` : ''}</div>`;
+}
+Object.assign(ACT, {
+  async mailCheck() {
+    mail.checking = true; mail.checkErr = ''; drawMailPane();
+    try { mail.check = await api('mail/check', {method: 'POST'}); } catch (e) { mail.checkErr = e.message; }
+    mail.checking = false; if (mail.tab === 'health') drawMailPane();
+  },
+});
+
+// Accounts.
+async function mailLoadAccounts() {
+  mail.accountsErr = '';
+  try { mail.accounts = (await api('mail/accounts')).accounts; } catch (e) { mail.accounts = null; mail.accountsErr = e.message; }
+  if (mail.clientUser === null) mail.clientUser = (mail.accounts || []).find(a => !a.admin)?.email.split('@')[0] || '';
+  if (mail.tab === 'accounts' || mail.tab === 'apps') drawMailPane();
+}
+function mailPaneAccounts() {
+  const list = mail.accounts, domain = mail.s.setup?.domain || '';
+  return `<div class="stack"><div class="card pad"><div class="row" style="gap:12px;flex-wrap:wrap"><div class="grow" style="min-width:240px"><h3 style="margin:0 0 2px">Mail accounts</h3>
+    <div class="hint">One account per person or purpose. Each has its own address and password, and signs in from a mail app.</div></div><button class="btn primary" data-act="mailAddAccount" ${list ? '' : 'disabled'}>${icon('plus')}Add an account</button></div></div>
+    ${mail.accountsErr ? `<div class="card pad">${notice('', esc(mail.accountsErr) + (/running|ready|starting/i.test(mail.accountsErr) ? ' Accounts can be managed once it is up.' : ''), '<button class="btn sm" data-act="mailAccountsReload">Try again</button>')}</div>`
+      : !list ? skeletons(1)
+      : list.length ? `<div class="card">${list.map(a => `<div class="item"><span class="ficon">${icon('mail')}</span><span class="grow"><span class="name">${esc(a.email)}</span>${a.admin ? '<br><span class="hint">Server admin. Sign in to the web admin with it.</span>' : ''}</span>
+          ${a.admin ? '<span class="badge plain">Admin</span>' : ''}<span class="acts"><button class="btn sm" data-act="mailReset" data-id="${esc(a.id)}" data-email="${esc(a.email)}">${icon('key')}Reset password</button>
+          ${a.admin ? '' : `<button class="btn ghost sm icon danger" data-act="mailDelete" data-id="${esc(a.id)}" data-email="${esc(a.email)}" title="Delete" aria-label="Delete ${esc(a.email)}">${icon('trash')}</button>`}</span></div>`).join('')}</div>`
+      : emptyState('mail', 'No accounts yet. Make one to start sending and receiving at ' + esc(domain) + '.', `<div><button class="btn primary" data-act="mailAddAccount">${icon('plus')}Add an account</button></div>`)}</div>`;
+}
+/** A password shown once, with a way to copy it. */
+function mailShowPassword(title, email, password, generated) {
+  formDialog({title, confirm: 'Done', body: `<p style="margin:0">${generated ? 'The phone made this password.' : 'Here is the password you set.'} Copy it now and give it to the person using <span class="mono">${esc(email)}</span>. It is shown only once.</p>
+    <div class="once"><div class="row">${icon('key')}<b class="grow">Password for ${esc(email)}</b></div>${copyLine(password, 'Password copied')}</div>`, submit: async () => true, setup: f => $('[data-act="dlgCancel"]', f)?.remove()});
+}
+Object.assign(ACT, {
+  mailAccountsReload: () => mailLoadAccounts(),
+  mailAddAccount() {
+    const domain = mail.s.setup?.domain || '';
+    formDialog({title: 'Add a mail account', confirm: 'Add account',
+      body: `<label class="field">Name<span class="row" style="gap:6px"><input name="name" required placeholder="alice" spellcheck="false" autocomplete="off" autocapitalize="off" style="flex:1"><span class="mono muted">@${esc(domain)}</span></span><span class="hint">Letters, digits, dots, dashes and underscores. This is the part before the @.</span></label>
+        <label class="field">Password (optional)<input name="password" type="password" autocomplete="new-password" spellcheck="false" placeholder="Leave empty to make one"><span class="hint">8 to 128 characters. If you leave it empty, the phone makes a strong one and shows it once.</span></label>`,
+      submit: async form => {
+        const name = form.elements.name.value.trim().toLowerCase(), pw = form.elements.password.value;
+        if (!/^[a-z0-9]([a-z0-9._-]{0,62}[a-z0-9])?$/.test(name)) throw new Error('Use letters, digits, dots, dashes or underscores for the name, like alice.');
+        if (pw && (pw.length < 8 || pw.length > 128)) throw new Error('The password needs 8 to 128 characters.');
+        const r = await api('mail/accounts', {method: 'POST', body: {name, password: pw}});
+        setTimeout(() => mailShowPassword('Account created', r.email, r.password, r.generated), 150);
+        mailLoadAccounts();
+      }});
+  },
+  mailReset(b) {
+    formDialog({title: 'Reset the password of ' + b.dataset.email, confirm: 'Reset password',
+      body: `<p style="margin:0">The old password stops working right away. Mail apps using it will ask for the new one.</p>
+        <label class="field">New password (optional)<input name="password" type="password" autocomplete="new-password" spellcheck="false" placeholder="Leave empty to make one"><span class="hint">8 to 128 characters.</span></label>`,
+      submit: async form => {
+        const pw = form.elements.password.value; if (pw && (pw.length < 8 || pw.length > 128)) throw new Error('The password needs 8 to 128 characters.');
+        const r = await api(`mail/accounts/${encodeURIComponent(b.dataset.id)}/password`, {method: 'POST', body: {password: pw}});
+        setTimeout(() => mailShowPassword('Password reset', b.dataset.email, r.password, r.generated), 150);
+      }});
+  },
+  async mailDelete(b) {
+    if (await ask({title: `Delete ${b.dataset.email}?`, text: 'The account is removed from the mail server. Nobody can sign in to it any more, and you should expect the mail stored in it to be gone. This can’t be undone.', confirm: 'Delete account', danger: true})) {
+      try { await api('mail/accounts/' + encodeURIComponent(b.dataset.id), {method: 'DELETE'}); toast('Account deleted'); mailLoadAccounts(); } catch (e) { toast(e.message, true); }
+    }
+  },
+});
+
+// Settings for mail apps.
+async function mailLoadClient() {
+  mail.clientErr = ''; mail.client = null; if (mail.tab === 'apps') drawMailPane();
+  try { mail.client = await api('mail/clients?user=' + encodeURIComponent(mail.clientUser || '')); } catch (e) { mail.clientErr = e.message; }
+  if (mail.tab === 'apps') drawMailPane();
+}
+const settingsCard = (title, o) => {
+  if (!o?.incoming) return `<div class="card pad stack"><h3 style="margin:0">${esc(title)}</h3>${notice('', 'The phone’s address on your home network isn’t known yet. Connect it to Wi-Fi and reload this page.')}</div>`;
+  const side = (name, x) => `<div class="setgroup"><div class="subhead"><b>${name}</b> <span class="hint">${esc(x.protocol)}</span></div>${mrow('Server', x.server, 'Server copied')}${mrow('Port', String(x.port), 'Port copied')}${mrow('Security', x.security, 'Security copied', false)}${mrow('User name', x.username, 'User name copied')}${mrow('Sign-in', x.authentication, '', false)}
+    ${x.alternative ? `<div class="hint" style="margin-top:6px">Or use STARTTLS on port <span class="mono">${x.alternative.port}</span> if your app can’t do TLS from the start.</div>` : ''}</div>`;
+  return `<div class="card pad stack"><div><h3 style="margin:0 0 2px">${esc(title)}</h3><div class="hint">${esc(o.when)}</div></div>${side('Incoming mail', o.incoming)}${side('Outgoing mail', o.outgoing)}</div>`;
+};
+function mailPaneApps() {
+  const c = mail.client, names = (mail.accounts || []).map(a => a.email.split('@')[0]);
+  return `<div class="stack"><div class="card pad stack"><div><h3 style="margin:0 0 2px">Set up a mail app</h3><div class="hint" style="max-width:70ch">Pick the account, then type these values into the mail app. Use the <b>Away</b> settings from anywhere once your router forwards the ports. Use the <b>Home</b> settings on your home Wi-Fi: they go straight to the phone and need no router setup.</div></div>
+      <label class="field" style="max-width:360px">Account<input list="mailAcctList" value="${esc(mail.clientUser || '')}" data-change="mailClientUser" placeholder="alice" spellcheck="false" autocomplete="off" autocapitalize="off"><datalist id="mailAcctList">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+        <span class="hint">${names.length ? 'Choose one of your accounts or type a name.' : 'Type the part before the @.'}</span></label></div>
+    ${mail.clientErr ? notice('bad', esc(mail.clientErr)) : !c ? skeletons(2) : `<div class="grid2">${settingsCard('Away from home', c.away)}${settingsCard('At home, on Wi-Fi', c.home)}</div>
+      <div class="card pad stack"><div><h3 style="margin:0 0 6px">Steps in the mail app</h3><ol class="steps">${c.steps.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
+        <div class="hint" style="margin-top:8px">The password is the one set for ${esc(c.email)}. If it is lost, reset it in the Accounts tab.</div></div>
+        ${notice('info', esc(c.certificate))}
+        ${c.webAdmin || c.jmap ? `<div>${c.webAdmin ? mrow('Web admin', c.webAdmin, 'Address copied') : ''}${c.jmap ? mrow('JMAP', c.jmap, 'Address copied') : ''}</div>` : ''}</div>`}</div>`;
+}
+
+// Certificate.
+function mailPaneCert() {
+  const https = location.protocol === 'https:';
+  return `<div class="stack"><div class="card pad stack"><div><h3 style="margin:0 0 2px">Install your own certificate</h3>
+    <div class="hint" style="max-width:70ch">The mail server starts with a self-signed certificate, so mail apps warn once and you accept it. If you want apps and other servers to trust it without a warning, get a certificate for <span class="mono">${esc(mail.s.setup?.hostname || 'mail.example.com')}</span> and paste it here. Use a certificate authority such as Let’s Encrypt with its DNS challenge, since an app on the phone can’t open port 80 or 443 for the usual check.</div></div>
+    ${https ? '' : notice('', 'You opened this dashboard over plain HTTP, so the private key travels unencrypted to the phone. Only do this on a network you trust.')}
+    <label class="field">Certificate (PEM, with the full chain)<textarea data-input="mailCert" data-k="cert" rows="7" class="mono pem" placeholder="-----BEGIN CERTIFICATE-----" spellcheck="false" autocomplete="off">${esc(mail.cert.cert)}</textarea></label>
+    <label class="field">Private key (PEM)<textarea data-input="mailCert" data-k="key" rows="7" class="mono pem" placeholder="-----BEGIN PRIVATE KEY-----" spellcheck="false" autocomplete="off">${esc(mail.cert.key)}</textarea><span class="hint">Sent to the phone and kept there. It is never shown again.</span></label>
+    ${mail.certErr ? notice('bad', esc(mail.certErr)) : ''}
+    <div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn primary" data-act="mailCert" ${mail.certBusy ? 'disabled' : ''}>${icon('upload')}${mail.certBusy ? 'Installing…' : 'Install the certificate'}</button><span class="hint">The mail server restarts for a few seconds.</span></div></div></div>`;
+}
+INP.mailCert = t => { mail.cert[t.dataset.k] = t.value; };
+Object.assign(ACT, {
+  async mailCert() {
+    const p = mailPemProblem(mail.cert.cert, mail.cert.key);
+    if (p) { mail.certErr = p; drawMailPane(); return; }
+    mail.certErr = ''; mail.certBusy = true; drawMailPane();
+    try { await api('mail/certificate', {method: 'POST', body: {certificate: mail.cert.cert.trim(), privateKey: mail.cert.key.trim()}}); mail.cert = {cert: '', key: ''}; toast('Certificate installed; the mail server is restarting'); }
+    catch (e) { mail.certErr = e.message; }
+    mail.certBusy = false; drawMailPane();
+  },
+});
+registerPage('mail', renderMail, 0);
+
+
+// ---- Wi-Fi repeater --------------------------------------------------------------------
+// Shares the phone's internet through a Wi-Fi Direct network and built-in proxies. Polls while open for the clients and traffic.
+const RP_GUIDE = 'https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md';
+const rp = {s: null, reveal: false, os: 0, prev: null, prevAt: 0, rates: {up: 0, down: 0}, qrFor: '', qrSvg: '', qrErr: ''};
+async function renderRepeater() {
+  const s = await api('repeater'), now = Date.now();
+  rp.rates = s.state === 'running' ? repeaterRates(rp.prev, s.traffic, now - rp.prevAt) : {up: 0, down: 0};
+  rp.prev = s.traffic; rp.prevAt = now; rp.s = s;
+  drawRepeater();
+}
+function rpQr(payload) {
+  if (rp.qrFor !== payload) {
+    rp.qrFor = payload; rp.qrErr = ''; rp.qrSvg = '';
+    try { rp.qrSvg = qrSvg(qrEncode(payload), 'QR code that joins the Wi-Fi network'); } catch (e) { rp.qrErr = e.message; }
+  }
+  return rp.qrSvg;
+}
+function drawRepeater() {
+  const s = rp.s, running = s.state === 'running';
+  setHTML($('#rpHead'), rpHeadHtml(s));
+  setHTML($('#rpNet'), rpNetHtml(s));
+  setHTML($('#rpQr'), rpQrHtml(s, running));
+  setHTML($('#rpProxy'), rpProxyHtml(s, running));
+  setHTML($('#rpHow'), rpHowHtml(s, running));
+  setHTML($('#rpClients'), rpClientsHtml(s, running));
+  setHTML($('#rpLimits'), `<div class="card pad"><h3 style="margin:0 0 6px">What it can’t do</h3>${mailBullets((s.limits || []).map(esc))}<p class="hint" style="margin:10px 0 0">More in ${extLink(RP_GUIDE, 'the Wi-Fi repeater guide')}.</p></div>`);
+}
+function rpHeadHtml(s) {
+  const st = REPEATER_STATES[s.state] || {badge: '', label: s.state, tone: ''}, label = s.permission?.label || 'Nearby devices';
+  const detail = {
+    needs_permission: `<b>Android needs your permission first.</b> A phone can only create a Wi-Fi network after you allow “${esc(label)}” (<span class="mono">${esc(s.permission?.name || '')}</span>) for Homedroid. Homedroid doesn’t use your location for this. The dashboard can’t ask for it: on the phone, open Homedroid, go to <b>Settings → Wi-Fi repeater</b> and allow it, then turn the switch on here.`,
+    unsupported: `<b>This phone can’t do it.</b> ${esc(s.message)} The repeater needs Wi-Fi Direct; there is nothing to set up on this phone.`,
+    error: `<b>The network didn’t start.</b> ${esc(s.message)} Turn the switch off and on to try again.`,
+    waiting: `<b>Waiting to start again.</b> ${esc(s.message || 'Android closed the network.')} Homedroid tries again every few seconds, then less often, up to once a minute.`,
+    starting: `<b>Starting.</b> ${esc(s.message || 'The phone is creating the network.')} This takes a few seconds.`,
+  }[s.state];
+  const c = s.concurrent;
+  return `<div class="card pad stack"><div class="row" style="gap:12px;flex-wrap:wrap"><div class="avatar" style="background:var(--accent-soft);color:var(--accent)">${icon('wifi')}</div>
+    <div class="grow" style="flex:1 1 180px"><div class="title" style="font-size:var(--text-lg);font-weight:650">Share this phone’s internet</div>
+      <div class="hint">${s.state === 'running' ? `${s.clients.count} ${s.clients.count === 1 ? 'device' : 'devices'} connected` : 'Other devices join a Wi-Fi network made by this phone and use it as their proxy.'}</div></div>
+    <span class="badge ${st.badge}">${esc(st.label)}</span>${switchBtn('rpToggle', s.enabled, 'Wi-Fi repeater on', s.state === 'unsupported' ? 'disabled' : '')}</div>
+    ${detail ? notice(st.tone === 'bad' ? 'bad' : '', detail) : ''}
+    ${s.state === 'running' && c?.note ? notice(c.stationKept === false ? '' : 'info', esc(c.note)) : ''}
+    ${s.state === 'off' ? `<div class="hint max">Turn it on, then join the network from another device and set that device’s proxy. The steps for each system are further down. It is not a true repeater: devices must be told to use the phone as their proxy.</div>` : ''}</div>`;
+}
+function rpNetHtml(s) {
+  const n = s.network, pass = n.passphrase || '';
+  return `<div class="card pad stack"><div><h3 style="margin:0 0 2px">The network</h3><div class="hint">The name and passphrase other devices use to join.</div></div>
+    <div class="mrow"><span class="ml">Name</span><span class="mv mono">${esc(n.name)}</span><span class="row" style="gap:0">${copyBtn(n.name, 'Name copied')}</span></div>
+    <div class="mrow"><span class="ml">Passphrase</span><span class="mv mono ${rp.reveal ? '' : 'masked'}">${rp.reveal ? esc(pass) : '••••••••••••'}</span>
+      <span class="row" style="gap:0"><button type="button" class="btn ghost sm icon" data-act="rpReveal" aria-pressed="${rp.reveal}" title="${rp.reveal ? 'Hide' : 'Show'} the passphrase" aria-label="${rp.reveal ? 'Hide' : 'Show'} the passphrase">${icon(rp.reveal ? 'eyeoff' : 'eye')}</button>
+      <button type="button" class="btn ghost sm icon" data-act="rpCopyPass" title="Copy the passphrase" aria-label="Copy the passphrase">${icon('copy')}</button></span></div>
+    <div class="mrow"><span class="ml">Band</span><span class="mv"><span class="seg" role="group" aria-label="Band">${[['auto', 'Automatic'], ['2.4', '2.4 GHz'], ['5', '5 GHz']].map(([v, t]) => `<button type="button" data-act="rpBand" data-v="${v}" aria-pressed="${n.band === v}">${t}</button>`).join('')}</span></span><span></span></div>
+    ${s.state === 'running' ? `<div class="mrow"><span class="ml">Phone’s address</span><span class="mv mono">${esc(n.address)}</span>${copyBtn(n.address, 'Address copied')}</div>` : ''}
+    <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="rpEdit">${icon('edit')}Change name or passphrase</button><button class="btn sm" data-act="rpRegen">${icon('sync')}New passphrase</button></div>
+    <div class="hint">The name always starts with <span class="mono">DIRECT-xx-</span>, which Android requires. 5 GHz is faster when the phone’s own Wi-Fi is also 5 GHz. Some phones can only run the network on 2.4 GHz, or on the same channel as their own Wi-Fi.</div></div>`;
+}
+function rpQrHtml(s, running) {
+  const svg = s.wifiQr ? rpQr(s.wifiQr) : '';
+  return `<div class="card pad stack" style="align-items:center;text-align:center"><div style="align-self:stretch;text-align:left"><h3 style="margin:0 0 2px">Join with a camera</h3><div class="hint">Scan it with another phone’s camera or its Wi-Fi settings to join “${esc(s.network.name)}”.</div></div>
+    ${svg ? `<div class="qrbox ${running ? '' : 'dim'}">${svg}</div>` : notice('', esc(rp.qrErr || 'No code to show.'))}
+    <div class="hint" style="max-width:36ch">${running ? 'The code holds the passphrase, so keep it off shared screens. It only joins the Wi-Fi: the device still needs the proxy settings.' : 'The network is off, so this code won’t connect until you turn it on.'}</div>
+    ${s.wifiQr ? `<details style="align-self:stretch;text-align:left"><summary class="hint">Show the text in the code</summary><div style="margin-top:8px">${copyLine(s.wifiQr, 'Text copied')}</div></details>` : ''}</div>`;
+}
+function rpProxyHtml(s, running) {
+  const p = s.proxy, line = (label, value, what) => running ? `<div class="mrow"><span class="ml">${esc(label)}</span><span class="mv mono">${esc(value)}</span>${copyBtn(value, what)}</div>` : `<div class="mrow"><span class="ml">${esc(label)}</span><span class="mv muted">Shown when the network is running</span><span></span></div>`;
+  return `<div class="card pad stack"><div><h3 style="margin:0 0 2px">Proxy for the devices</h3><div class="hint">Devices that joined the network set one of these. Anything that follows the proxy setting then goes through this phone.</div></div>
+    ${line('HTTP and HTTPS', p.http, 'Address copied')}${line('SOCKS5', p.socks, 'Address copied')}${line('Automatic (PAC)', p.pac, 'Address copied')}
+    <div class="rule"></div>
+    <div class="row" style="gap:12px;align-items:flex-start"><div class="grow"><b>Let devices reach my home network</b>
+      <div class="hint">${p.allowLan ? 'On: anyone with the Wi-Fi passphrase can reach other devices on your home network, and this phone’s own services.' : 'Off: devices get the internet only. They can’t reach this phone’s dashboard or SSH, or other devices on your home network. Leave it off unless you need it.'}</div></div>
+      ${switchBtn('rpLan', p.allowLan, 'Let devices reach my home network')}</div>
+    ${p.allowLan ? notice('bad', '<b>Anyone who knows the passphrase can use your home network.</b> That includes the dashboard, files and anything else reachable from this phone. Turn it off when you are done.') : ''}</div>`;
+}
+function rpHowHtml(s, running) {
+  const list = s.instructions || [], os = Math.min(rp.os, Math.max(0, list.length - 1)), cur = list[os];
+  const step = t => /^(export |curl )/.test(t) ? codeBlock(t, 'Command copied') : esc(t);
+  return `<div class="card pad stack"><div><h3 style="margin:0 0 2px">Connect a device</h3><div class="hint">Pick the device’s system. First join the network, then set the proxy.${running ? '' : ' The addresses are filled in once the network is running.'}</div></div>
+    ${tabsHtml('rpOs', list.map((x, i) => [String(i), x.os]), String(os), 'System')}
+    ${cur ? `<ol class="steps">${cur.steps.map(t => `<li>${step(t)}</li>`).join('')}</ol>` : ''}</div>`;
+}
+const fmtRate = n => n ? rate(n) : '0 B/s';
+function rpClientsHtml(s, running) {
+  const c = s.clients, t = s.traffic, tile = (k, v, sub) => `<div class="mini"><div class="mini-k">${k}</div><div class="mini-v">${v}</div><div class="hint">${sub}</div></div>`;
+  return `<div class="card pad stack"><div><h3 style="margin:0 0 2px">Devices and traffic</h3><div class="hint">${running ? 'Updates every few seconds.' : 'Shown while the network is running.'}</div></div>
+    <div class="minis">${tile('Sent to devices', bytes(t.bytesDown), running ? fmtRate(rp.rates.down) : '–')}${tile('Received from devices', bytes(t.bytesUp), running ? fmtRate(rp.rates.up) : '–')}${tile('Open connections', String(t.connections), `${t.totalConnections} since it started`)}</div>
+    ${c.devices.length ? `<div class="gridwrap" style="max-height:none"><table class="dtable"><thead><tr><th>Device</th><th>Address</th></tr></thead><tbody>${c.devices.map(d => `<tr><td>${esc(d.name)}</td><td class="mono">${esc(d.mac)}</td></tr>`).join('')}</tbody></table></div>`
+      : `<div class="hint">${running ? 'No device has joined yet. Join the network from another device, then set its proxy.' : 'No devices.'}</div>`}</div>`;
+}
+async function rpPost(body, done) {
+  try { rp.s = await api('repeater', {method: 'POST', body}); if (done) toast(done); } catch (e) { toast(e.message, true); }
+  refresh();
+}
+Object.assign(ACT, {
+  rpToggle(b) { const on = !isOn(b); setSwitch(b, on); rpPost({enabled: on}, on ? 'Turning the repeater on' : 'Repeater off'); },
+  rpReveal() { rp.reveal = !rp.reveal; drawRepeater(); },
+  rpCopyPass() { copyText(rp.s.network.passphrase, 'Passphrase copied'); },
+  rpBand(b) { rpPost({band: b.dataset.v}, 'Band set to ' + (b.dataset.v === 'auto' ? 'automatic' : b.dataset.v + ' GHz')); },
+  rpOs(b) { rp.os = +b.dataset.t; drawRepeater(); },
+  async rpRegen() {
+    if (await ask({title: 'Make a new passphrase?', text: 'Devices that joined with the old one are cut off and have to join again with the new one. If the network is on, it restarts.', confirm: 'New passphrase'})) rpPost({regenerate: true}, 'New passphrase made');
+  },
+  async rpLan(b) {
+    const on = !isOn(b);
+    if (on && !(await ask({title: 'Let devices reach your home network?', text: 'Everyone who knows the Wi-Fi passphrase will be able to reach devices on your home network and this phone’s own services, such as this dashboard. Only turn it on for people and devices you trust.', confirm: 'Allow it', danger: true}))) return;
+    rpPost({allowLan: on}, on ? 'Devices can reach your home network' : 'Devices can reach the internet only');
+  },
+  rpEdit() {
+    const n = rp.s.network;
+    formDialog({title: 'Change the network', confirm: 'Save',
+      body: `<label class="field">Name<input name="name" value="${esc(n.name.replace(/^DIRECT-[A-Za-z0-9]{2}-/, ''))}" maxlength="22" spellcheck="false" autocomplete="off" data-input="rpName"><span class="hint" id="rpNamePrev">Saved as <span class="mono">${esc(repeaterName(n.name))}</span>. Android requires the DIRECT-xx- start; just type the rest.</span></label>
+        <label class="field">Passphrase<input name="passphrase" value="${esc(n.passphrase)}" class="mono" spellcheck="false" autocomplete="off" minlength="8" maxlength="63"><span class="hint">8 to 63 letters, digits or symbols, no accents. Empty keeps the current one.</span></label>
+        ${notice('', 'If the network is on, it restarts, and devices have to join again when the name or passphrase changes.')}`,
+      submit: async form => {
+        const name = form.elements.name.value.trim(), pass = form.elements.passphrase.value;
+        if (pass && !repeaterPassOk(pass)) throw new Error('The passphrase needs 8 to 63 letters, digits or symbols, with no accents.');
+        const body = {name: name || 'Homedroid'}; if (pass && pass !== n.passphrase) body.passphrase = pass;
+        rp.s = await api('repeater', {method: 'POST', body}); toast('Saved'); refresh();
+      }});
+  },
+});
+INP.rpName = t => { const el = $('#rpNamePrev .mono'); if (el) el.textContent = repeaterName(t.value); };
+registerPage('repeater', renderRepeater, 3000);
+
 
 // ---- IPCam and settings ----------------------------------------------------------------
 function syncCameraNavigation(settings) {

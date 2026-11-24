@@ -392,7 +392,7 @@ function createMockServer({log = console.warn, jobStepMs = 350, delayMs = 800} =
       if (method === 'POST' && s[2] === 'restart') { need(F.daemon(p, s[1]), 'Service is not running'); F.bump(p, s[1], true); return send(res, ok); }
     }
     // Console pages: databases, documents, domains, logs, DDNS, firewall, MCP, deployment settings and hooks, MacroPads, desktop.
-    if (['db', 'docs', 'domains', 'ddns', 'firewall', 'mcp', 'macropads', 'desktop'].includes(s[0]) || (s[0] === 'deploys' && s.length >= 3 && ['settings', 'token', 'upload', 'pipeline', 'runs'].includes(s[2]))) {
+    if (['db', 'docs', 'domains', 'ddns', 'firewall', 'mcp', 'macropads', 'desktop', 'mail', 'repeater'].includes(s[0]) || (s[0] === 'deploys' && s.length >= 3 && ['settings', 'token', 'upload', 'pipeline', 'runs'].includes(s[2]))) {
       const handled = await X.route(extras, p, s, method, b, raw, url, res, send, {later, stepMs: jobStepMs});
       if (handled !== false) return;
     }
