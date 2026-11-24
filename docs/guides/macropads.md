@@ -88,6 +88,61 @@ fail immediately. Redirects are not followed. URLs must use HTTP/HTTPS and canno
 contain embedded credentials. Webhook URLs are convenient for Home Assistant;
 custom authorization headers are not part of this version's action format.
 
+## Appearance
+
+Tap the palette icon in the deck header (or use the dashboard's **Look** section) to
+restyle the deck. Scope can be the whole deck, one profile or one page; the more specific
+scope overrides the broader one option by option. Changes preview live behind the sheet
+and apply when you tap **Save look**.
+
+- **Themes**: Studio, Neon, Minimal, Paper, OLED, Sunset and Ocean apply in one tap;
+  adjusting any option afterwards makes the look custom.
+- **Background**: the app default, a solid color, a gradient (2-3 stops, angle in steps
+  of 45 degrees), OLED black, or your own image with blur (0-25) and dim (0-90 percent).
+  Images are picked from the gallery, scaled to fit and stored on the phone.
+- **Font**: family (system, sans, serif, monospace, rounded, condensed or an imported
+  `.ttf`/`.otf` file up to 1 MB), weight, size (50-200 percent), label position
+  (below the icon, beside it or hidden), text color and uppercase.
+- **Keys**: corner radius, gap, border and its color, glow, shadow, a gradient on or off,
+  and a key color that replaces every key's own color. Per key you can set a label size
+  and content alignment.
+- **Icons**: size and tint, 88 built-in line icons with a searchable picker, an emoji,
+  or an image from the gallery (cropped to a square, never tinted).
+
+Header text follows the background brightness so it stays readable.
+
+### Look in macropads.json
+
+All fields are optional; absent means the default shown. The same `look` object may appear
+on the deck (top level), a profile and a page.
+
+```json
+{"version": 2, "look": {
+  "theme": "neon",
+  "bg":   {"type": "color|gradient|image|oled", "color": "#101418", "colors": ["#1B2230", "#0E121A"],
+           "angle": 135, "image": "a-0123456789abcdef", "blur": 0, "dim": 0},
+  "font": {"family": "system|sans|serif|mono|rounded|condensed|custom", "custom": "a-...", "weight": 500,
+           "scale": 100, "position": "below|inside|none", "color": "#FFFFFF", "upper": false},
+  "key":  {"radius": 20, "gap": 6, "border": 1, "borderColor": "#FFFFFF", "glow": 0, "shadow": 0,
+           "gradient": true, "color": "#263142"},
+  "icon": {"size": 30, "tint": "#00F0FF"}}}
+```
+
+Buttons gain `image` (asset id of a custom icon), `textSize` (6-40 sp) and `align`
+(`center|start|end`). Image and font files are not stored in `macropads.json`; they are
+referenced by asset id and kept in the app's private files (at most 40 files of 1 MB;
+files no deck references are removed after ten minutes). The API:
+
+- `GET /api/macropads/themes` returns `[{id, name, look}]`.
+- `GET /api/macropads/assets` lists `{id, kind, bytes, name}`.
+- `POST /api/macropads/assets?kind=image|font&name=...` stores the raw request body
+  (JPEG, PNG or WebP; TTF or OTF; at most 1 MB) and returns the asset description.
+- `GET /api/macropads/assets/<id>` returns the file; `DELETE` removes it unless the deck uses it.
+
+**Copy JSON** and **Share JSON** embed the used images and fonts as base64 under a top-level
+`assets` object when they total 1.5 MB or less; otherwise they are left out (the app tells you)
+and the look only works on this phone. **Import JSON** stores the embedded assets first.
+
 ## Import and export
 
 In **Deck settings**, use **Copy JSON** to back up to the clipboard, or **Share JSON**
@@ -96,7 +151,7 @@ field prefilled from the clipboard. Review it and tap Import to replace all prof
 Invalid imports leave the saved deck intact. Exports can include command text and
 private webhook URLs; share only with intended recipients.
 
-The document uses protocol version 1 and is stored atomically in
+The document uses schema version 2 (version 1 decks are migrated when read; they have no look) and is stored atomically in
 `files/macropads.json`. IDs are globally unique, with at most 16 profiles and 16 pages
 per profile. Each button occupies one grid cell. The document is limited to 512K
 characters. Labels and names are limited to 80 characters; colors use `#RRGGBB`.
@@ -118,8 +173,14 @@ There is one webcam stream per phone. Stop IPCam live view, monitoring, recordin
 its torch before starting it. IPCam and Desktop webcam reserve the camera exclusively;
 a conflict returns 409 with an explanation. Slow clients receive the newest frame,
 not a backlog. Stream disconnects release capture resources when detected; stalled
-socket writes are closed after 30 seconds. Torch and zoom are best effort, mirror is
-applied before JPEG encoding, and optional focus controls report unsupported.
+socket writes are closed after 30 seconds. The desktop companion's Camera panel
+(and `homedroid-desktop webcam --zoom 1.5 --torch --ev 1 --wb daylight --rotate 90`) offers
+only what the selected phone camera reports it supports: source, resolution and frame
+rate, zoom, torch, focus (continuous, auto, manual distance, tap to focus), exposure
+compensation, AE/AWB lock, white balance, manual ISO and shutter, stabilization,
+anti-banding, and mirror/flip/rotate, which are applied on the phone before JPEG
+encoding. Unsupported requests are rejected with a clear error. See
+`docs/desktop-protocol.md` for the control fields and capabilities shape.
 
 ## Dashboard integration
 

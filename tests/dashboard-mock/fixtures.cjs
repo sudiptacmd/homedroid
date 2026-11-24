@@ -523,7 +523,22 @@ function createCluster() {
   };
 }
 
+// ---- MacroPads look fixtures --------------------------------------------------------------------------------------
+/** Uploaded-asset ids the starter deck refers to, and a tiny wallpaper (a PNG test card) the mock serves for them. */
+const MACRO_ASSET_IDS = {wallpaper: 'a-0ba11e7500000001'};
+function macroAssets() {
+  return new Map([[MACRO_ASSET_IDS.wallpaper, {id: MACRO_ASSET_IDS.wallpaper, kind: 'image', name: 'wallpaper.png', mime: 'image/png', data: frame(0, 70, 640, 360)}]]);
+}
+/** Looks on the starter deck: a gradient deck look, and a streaming profile with a blurred, dimmed picture and glowing keys. */
+function macroLooks() {
+  return {
+    deck: {theme: 'studio', bg: {type: 'gradient', colors: ['#1B2230', '#0E121A'], angle: 180}, font: {family: 'system', weight: 500}, key: {radius: 20, gap: 6, border: 1, gradient: true, shadow: 30}, icon: {size: 30}},
+    streaming: {bg: {type: 'image', image: MACRO_ASSET_IDS.wallpaper, blur: 6, dim: 35}, font: {family: 'mono', weight: 700, upper: true, scale: 90}, key: {radius: 30, gap: 10, border: 2, borderColor: '#FFFFFF', glow: 40, gradient: false}, icon: {size: 34, tint: '#FFFFFF'}},
+  };
+}
+
 module.exports = {
+  MACRO_ASSET_IDS, macroAssets, macroLooks,
   ASSETS, VERSION, CORE, AI_CATALOG, now, rand, pick, hex, clamp,
   createPhone, createCluster, startJob, installLines, bump, walk, treeSize,
   status, services, serviceList, daemon, modules, job, deploys, deployJson, settings, logs, tailscaleJson,

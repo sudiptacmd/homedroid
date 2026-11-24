@@ -19,6 +19,8 @@ internal class MacroPadEditor(
     private val computers: JSONArray,
     private val model: JSONObject,
     private val profile: JSONObject,
+    private val assets: MacroAssets,
+    private val pickAsset: (kind: String, square: Boolean, then: (String) -> Unit) -> Unit,
 ) {
     private fun objects(a: JSONArray) = (0 until a.length()).map { a.getJSONObject(it) }
     private fun choice(parent: LinearLayout, title: String, values: List<Pair<String, String>>, initial: String): () -> String {
@@ -56,34 +58,63 @@ internal class MacroPadEditor(
         var selected = initial
         lateinit var button: TextView
         button = ui.button("Icon · $selected", ButtonKind.Tonal, MacroIcons.get(selected)) {
-            val sheet = ui.sheet("Choose an icon", "Line icons adapt to your key's text color")
-            MacroIcons.all.entries.chunked(4).forEach { icons ->
-                val row = ui.row()
-                icons.forEach { (name, glyph) ->
-                    row.addView(ui.column().apply {
-                        gravity = Gravity.CENTER; setPadding(0, ui.dp(8), 0, ui.dp(8))
-                        background = ui.ripple(ui.shape(if (name == selected) ui.p.primaryContainer else ui.p.surfaceHigh, 16), ui.shape(Color.WHITE, 16))
-                        addView(ui.icon(glyph, ui.p.onSurface, 26))
-                        addView(ui.text(name, TypeStyle.LabelSmall).apply { gravity = Gravity.CENTER; maxLines = 1 }, ui.lp(top = 6))
-                        contentDescription = name; isFocusable = true; ui.role(this, "android.widget.Button")
-                        setOnClickListener { selected = name; button.text = "Icon · $name"; sheet.close() }
-                    }, ui.lp(0, ui.dp(76), 1f, start = 3, end = 3))
+            val sheet = ui.sheet("Choose an icon", "${MacroIcons.list.size} line icons that adapt to your key's colors")
+            val query = ui.field(sheet.body, "Search", "", hint = "mic, volume, game, mail…")
+            val results = ui.column(); sheet.body.addView(results)
+            fun draw(text: String) {
+                results.removeAllViews()
+                val found = MacroIcons.search(text)
+                if (found.isEmpty()) results.addView(ui.text("No icons match \"$text\".", TypeStyle.BodyMedium, ui.p.onSurfaceVariant), ui.lp(top = 16))
+                found.chunked(4).forEach { icons ->
+                    val row = ui.row()
+                    icons.forEach { entry ->
+                        row.addView(ui.column().apply {
+                            gravity = Gravity.CENTER; setPadding(0, ui.dp(8), 0, ui.dp(8))
+                            background = ui.ripple(ui.shape(if (entry.name == selected) ui.p.primaryContainer else ui.p.surfaceHigh, 16), ui.shape(Color.WHITE, 16))
+                            addView(ui.icon(entry.icon, ui.p.onSurface, 26))
+                            addView(ui.text(entry.name, TypeStyle.LabelSmall).apply { gravity = Gravity.CENTER; maxLines = 1 }, ui.lp(top = 6))
+                            contentDescription = entry.name; isFocusable = true; ui.role(this, "android.widget.Button")
+                            setOnClickListener { selected = entry.name; button.text = "Icon · ${entry.name}"; sheet.close() }
+                        }, ui.lp(0, ui.dp(76), 1f, start = 3, end = 3))
+                    }
+                    repeat(4 - icons.size) { row.addView(android.view.View(ctx), ui.lp(0, 1, 1f, start = 3, end = 3)) }
+                    results.addView(row, ui.lp(top = 6))
                 }
-                sheet.body.addView(row, ui.lp(top = 6))
             }
+            draw("")
+            query.edit.addTextChangedListener(object : android.text.TextWatcher {
+                override fun afterTextChanged(s: android.text.Editable?) = draw(s.toString())
+                override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            })
             sheet.done(); sheet.show()
         }
         parent.addView(button, ui.lp(top = 12))
         return { selected }
     }
+    /** Custom image icon: picked from the gallery, centre-cropped square and stored locally. Returns the asset id or "". */
+    private fun imageIcon(parent: LinearLayout, initial: String): () -> String {
+        var selected = initial.takeIf { it.isNotEmpty() && assets.has(it, "image") }.orEmpty()
+        lateinit var pick: TextView; lateinit var clear: TextView
+        fun refresh() { pick.text = if (selected.isEmpty()) "Image icon · none" else "Image icon · custom"; clear.visibility = if (selected.isEmpty()) android.view.View.GONE else android.view.View.VISIBLE }
+        pick = ui.button("", ButtonKind.Tonal, Icon.Image) { pickAsset("image", true) { id -> selected = id; refresh() } }
+        clear = ui.button("Remove image icon", ButtonKind.Text, Icon.Close) { selected = ""; refresh() }
+        parent.addView(pick, ui.lp(top = 12)); parent.addView(clear); refresh()
+        parent.addView(ui.text("An image replaces the line icon and emoji. It is cropped to a square and keeps its own colors.", TypeStyle.BodySmall, ui.p.onSurfaceVariant), ui.lp(top = 4))
+        return { selected }
+    }
+
     fun show(original: JSONObject?, row: Int, col: Int, commit: (JSONObject?) -> Boolean) {
         val sheet = ui.sheet(if (original == null) "Create a key" else "Edit key", "Make it yours · changes apply when you save")
         val draft = original?.let { JSONObject(it.toString()) } ?: JSONObject().put("id", "b-${UUID.randomUUID()}").put("row", row).put("col", col)
         val label = ui.field(sheet.body, "Label", draft.optString("label", "New key"))
         val selectedIcon = icon(sheet.body, draft.optString("icon", "star"))
         val emoji = ui.field(sheet.body, "Emoji (optional)", if (draft.isNull("emoji")) "" else draft.optString("emoji"), supporting = "An emoji replaces the line icon. Clear it to use the icon.")
+        val image = imageIcon(sheet.body, draft.optString("image"))
         val background = color(sheet.body, "Key color", draft.optString("color", "#285A78"))
         val foreground = color(sheet.body, "Text color", draft.optString("textColor", "#FFFFFF"))
+        val textSize = ui.field(sheet.body, "Label size · optional", if (draft.has("textSize")) draft.optInt("textSize").toString() else "", numeric = true, supporting = "6–40 sp. Leave empty to fit the label automatically.")
+        val align = choice(sheet.body, "Content alignment", listOf("" to "Default", "center" to "Center", "start" to "Start", "end" to "End"), draft.optString("align"))
         val enabled = choice(sheet.body, "Button", listOf("yes" to "Enabled", "no" to "Disabled"), if (draft.optBoolean("disabled")) "no" else "yes")
         val action = actionForm(sheet.body, draft.optJSONObject("action") ?: JSONObject().put("kind", "media").put("key", "play_pause"))
         val targets = listOf("" to "All connected computers") + objects(computers).map { it.getString("id") to it.getString("name") }
@@ -105,6 +136,9 @@ internal class MacroPadEditor(
             draft.put("label", label.value).put("icon", selectedIcon()).put("emoji", emoji.value.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("color", background()).put("textColor", foreground()).put("action", a)
                 .put("computer", target().takeIf { it.isNotEmpty() } ?: JSONObject.NULL).put("disabled", enabled() == "no")
+            image().let { if (it.isEmpty()) draft.remove("image") else draft.put("image", it) }
+            textSize.value.trim().let { if (it.isEmpty()) draft.remove("textSize") else draft.put("textSize", it.toIntOrNull() ?: throw IllegalArgumentException("Label size must be 6–40")) }
+            align().let { if (it.isEmpty()) draft.remove("align") else draft.put("align", it) }
             if (hasToggle() == "yes") draft.put("toggle", (toggle?.let { JSONObject(it.toString()) } ?: JSONObject()).put("label", toggleLabel.value).put("icon", toggleIcon()).put("color", toggleColor()))
             else draft.remove("toggle")
             MacroPadsCore.validateAction(a)

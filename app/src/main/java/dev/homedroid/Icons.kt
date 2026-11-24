@@ -22,7 +22,8 @@ enum class Icon {
     Refresh, Trash, Lock, Fingerprint, Key, Terminal, Shield, Cloud, Camera, Logs, Folder, Sparkle,
     Layers, Phone, Contrast, Clock, Dock, Keypad, Info, Warning, Alert, Server, Plug, Stop, Play,
     Eye, Bell, Nodes, Swatch, Mic, MicOff, VolumeUp, VolumeDown, VolumeMute, Pause, Next, Previous,
-    Screenshot, Paste, Undo, Redo, Light, Mouse, Keyboard, Music, Heart, Search, Minus;
+    Screenshot, Paste, Undo, Redo, Light, Mouse, Keyboard, Music, Heart, Search, Minus,
+    Video, Image, Mail, Chat, Calendar, Bookmark, Flag, Pin, Edit, Link, Code, Gamepad, Headphones, Sun, Moon, Cart, Gift, Star;
 
     private val parts: Pair<Path, Path?> by lazy { build(this) }
     val stroke: Path get() = parts.first
@@ -219,6 +220,40 @@ enum class Icon {
                     p.cubicTo(13.2f, 21f, 13.8f, 20.2f, 13.5f, 19.2f); p.cubicTo(13.1f, 17.8f, 14f, 16.5f, 15.5f, 16.5f)
                     p.lineTo(17f, 16.5f); p.cubicTo(19.2f, 16.5f, 21f, 14.7f, 21f, 12.5f); p.cubicTo(21f, 7.3f, 17f, 3f, 12f, 3f); p.close()
                     dot(7.5f, 12f, 1.3f); dot(9.5f, 7.8f, 1.3f); dot(14.5f, 7.8f, 1.3f); dot(17f, 11.5f, 1.3f)
+                }
+                Video -> { rr(3f, 6f, 16f, 18f, 2.5f); line(16f, 10f, 21f, 7f, 21f, 17f, 16f, 14f) }
+                Image -> { rr(3f, 4f, 21f, 20f, 2.5f); circle(9f, 10f, 1.8f); line(3f, 17f, 9f, 12f, 13f, 16f, 16f, 13f, 21f, 18f) }
+                Mail -> { rr(3f, 5f, 21f, 19f, 2.5f); line(3.5f, 7f, 12f, 13.5f, 20.5f, 7f) }
+                Chat -> { rr(3f, 4f, 21f, 16f, 3f); line(8f, 16f, 8f, 20.5f, 12.5f, 16f) }
+                Calendar -> { rr(3f, 5f, 21f, 21f, 2.5f); line(3f, 10f, 21f, 10f); line(8f, 3f, 8f, 7f); line(16f, 3f, 16f, 7f); dot(8f, 14f); dot(12f, 14f); dot(16f, 14f); dot(8f, 17.5f); dot(12f, 17.5f) }
+                Bookmark -> { line(6f, 3.5f, 18f, 3.5f, 18f, 21f, 12f, 16.5f, 6f, 21f); p.close() }
+                Flag -> { line(5f, 21f, 5f, 3f); line(5f, 4f, 19f, 4f, 15.5f, 8.5f, 19f, 13f, 5f, 13f) }
+                Pin -> {
+                    p.moveTo(12f, 21f); p.cubicTo(6.5f, 14.5f, 5f, 11.5f, 5f, 9f); p.arcTo(oval(5f, 2f, 19f, 16f), 180f, 180f)
+                    p.cubicTo(19f, 11.5f, 17.5f, 14.5f, 12f, 21f); p.close(); circle(12f, 9f, 2.5f)
+                }
+                Edit -> { line(4f, 20f, 4.5f, 15.5f, 16f, 4f, 20f, 8f, 8.5f, 19.5f); p.close(); line(13.5f, 6.5f, 17.5f, 10.5f) }
+                Link -> { rr(2.5f, 9f, 12.5f, 15f, 3f); rr(11.5f, 9f, 21.5f, 15f, 3f); line(9f, 12f, 15f, 12f) }
+                Code -> { line(8f, 7f, 3f, 12f, 8f, 17f); line(16f, 7f, 21f, 12f, 16f, 17f); line(14f, 5f, 10f, 19f) }
+                Gamepad -> { rr(2.5f, 7f, 21.5f, 17f, 5f); line(7f, 10.5f, 7f, 13.5f); line(5.5f, 12f, 8.5f, 12f); dot(15.5f, 11f); dot(18f, 13f) }
+                Headphones -> { p.addArc(oval(4f, 3f, 20f, 19f), 180f, 180f); rr(3f, 13f, 7f, 20f, 1.5f); rr(17f, 13f, 21f, 20f, 1.5f); line(4f, 11f, 4f, 13f); line(20f, 11f, 20f, 13f) }
+                Sun -> {
+                    circle(12f, 12f, 4f)
+                    for (k in 0 until 8) {
+                        val a = Math.toRadians(k * 45.0)
+                        line(12f + 6.8f * cos(a).toFloat(), 12f + 6.8f * sin(a).toFloat(), 12f + 9.3f * cos(a).toFloat(), 12f + 9.3f * sin(a).toFloat())
+                    }
+                }
+                Moon -> { p.moveTo(18.9f, 17.8f); p.arcTo(oval(3f, 3f, 21f, 21f), 40f, 250f); p.quadTo(10.5f, 10f, 18.9f, 17.8f); p.close() }
+                Cart -> { line(2f, 4f, 5f, 4f, 7.5f, 15f, 18.5f, 15f, 20.5f, 7f, 6f, 7f); dot(9.5f, 19f, 1.4f); dot(17f, 19f, 1.4f) }
+                Gift -> { rr(4f, 10f, 20f, 21f, 1.5f); rr(3f, 7f, 21f, 10f, 1f); line(12f, 7f, 12f, 21f); p.addOval(oval(7f, 3f, 12f, 7f), Path.Direction.CW); p.addOval(oval(12f, 3f, 17f, 7f), Path.Direction.CW) }
+                Star -> {
+                    for (k in 0 until 10) {
+                        val r = if (k % 2 == 0) 9.5f else 4.2f; val a = Math.toRadians(-90.0 + k * 36.0)
+                        val x = 12f + r * cos(a).toFloat(); val y = 12.5f + r * sin(a).toFloat()
+                        if (k == 0) p.moveTo(x, y) else p.lineTo(x, y)
+                    }
+                    p.close()
                 }
             }
             return p to f

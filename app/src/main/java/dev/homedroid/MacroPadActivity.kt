@@ -36,6 +36,14 @@ class MacroPadActivity : MobileActivity() {
     private lateinit var pads: MacroPads
     private lateinit var desktop: DesktopLink
     private lateinit var model: JSONObject
+    private lateinit var looks: MacroLook
+    private lateinit var curLook: MacroLookCore.Look
+    /** Color for text drawn straight on a custom deck background. */
+    private var onBackground = 0
+    /** True while the look editor is open: its unsaved edits live in [model] and must survive onResume. */
+    private var lookDraft = false
+    private class PendingPick(val kind: String, val square: Boolean, val then: (String) -> Unit)
+    private var pendingPick: PendingPick? = null
     private var profileId = ""
     private var pageId = ""
     private var editing = false
@@ -52,14 +60,14 @@ class MacroPadActivity : MobileActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        pads = MacroPads.get(this); desktop = DesktopLink.get(this); model = pads.read()
+        pads = MacroPads.get(this); desktop = DesktopLink.get(this); model = pads.read(); looks = MacroLook(this, pads.assets)
         profileId = savedInstanceState?.getString("profile").orEmpty(); pageId = savedInstanceState?.getString("page").orEmpty()
         editing = savedInstanceState?.getBoolean("editing") ?: false
         toggled.addAll(savedInstanceState?.getStringArrayList("toggled").orEmpty())
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         render()
     }
-    override fun onResumeUnlocked() { model = pads.read(); render(); handler.removeCallbacks(refresh); handler.post(refresh) }
+    override fun onResumeUnlocked() { if (!lookDraft) model = pads.read(); render(); handler.removeCallbacks(refresh); handler.post(refresh) }
     override fun onPause() { handler.removeCallbacks(refresh); super.onPause() }
     override fun onDestroy() { handler.removeCallbacksAndMessages(null); super.onDestroy() }
     override fun onSaveInstanceState(outState: Bundle) {
@@ -83,38 +91,50 @@ class MacroPadActivity : MobileActivity() {
     }
     private fun render() {
         val p = profile(); val pg = page(); val ui = design
-        val root = ui.column().apply { setBackgroundColor(ui.p.background); setPadding(ui.dp(10), 0, ui.dp(10), ui.dp(6)) }
+        curLook = MacroLookCore.resolve(model.optJSONObject("look"), p.optJSONObject("look"), pg.optJSONObject("look")); val look = curLook
+        val backdrop = looks.backdrop(look)
+        // Header text sits straight on the deck background, so it follows that background's brightness.
+        val luminance = MacroLookCore.backgroundLuminance(look, look.bgImage?.let { looks.bitmap(it, 64) }?.let(looks::luminance))
+        onBackground = if (backdrop == null) ui.p.onSurfaceVariant else if (luminance < 0.5f) 0xFFEDEDED.toInt() else 0xFF1B1B1B.toInt()
+        val strong = if (backdrop == null) ui.p.onSurface else onBackground
+        val root = ui.column().apply {
+            if (backdrop != null) background = backdrop else setBackgroundColor(ui.p.background)
+            setPadding(ui.dp(10), 0, ui.dp(10), ui.dp(6)); clipChildren = false; clipToPadding = false
+        }
         val header = ui.row()
-        header.addView(ui.iconButton(Icon.ChevronRight, "Exit MacroPads") { finish() }.apply { rotation = 180f })
-        header.addView(ui.text(p.getString("name"), TypeStyle.TitleLarge).apply {
-            setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, IconDrawable(Icon.ChevronDown, ui.p.primary, ui.dp(20)), null)
+        header.addView(ui.iconButton(Icon.ChevronRight, "Exit MacroPads", color = if (backdrop == null) null else strong) { finish() }.apply { rotation = 180f })
+        header.addView(ui.text(p.getString("name"), TypeStyle.TitleLarge, strong).apply {
+            setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, IconDrawable(Icon.ChevronDown, if (backdrop == null) ui.p.primary else strong, ui.dp(20)), null)
             compoundDrawablePadding = ui.dp(8); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
             contentDescription = "Switch profile: ${p.getString("name")}"; setOnClickListener { profiles() }
         }, ui.lp(0, -2, 1f, start = 4))
-        header.addView(ui.iconButton(if (editing) Icon.Check else Icon.Tune, if (editing) "Finish editing" else "Edit deck") { editing = !editing; render() })
-        header.addView(ui.iconButton(Icon.Dock, "Computers and pairing") { computers() })
-        header.addView(ui.iconButton(Icon.Settings, "Deck settings") { settings() })
+        val tint = if (backdrop == null) null else strong
+        header.addView(ui.iconButton(if (editing) Icon.Check else Icon.Tune, if (editing) "Finish editing" else "Edit deck", color = tint) { editing = !editing; render() })
+        header.addView(ui.iconButton(Icon.Swatch, "Deck appearance", color = tint) { appearance() })
+        header.addView(ui.iconButton(Icon.Dock, "Computers and pairing", color = tint) { computers() })
+        header.addView(ui.iconButton(Icon.Settings, "Deck settings", color = tint) { settings() })
         root.addView(header, ui.lp(-1, ui.dp(54)))
-        connection = ui.text("", TypeStyle.LabelSmall, ui.p.onSurfaceVariant).apply {
+        connection = ui.text("", TypeStyle.LabelSmall, if (backdrop == null) ui.p.onSurfaceVariant else onBackground).apply {
             setPadding(ui.dp(10), 0, ui.dp(10), ui.dp(4)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
             setOnClickListener { computers() }
         }.also { root.addView(it) }
-        val grid = ui.column(); val rows = p.getInt("rows"); val cols = p.getInt("cols")
+        val grid = ui.column().apply { clipChildren = false; clipToPadding = false }; val rows = p.getInt("rows"); val cols = p.getInt("cols")
         val buttons = objects(pg.getJSONArray("buttons"))
         // A wide grid on a tall screen would stretch keys into slabs: show the same keys, in the
         // same reading order, with the long side running down the screen instead.
         val portrait = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
         val shownCols = if (portrait && cols > rows) rows else cols
         val shownRows = (rows * cols + shownCols - 1) / shownCols
+        val gap = look.gap / 2
         for (r in 0 until shownRows) {
-            val line = ui.row()
+            val line = ui.row().apply { clipChildren = false; clipToPadding = false }
             for (c in 0 until shownCols) {
                 val index = r * shownCols + c
-                if (index >= rows * cols) { line.addView(android.view.View(this), ui.lp(0, -1, 1f, start = 3, end = 3, top = 3, bottom = 3)); continue }
+                if (index >= rows * cols) { line.addView(android.view.View(this), ui.lp(0, -1, 1f, start = gap, end = gap, top = gap, bottom = gap)); continue }
                 val row = index / cols; val col = index % cols
                 val b = buttons.firstOrNull { it.getInt("row") == row && it.getInt("col") == col }
                 val key = key(b, row, col)
-                line.addView(key, ui.lp(0, -1, 1f, start = 3, end = 3, top = 3, bottom = 3))
+                line.addView(key, ui.lp(0, -1, 1f, start = gap, end = gap, top = gap, bottom = gap))
             }
             grid.addView(line, ui.lp(-1, 0, 1f))
         }
@@ -124,7 +144,7 @@ class MacroPadActivity : MobileActivity() {
         pages.forEach { item ->
             val selected = item.getString("id") == pageId
             dots.addView(ui.text(if (selected) "●  ${item.getString("name")}" else "○", TypeStyle.LabelMedium,
-                if (selected) ui.p.primary else ui.p.onSurfaceVariant).apply {
+                if (backdrop != null) onBackground else if (selected) ui.p.primary else ui.p.onSurfaceVariant).apply {
                 gravity = Gravity.CENTER; setPadding(ui.dp(10), 0, ui.dp(10), 0)
                 contentDescription = "Page ${item.getString("name")}"; isSelected = selected
                 setOnClickListener { pageId = item.getString("id"); render() }
@@ -147,40 +167,65 @@ class MacroPadActivity : MobileActivity() {
         }
     }
     private fun key(button: JSONObject?, row: Int, col: Int): View {
-        val ui = design; val id = button?.getString("id").orEmpty()
+        val ui = design; val id = button?.getString("id").orEmpty(); val look = curLook
         val state = button?.optJSONObject("toggle")?.takeIf { id in toggled }
         fun value(name: String, default: String) = state?.optString(name)?.takeIf { it.isNotEmpty() }
             ?: button?.optString(name)?.takeIf { it.isNotEmpty() && it != "null" } ?: default
-        val color = Color.parseColor(value("color", if (ui.dark) "#263142" else "#E4E9F2"))
-        val fg = if (button == null) ui.p.onSurfaceVariant else Color.parseColor(value("textColor", "#FFFFFF"))
+        // A look's key color replaces every key's own color, except a toggled key that sets its own.
+        val color = state?.optString("color")?.takeIf { it.isNotEmpty() }?.let(Color::parseColor) ?: look.keyColor
+            ?: Color.parseColor(value("color", if (ui.dark) "#263142" else "#E4E9F2"))
+        val fg = if (button == null) (if (look.themedBackground) onBackground else ui.p.onSurfaceVariant)
+            else look.fontColor ?: Color.parseColor(value("textColor", "#FFFFFF"))
         val label = value("label", if (editing) "Add key" else "")
+        val inside = look.position == "inside"; val align = button?.optString("align")?.takeIf { it in MacroLookCore.aligns } ?: "center"
+        val gravity = when (align) { "start" -> Gravity.START or Gravity.CENTER_VERTICAL; "end" -> Gravity.END or Gravity.CENTER_VERTICAL; else -> Gravity.CENTER }
+        val face = looks.typeface(look)
         val key = ui.column().apply {
-            gravity = Gravity.CENTER; setPadding(ui.dp(3), ui.dp(4), ui.dp(3), ui.dp(4))
-            background = ui.ripple(GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Palette.mix(color, Color.WHITE, 0.09f), color, Palette.mix(color, Color.BLACK, 0.13f))).apply {
-                cornerRadius = ui.dp(20).toFloat(); setStroke(ui.dp(1).coerceAtLeast(1), Palette.mix(color, Color.WHITE, 0.22f))
-            }, ui.shape(Color.WHITE, 20), fg)
+            orientation = if (inside) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+            this.gravity = gravity; setPadding(ui.dp(3), ui.dp(4), ui.dp(3), ui.dp(4)); clipChildren = false
+            val shape = if (look.gradient) GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(Palette.mix(color, Color.WHITE, 0.09f), color, Palette.mix(color, Color.BLACK, 0.13f)))
+                else GradientDrawable().apply { setColor(color) }
+            shape.cornerRadius = ui.dp(look.radius).toFloat()
+            if (look.border > 0) shape.setStroke(ui.dp(look.border).coerceAtLeast(1), look.borderColor ?: Palette.mix(color, Color.WHITE, 0.22f))
+            background = ui.ripple(shape, ui.shape(Color.WHITE, look.radius), fg)
+            val lift = maxOf(look.shadow * 0.1f, look.glow * 0.16f)
+            if (lift > 0f) {
+                elevation = ui.dpf(lift)
+                val tone = if (look.glow > 0) look.borderColor ?: Palette.mix(color, Color.WHITE, 0.5f) else Color.BLACK
+                outlineSpotShadowColor = tone; outlineAmbientShadowColor = tone
+            }
             alpha = if (button?.optBoolean("disabled") == true) 0.45f else 1f
             contentDescription = label + if (button?.optBoolean("disabled") == true) ", disabled until configured" else ""
             isFocusable = button != null || editing; ui.role(this, "android.widget.Button")
         }
         if (button != null || editing) {
-            val emoji = value("emoji", "")
-            if (emoji.isNotEmpty()) key.addView(ui.text(emoji, TypeStyle.HeadlineSmall, fg).apply { gravity = Gravity.CENTER; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO })
-            else key.addView(ui.icon(if (button == null) Icon.Plus else MacroIcons.get(value("icon", "grid")), fg, 30).apply { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO })
-            key.addView(ui.text(label, TypeStyle.LabelMedium, fg).apply {
-                gravity = Gravity.CENTER; maxLines = 2; setAutoSizeTextTypeUniformWithConfiguration(8, 13, 1, android.util.TypedValue.COMPLEX_UNIT_SP)
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-            }, ui.lp(-1, ui.dp(34), top = 5))
+            val emoji = value("emoji", ""); val tint = look.iconTint ?: fg
+            val imageId = value("image", ""); val picture = if (button != null && imageId.isNotEmpty()) looks.bitmap(imageId, 256) else null
+            if (picture != null) key.addView(android.widget.ImageView(this).apply {
+                setImageBitmap(picture); scaleType = android.widget.ImageView.ScaleType.FIT_CENTER; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }, LinearLayout.LayoutParams(ui.dp(look.iconSize), ui.dp(look.iconSize)))
+            else if (emoji.isNotEmpty()) key.addView(ui.text(emoji, TypeStyle.HeadlineSmall, fg).apply { this.gravity = Gravity.CENTER; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO })
+            else key.addView(ui.icon(if (button == null) Icon.Plus else MacroIcons.get(value("icon", "grid")), tint, look.iconSize).apply { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO })
+            val fixed = button?.optInt("textSize", 0) ?: 0
+            key.addView(ui.text(if (look.upper) label.uppercase() else label, TypeStyle.LabelMedium, fg).apply {
+                this.gravity = if (inside) Gravity.CENTER_VERTICAL or (if (align == "end") Gravity.END else Gravity.START) else when (align) { "start" -> Gravity.START; "end" -> Gravity.END; else -> Gravity.CENTER_HORIZONTAL }
+                maxLines = 2; typeface = face; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                if (fixed > 0) setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, fixed.toFloat() * look.scale)
+                else setAutoSizeTextTypeUniformWithConfiguration(maxOf(4, (8 * look.scale).toInt()), maxOf(6, (13 * look.scale).toInt()), 1, android.util.TypedValue.COMPLEX_UNIT_SP)
+                visibility = if (look.position == "none" || label.isEmpty()) View.GONE else View.VISIBLE
+            }, if (inside) ui.lp(0, -2, 1f, start = 6) else ui.lp(-1, ui.dp(34), top = 5))
             key.addOnLayoutChangeListener { _, left, top, right, bottom, _, _, _, _ ->
-                val available = (bottom - top - key.paddingTop - key.paddingBottom).coerceAtLeast(1)
+                val availableH = (bottom - top - key.paddingTop - key.paddingBottom).coerceAtLeast(1)
+                val availableW = (right - left - key.paddingLeft - key.paddingRight).coerceAtLeast(1)
                 val glyph = key.getChildAt(0)
                 val caption = key.getChildAt(1) as TextView
-                val glyphSize = minOf(ui.dp(30), (available * 0.43f).toInt(), right - left - ui.dp(6)).coerceAtLeast(1)
-                val captionHeight = (available - glyphSize - ui.dp(2)).coerceIn(1, ui.dp(34))
+                val labelled = caption.visibility == View.VISIBLE
+                val glyphSize = (if (inside && labelled) minOf(ui.dp(look.iconSize), (availableH * 0.8f).toInt(), availableW / 2)
+                    else minOf(ui.dp(look.iconSize), (availableH * (if (labelled) 0.43f else 0.8f)).toInt(), availableW)).coerceAtLeast(1)
                 if (glyph.layoutParams.height != glyphSize) {
                     glyph.layoutParams = LinearLayout.LayoutParams(if (glyph is TextView) -2 else glyphSize, glyphSize)
                     if (glyph is TextView) glyph.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, glyphSize * 0.8f)
-                    caption.layoutParams = ui.lp(-1, captionHeight, top = 2)
+                    caption.layoutParams = if (inside) ui.lp(0, -2, 1f, start = 6) else ui.lp(-1, (availableH - glyphSize - ui.dp(2)).coerceIn(1, ui.dp(34)), top = 2)
                 }
             }
             ui.pressScale(key, 0.94f)
@@ -223,11 +268,11 @@ class MacroPadActivity : MobileActivity() {
             val error = failure?.message ?: result?.error
             val old = view.background
             if (error != null) {
-                view.background = design.shape(design.p.error, 20)
+                view.background = design.shape(design.p.error, curLook.radius)
                 if (Motion.enabled()) ObjectAnimator.ofFloat(view, View.TRANSLATION_X, 0f, -10f, 10f, -7f, 7f, 0f).setDuration(320).start()
                 design.haptic(view, Haptic.Reject); toast(error)
             } else {
-                view.background = design.shape(Color.rgb(38, 143, 96), 20); design.haptic(view, Haptic.Confirm)
+                view.background = design.shape(Color.rgb(38, 143, 96), curLook.radius); design.haptic(view, Haptic.Confirm)
                 if (button.has("toggle")) { if (!toggled.add(id)) toggled.remove(id) }
                 result?.navigation?.let(::navigate)
             }
@@ -261,8 +306,35 @@ class MacroPadActivity : MobileActivity() {
         }
         return super.dispatchTouchEvent(event)
     }
+    /** Opens the system picker for an image or font, stores it as a deck asset, and hands back its id. */
+    private fun pickAsset(kind: String, square: Boolean, then: (String) -> Unit) {
+        pendingPick = PendingPick(kind, square, then)
+        try {
+            startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType(if (kind == "image") "image/*" else "*/*"), 71)
+        } catch (_: Exception) { pendingPick = null; toast("No file picker is available") }
+    }
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val pick = pendingPick; pendingPick = null; val uri = data?.data
+        if (requestCode != 71 || pick == null || resultCode != RESULT_OK || uri == null) return
+        Thread {
+            try {
+                val bytes = if (pick.kind == "font") MacroLook.readFont(this, uri) else MacroLook.readImage(this, uri, pick.square)
+                val id = pads.assets.put(pick.kind, bytes, uri.lastPathSegment.orEmpty().substringAfterLast('/'))
+                runOnUiThread { if (!isDestroyed) pick.then(id) }
+            } catch (e: Exception) { runOnUiThread { toast(e.message ?: "Could not import that file") } }
+        }.start()
+    }
+    private fun appearance() {
+        val snapshot = model.toString(); var saved = false
+        lookDraft = true
+        MacroLookEditor(design, model, profile(), page(), ::pickAsset, { render() }).show(
+            onSave = { m -> try { pads.save(m); model = pads.read(); saved = true; true } catch (e: Exception) { toast(e.message ?: "Could not save the look"); false } },
+            onCancel = { lookDraft = false; if (!saved) model = JSONObject(snapshot); render() })
+    }
     private fun edit(button: JSONObject?, row: Int, col: Int) {
-        MacroPadEditor(this, design, desktop.list(), model, profile()).show(button, row, col) { updated ->
+        MacroPadEditor(this, design, desktop.list(), model, profile(), pads.assets, ::pickAsset).show(button, row, col) { updated ->
             val buttons = page().getJSONArray("buttons")
             val index = objects(buttons).indexOfFirst { it.optString("id") == button?.optString("id") }
             if (index >= 0) buttons.remove(index)
@@ -312,9 +384,9 @@ class MacroPadActivity : MobileActivity() {
                 if (saveProfile()) { sheet.close(); true } else { p.put("pages", pages); false }
             }; confirm.show()
         })
-        sheet.body.addView(design.button("Copy JSON", ButtonKind.Tonal, Icon.Copy) { design.copy("MacroPads JSON", pads.read().toString(2)) }, design.lp(top = 8))
+        sheet.body.addView(design.button("Copy JSON", ButtonKind.Tonal, Icon.Copy) { design.copy("MacroPads JSON", exported().toString(2)) }, design.lp(top = 8))
         sheet.body.addView(design.button("Share JSON", ButtonKind.Text, Icon.Share) {
-            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("application/json").putExtra(Intent.EXTRA_TEXT, pads.read().toString(2)), "Export MacroPads"))
+            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("application/json").putExtra(Intent.EXTRA_TEXT, exported().toString(2)), "Export MacroPads"))
         })
         sheet.body.addView(design.button("Import JSON", ButtonKind.Text, Icon.Download) { sheet.close(); importDeck() })
         sheet.actions("Save layout") {
@@ -322,12 +394,18 @@ class MacroPadActivity : MobileActivity() {
             pg.put("name", pageName.value.trim()); saveProfile()
         }; sheet.show()
     }
+    /** The deck for sharing, with the look's images and fonts embedded when they are small enough. */
+    private fun exported(): JSONObject {
+        val (doc, complete) = pads.export()
+        if (!complete) toast("Images and fonts are over 1.5 MB and are not included; they only work on this phone")
+        return doc
+    }
     private fun importDeck() {
-        val sheet = design.sheet("Import deck", "Replaces all profiles after validation. Copy your current JSON first to keep a backup.")
+        val sheet = design.sheet("Import deck", "Replaces all profiles after validation, including their look. Copy your current JSON first to keep a backup.")
         val clip = getSystemService(ClipboardManager::class.java).primaryClip
         val value = clip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(this)?.toString().orEmpty()
-        val field = design.field(sheet.body, "Deck JSON", value.take(524288), multiline = true, mono = true)
-        sheet.actions("Import") { pads.save(JSONObject(field.value)); model = pads.read(); profileId = ""; pageId = ""; toggled.clear(); render(); true }; sheet.show()
+        val field = design.field(sheet.body, "Deck JSON", value.take(3_000_000), multiline = true, mono = true)
+        sheet.actions("Import") { pads.import(JSONObject(field.value)); model = pads.read(); profileId = ""; pageId = ""; toggled.clear(); render(); true }; sheet.show()
     }
     private fun computers() {
         val sheet = design.sheet("Your computers", "Open Homedroid Desktop on each computer to connect")

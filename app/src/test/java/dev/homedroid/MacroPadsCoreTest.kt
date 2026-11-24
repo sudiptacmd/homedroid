@@ -85,7 +85,7 @@ class MacroPadsCoreTest {
     }
     @Test fun modelRejectsWrongVersionTypesGridSizesDuplicatesAndAppearance() {
         val changes: List<(JSONObject) -> Unit> = listOf(
-            { it.put("version", 2) }, { profile(it).put("rows", 1) }, { profile(it).put("rows", 7) },
+            { it.put("version", 3) }, { profile(it).put("rows", 1) }, { profile(it).put("rows", 7) },
             { profile(it).put("cols", 9) }, { profile(it).put("cols", "5") },
             { button(it).put("row", 3) }, { button(it).put("col", -1) },
             { button(it).put("id", profile(it).getString("id")) },

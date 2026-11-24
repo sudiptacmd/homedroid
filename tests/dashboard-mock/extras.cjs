@@ -19,7 +19,7 @@ function dashboardHelpers() {
   const a = html.indexOf('// ---- Console helpers'), b = html.indexOf('// ---- End console helpers');
   if (a < 0 || b < 0) return {macroProblems: () => []};
   const ctx = vm.createContext({bytes: n => n + ' B', URL, location: {}});
-  vm.runInContext(html.slice(a, b) + '\nthis.macroProblems = macroProblems;', ctx);
+  vm.runInContext(html.slice(a, b) + '\nthis.macroProblems = macroProblems; this.themes = MP_THEMES;', ctx);
   return ctx;
 }
 
@@ -414,21 +414,51 @@ function starterDeck() {
   const buttons = list.map((b, i) => ({id: 'b-' + (i + 1), row: Math.floor(i / 5), col: i % 5, ...b}));
   const second = [a('Dev setup', 'terminal', {kind: 'sequence', steps: [{kind: 'launch', path: 'code', args: ['.']}, {kind: 'hotkey', keys: ['ctrl', '`'], delayMs: 800}]}, '#1F6F6B'), a('Docs', 'browser', {kind: 'open', target: 'https://developer.mozilla.org'}), a('Back', 'back', {kind: 'back'}, '#444B57')]
     .map((b, i) => ({id: 'b-' + (20 + i), row: 0, col: i, ...b}));
-  return {version: 1, profiles: [{id: 'p-default', name: 'Everyday', rows: 3, cols: 5, pages: [{id: 'pg-1', name: 'Main', buttons: [...buttons, {id: 'b-19', row: 2, col: 4, ...a('More', 'page', {kind: 'page', page: 'pg-2'}, '#444B57')}].slice(0, 15)}, {id: 'pg-2', name: 'Work', buttons: second}]},
-    {id: 'p-stream', name: 'Streaming', rows: 2, cols: 4, pages: [{id: 'pg-s1', name: 'Scenes', buttons: [{id: 'b-40', row: 0, col: 0, ...a('Go live', 'camera', hot('ctrl', 'alt', 'l'), '#A53E54')}, {id: 'b-41', row: 0, col: 1, ...a('Mute', 'mic-off', hot('ctrl', 'alt', 'm'), '#67509B')}]}]}]};
+  const looks = F.macroLooks();
+  return {version: 2, look: looks.deck, profiles: [{id: 'p-default', name: 'Everyday', rows: 3, cols: 5, pages: [{id: 'pg-1', name: 'Main', buttons: [...buttons, {id: 'b-19', row: 2, col: 4, ...a('More', 'page', {kind: 'page', page: 'pg-2'}, '#444B57')}].slice(0, 15)}, {id: 'pg-2', name: 'Work', buttons: second}]},
+    {id: 'p-stream', name: 'Streaming', look: looks.streaming, rows: 2, cols: 4, pages: [{id: 'pg-s1', name: 'Scenes', buttons: [{id: 'b-40', row: 0, col: 0, ...a('Go live', 'camera', hot('ctrl', 'alt', 'l'), '#A53E54')}, {id: 'b-41', row: 0, col: 1, ...a('Mute', 'mic-off', hot('ctrl', 'alt', 'm'), '#67509B')}]}]}]};
 }
 function desktopState() {
   const t = Date.now();
-  return {computers: [{id: 'c-3f2a9b10', name: 'Work laptop', os: 'windows', online: true, lastSeen: t - 4000}, {id: 'c-77aa01de', name: 'Studio desktop', os: 'linux', online: false, lastSeen: t - 3 * 86400000}], deck: starterDeck(), code: null};
+  return {assets: F.macroAssets(), computers: [{id: 'c-3f2a9b10', name: 'Work laptop', os: 'windows', online: true, lastSeen: t - 4000}, {id: 'c-77aa01de', name: 'Studio desktop', os: 'linux', online: false, lastSeen: t - 3 * 86400000}], deck: starterDeck(), code: null};
 }
-function macroRoute(x, H, route, method, b, res, send) {
+/** The mock's copy of the phone's byte sniffing: the mime type for a valid [kind] file, else null. */
+function assetKind(kind, raw) {
+  const at = (i, ...v) => raw.length > i + v.length && v.every((c, k) => raw[i + k] === c), text = (i, t) => raw.length > i + t.length && raw.subarray(i, i + t.length).toString('latin1') === t;
+  if (kind === 'image') return at(0, 0xFF, 0xD8, 0xFF) ? 'image/jpeg' : at(0, 0x89, 0x50, 0x4E, 0x47) ? 'image/png' : text(0, 'RIFF') && text(8, 'WEBP') ? 'image/webp' : null;
+  if (kind === 'font') return at(0, 0, 1, 0, 0) || text(0, 'true') ? 'font/ttf' : text(0, 'OTTO') ? 'font/otf' : null;
+  return null;
+}
+function macroRoute(x, H, route, method, b, res, send, raw, url) {
   const dk = x.desktop;
   if (route === 'macropads' && method === 'GET') return send(res, {...JSON.parse(JSON.stringify(dk.deck)), computers: dk.computers});
   if (route === 'macropads' && method === 'PUT') {
     if (JSON.stringify(b).length > 524288) fail(400, 'Deck exceeds 512 KB');
     const {computers, ...model} = b, problems = H.macroProblems(model);
     if (problems.length) fail(400, problems[0]);
+    // Like the phone, every referenced image or font must have been uploaded (and be of the right kind).
+    const refs = [];
+    const scan = (look, where) => { if (look?.bg?.image) refs.push([look.bg.image, 'image']); if (look?.font?.custom) refs.push([look.font.custom, 'font']); };
+    scan(model.look); for (const p of model.profiles) { scan(p.look); for (const g of p.pages) { scan(g.look); for (const k of g.buttons) if (k.image) refs.push([k.image, 'image']); } }
+    for (const [id, kind] of refs) if (dk.assets.get(id)?.kind !== kind) fail(400, `Unknown ${kind} asset ${id}`);
     dk.deck = model; return send(res, ok);
+  }
+  if (route === 'macropads/themes' && method === 'GET') return send(res, H.themes.map(t => ({id: t.id, name: t.name, look: JSON.parse(JSON.stringify(t.look))})));
+  if (route === 'macropads/assets' && method === 'GET') return send(res, [...dk.assets.values()].map(({data, mime, ...a}) => ({...a, bytes: data.length})));
+  if (route === 'macropads/assets' && method === 'POST') {
+    const kind = url.searchParams.get('kind'), name = (url.searchParams.get('name') || '').slice(0, 40), ext = assetKind(kind, raw);
+    if (raw.length < 1 || raw.length > 1048576) fail(400, 'Files must be 1 byte–1 MB');
+    if (!ext) fail(400, kind === 'font' ? 'Use a .ttf or .otf font file' : kind === 'image' ? 'Use a JPEG, PNG or WebP image' : 'kind must be image or font');
+    if (dk.assets.size >= 40) fail(400, 'Too many images and fonts; remove unused ones first');
+    const id = 'a-' + hex(16), a = {id, kind, name, mime: ext, data: Buffer.from(raw)}; dk.assets.set(id, a);
+    return send(res, {id, kind, bytes: raw.length, name});
+  }
+  const asset = /^macropads\/assets\/([^/]+)$/.exec(route);
+  if (asset && ['GET', 'DELETE'].includes(method)) {
+    const a = dk.assets.get(asset[1]) || fail(404, 'No such image or font');
+    if (method === 'GET') return send(res, a.data, 200, {'Content-Type': a.mime, 'Cache-Control': 'private, max-age=3600'});
+    if (JSON.stringify(dk.deck).includes(`"${a.id}"`)) fail(409, 'This file is used by the deck; remove it from the look first');
+    dk.assets.delete(a.id); return send(res, ok);
   }
   if (route === 'macropads/press' && method === 'POST') {
     const p = dk.deck.profiles.find(v => v.id === b.profile) || fail(409, 'Unknown profile'), g = p.pages.find(v => v.id === b.page) || fail(409, 'Unknown page'), k = g.buttons.find(v => v.id === b.button) || fail(409, 'Unknown button');
@@ -709,7 +739,7 @@ function route(x, p, s, method, b, raw, url, res, send, ctx) {
   if (area === 'deploys' && s.length >= 3 && ['settings', 'token', 'upload', 'pipeline', 'runs'].includes(s[2])) return deployExtras(x, p, s, method, b, raw, url, res, send, ctx.later, ctx.stepMs);
   if (area === 'mail') return mailRoute(x, p, rest, method, b, res, send, {...ctx, url});
   if (area === 'repeater') return repeaterRoute(x, rest, method, b, res, send, ctx);
-  if (area === 'macropads' || area === 'desktop') return macroRoute(x, x.helpers, s.join('/'), method, b, res, send);
+  if (area === 'macropads' || area === 'desktop') return macroRoute(x, x.helpers, s.join('/'), method, b, res, send, raw, url);
   return false;
 }
 module.exports = {createExtras, route, DB_SPECS, starterDeck};

@@ -21,19 +21,33 @@ class MacroPads private constructor(ctx: Context) {
     }
     data class Result(val error: String? = null, val navigation: JSONObject? = null)
     private val desktop = DesktopLink.get(ctx)
+    val assets = MacroAssets.get(ctx)
     private val file = AtomicFile(File(ctx.filesDir, "macropads.json"))
     private val workers = ThreadPoolExecutor(2, 2, 30, TimeUnit.SECONDS, SynchronousQueue())
     private val deadlines = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "macro-http-deadlines").apply { isDaemon = true } }
-    private var model = if (file.baseFile.exists()) MacroPadsCore.validate(JSONObject(file.openRead().use { String(it.readBytes(), Charsets.UTF_8) })) else MacroPadsCore.starter()
+    private var model = if (file.baseFile.exists()) MacroPadsCore.validate(JSONObject(file.openRead().use { String(it.readBytes(), Charsets.UTF_8) }), assets::has) else MacroPadsCore.starter()
     init { if (!file.baseFile.exists()) save(model) }
     @Synchronized fun read(): JSONObject = JSONObject(model.toString())
     @Synchronized fun save(value: JSONObject) {
         val copy = JSONObject(value.toString()).apply { remove("computers") }
-        MacroPadsCore.validate(copy)
+        MacroPadsCore.validate(copy, assets::has)
         val out = file.startWrite()
         try { out.write(copy.toString(2).toByteArray()); file.finishWrite(out) }
         catch (e: Exception) { file.failWrite(out); throw e }
         model = copy
+        assets.prune(copy)
+    }
+    /** The deck for sharing: the look plus (when small enough) the images and fonts it uses. [included] is false when they were left out. */
+    fun export(): Pair<JSONObject, Boolean> {
+        val doc = read(); val embedded = assets.export(doc)
+        if (embedded != null && embedded.length() > 0) doc.put("assets", embedded)
+        return doc to (embedded != null)
+    }
+    /** Imports a deck exported by [export]; embedded assets are stored first so the look validates. */
+    fun import(doc: JSONObject) {
+        val embedded = doc.optJSONObject("assets"); doc.remove("assets")
+        if (embedded != null) assets.import(embedded)
+        save(doc)
     }
     fun press(profile: String, page: String, button: String): CompletableFuture<Result> {
         val doc = read(); val profiles = doc.getJSONArray("profiles")
@@ -87,6 +101,21 @@ class MacroPads private constructor(ctx: Context) {
             if (result.error != null) Response.error(409, result.error)
             else Response.json(JSONObject().put("ok", true).apply { result.navigation?.let { put("navigation", it) } })
         }
-        else -> Response.error(404, "No such MacroPads endpoint")
+        "GET" to "/api/macropads/themes" -> Response.json(MacroLookCore.themeJson())
+        "GET" to "/api/macropads/assets" -> Response.json(assets.list())
+        "POST" to "/api/macropads/assets" -> {
+            val kind = r.query["kind"].orEmpty()
+            val id = assets.put(kind, r.body, r.query["name"].orEmpty())
+            Response.json(assets.describe(assets.file(id)!!))
+        }
+        else -> if (r.path.startsWith("/api/macropads/assets/")) asset(r) else Response.error(404, "No such MacroPads endpoint")
+    }
+    private fun asset(r: Request): Response {
+        val id = r.path.substringAfterLast('/'); val f = assets.file(id) ?: return Response.error(404, "No such image or font")
+        return when (r.method) {
+            "GET" -> Response(200, f.readBytes(), assets.mime(id)!!, mapOf("Cache-Control" to "private, max-age=3600", "X-Content-Type-Options" to "nosniff"))
+            "DELETE" -> if (assets.referenced(read(), id)) Response.error(409, "This file is used by the deck; remove it from the look first") else { assets.delete(id); Response.ok() }
+            else -> Response.error(405, "Use GET or DELETE")
+        }
     }
 }
