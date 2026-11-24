@@ -2,6 +2,7 @@ mod actions;
 mod app;
 mod camera;
 mod config;
+mod controls;
 mod http;
 mod platform;
 mod ui;
@@ -27,7 +28,12 @@ Webcam options:
   --fps 30                   requested frame rate
   --quality 80               JPEG quality 1-100
   --device /dev/videoN       Linux: v4l2loopback device (default: first one found)
-  --mirror                   mirror the picture
+  --mirror / --flip          horizontal / vertical reflection
+  --zoom 1.5 --torch --ev 1   zoom, torch and exposure compensation (EV)
+  --wb daylight --rotate 90  white balance and clockwise rotation
+  --focus continuous|auto|manual --focus-distance 0.5
+  --iso 400 --shutter-ns 10000000   manual sensor exposure (specify both)
+  --ae-lock --awb-lock --stabilization --anti-banding auto|50hz|60hz
 
 Other options (ui, run, webcam):
   --no-browser               do not open the control page in a browser
@@ -104,6 +110,17 @@ fn serve(command: &str, args: &[String]) -> io::Result<()> {
         match arg {
             "--webcam" if command == "run" => camera_on = true,
             "--mirror" => options.mirror = true,
+            "--torch" | "--flip" | "--ae-lock" | "--awb-lock" | "--stabilization" => {
+                let key = match arg { "--ae-lock" => "aeLock", "--awb-lock" => "awbLock", _ => &arg[2..] };
+                options.controls[key] = serde_json::json!(true);
+            }
+            "--zoom" | "--ev" | "--wb" | "--rotate" | "--focus" | "--focus-distance" | "--iso" | "--shutter-ns" | "--anti-banding" => {
+                i += 1;
+                let v = args.get(i).ok_or_else(|| usage(&format!("missing value for {arg}")))?;
+                let (key, value) = controls::flag(arg, v)?;
+                options.controls[&key] = value;
+                if key == "iso" || key == "shutterNs" { options.controls["manualSensor"] = serde_json::json!(true); }
+            }
             "--no-browser" => browser = false,
             "--dry-run" => dry = true,
             "--camera" | "--size" | "--fps" | "--quality" | "--device" => {

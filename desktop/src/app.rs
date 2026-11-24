@@ -158,6 +158,30 @@ impl App {
         Ok(())
     }
 
+    fn send_controls(&self, c: &Config, controls: &Value) -> io::Result<()> {
+        crate::controls::validate(controls)?;
+        let reply = http::json(&c.address, &c.token, "POST", "/desktop/v1/webcam/control", Some(controls))?;
+        if let Some(settings) = reply.get("settings").filter(|v| v.is_object()) {
+            let mut o = lock(&self.options);
+            if let Some(v) = settings["camera"].as_str() { o.camera = v.into(); }
+            if let Some(v) = settings["width"].as_u64() { o.width = v as u32; }
+            if let Some(v) = settings["height"].as_u64() { o.height = v as u32; }
+            if let Some(v) = settings["fps"].as_u64() { o.fps = v as u32; }
+            if let Some(v) = settings["quality"].as_u64() { o.quality = v as u32; }
+            o.mirror = settings["mirror"].as_bool().unwrap_or(false);
+            let mut extra = settings.clone();
+            if let Some(map) = extra.as_object_mut() { for key in ["camera", "width", "height", "fps", "quality", "mirror"] { map.remove(key); } }
+            o.controls = extra;
+        }
+        Ok(())
+    }
+
+    pub fn control_camera(&self, value: &Value) -> io::Result<()> {
+        if !self.camera_on.load(Ordering::SeqCst) { return Err(invalid("Start webcam before changing live controls")); }
+        let c = lock(&self.config).clone();
+        self.send_controls(&c, value)
+    }
+
     pub fn log(&self, id: &str, kind: &str, result: &io::Result<()>) {
         let mut s = lock(&self.stats);
         if s.log.len() >= 40 {
@@ -183,6 +207,7 @@ impl App {
             "connection": s.connection,
             "webcam": self.camera_on.load(Ordering::SeqCst),
             "options": *lock(&self.options),
+            "cameraPresets": c.camera_presets,
             "cameraError": s.camera_error,
             "virtualCamera": s.virtual_camera,
             "cameras": s.cameras,
@@ -379,17 +404,10 @@ impl App {
                 )?;
                 *lock(&self.camera_socket) = Some(r.socket.try_clone()?);
                 lock(&self.stats).camera_error.clear();
-                // Ask the phone to mirror; if it can't, the virtual camera mirrors locally.
-                let phone = opts.mirror
-                    && http::json(
-                        &c.address,
-                        &c.token,
-                        "POST",
-                        "/desktop/v1/webcam/control",
-                        Some(&json!({"mirror": true})),
-                    )
-                    .is_ok();
-                self.phone_mirrors.store(phone, Ordering::SeqCst);
+                let mut controls = opts.controls.clone();
+                controls["mirror"] = json!(opts.mirror);
+                self.send_controls(&c, &controls)?;
+                self.phone_mirrors.store(true, Ordering::SeqCst);
                 let (mut count, mut start) = (0u64, Instant::now());
                 while self.camera_generation.load(Ordering::SeqCst) == generation {
                     let Some(frame) = http::frame(&mut r.body, &boundary)? else {
@@ -546,6 +564,7 @@ pub fn pair(address: &str, code: &str) -> io::Result<Config> {
         phone: field("phone")?,
         phone_id: field("phoneId")?,
         allow_commands: false,
+        camera_presets: Default::default(),
     };
     c.validate()?;
     Ok(c)
