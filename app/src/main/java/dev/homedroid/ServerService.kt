@@ -315,6 +315,8 @@ class ServerService : Service() {
                     // An app that was installed stays installed, even if the update failed half way.
                     apps.markInstalled(app, true)
                 }
+            } else if (install) {
+                installApp(app, apps, alpine, paths)
             } else {
                 // Stop it before deleting its files.
                 apps.markInstalled(app, false)
