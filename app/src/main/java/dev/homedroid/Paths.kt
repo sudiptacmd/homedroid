@@ -22,6 +22,8 @@ class Paths(ctx: Context) {
     val www = File(home, "www")
     val tmp: File = ctx.cacheDir
     val caddyfile = File(etc, "Caddyfile")
+    /** Caddy snippets Homedroid manages, imported at the end of [caddyfile]. */
+    val caddyDir = File(etc, "Caddyfile.d")
     val hostKey = File(etc, "ssh_host_ed25519_key")
     val authorizedKeys = File(home, ".ssh/authorized_keys")
     /** One JSON line per SSH or web terminal session, written by sshd. */
