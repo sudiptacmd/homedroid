@@ -28,6 +28,7 @@ class Dashboard(private val ctx: Context) {
     private val ai = Ai(ctx)
     private val wol = WakeOnLan(ctx, cfg)
     private val routines = Routines(ctx, ai)
+    private val mcp = Mcp(ctx, cfg, files, ai) { route(it) }
 
     fun start() {
         http.start()
@@ -58,6 +59,8 @@ class Dashboard(private val ctx: Context) {
         }
         if (r.method == "GET" && r.path.startsWith("/vendor/")) return vendor(r)
         if (r.method == "GET" && r.path.startsWith("/guides/")) return guideImage(r.path.removePrefix("/guides/"))
+        // MCP clients use their own token, not a dashboard session.
+        if (r.path == "/mcp" || r.path.startsWith("/mcp/")) return mcp.handle(r)
         if (!r.path.startsWith("/api/")) return Response.error(404, "not found")
         val terminal = r.path == "/api/terminal" || r.path.startsWith("/api/nodes/") && r.path.endsWith("/terminal")
         if (!AuthSecurity.browserAllowed(r.method, r.headers, terminal)) {
@@ -166,6 +169,7 @@ class Dashboard(private val ctx: Context) {
             seg.firstOrNull() == "ai" && seg.getOrNull(1) in setOf("routines", "briefs", "speak") -> routines.handle(r, seg.drop(1))
             seg.firstOrNull() == "ai" -> ai.handle(r, seg.drop(1))
             seg.firstOrNull() == "wol" -> wol.handle(r, seg.drop(1))
+            seg.firstOrNull() == "mcp" -> mcp.api(r, seg.drop(1), peer != null)
             seg.firstOrNull() == "network" -> network.handle(r, seg.drop(1))
             r.method == "GET" && seg == listOf("status") -> Response.json(status())
             // Everything the overview shows, in one request instead of four.

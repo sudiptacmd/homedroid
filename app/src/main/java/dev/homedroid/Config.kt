@@ -5,6 +5,8 @@ import android.content.Context
 /** User settings, persisted in private SharedPreferences. */
 class Config(ctx: Context) {
     private val prefs = ctx.getSharedPreferences("config", Context.MODE_PRIVATE)
+    /** Tokens and passwords, encrypted with a keystore key (older plaintext values move over on read). */
+    private val secrets = SecretStore(prefs)
 
     /** Native phone interface only: system, light or dark. */
     var appearance: String
@@ -38,8 +40,8 @@ class Config(ctx: Context) {
         set(v) = prefs.edit().putBoolean("web", v).apply()
 
     var tunnelToken: String
-        get() = prefs.getString("tunnel_token", "")!!
-        set(v) = prefs.edit().putString("tunnel_token", v).apply()
+        get() = secrets.get("tunnel_token").orEmpty()
+        set(v) = secrets.put("tunnel_token", v)
 
     var tailscaleEnabled: Boolean
         get() = prefs.getBoolean("tailscale", false)
@@ -47,8 +49,8 @@ class Config(ctx: Context) {
 
     /** Optional; without one, the dashboard shows a login link instead. */
     var tailscaleAuthKey: String
-        get() = prefs.getString("tailscale_authkey", "")!!
-        set(v) = prefs.edit().putString("tailscale_authkey", v).apply()
+        get() = secrets.get("tailscale_authkey").orEmpty()
+        set(v) = secrets.put("tailscale_authkey", v)
 
     var tailscaleHostname: String
         get() = prefs.getString("tailscale_hostname", null) ?: "homedroid"
@@ -92,10 +94,8 @@ class Config(ctx: Context) {
 
     /** Password for the web dashboard, generated on first use. */
     var dashboardPassword: String
-        get() = prefs.getString("dashboard_password", null) ?: randomPassword().also {
-            prefs.edit().putString("dashboard_password", it).apply()
-        }
-        set(value) = prefs.edit().putString("dashboard_password", value).apply()
+        get() = secrets.get("dashboard_password") ?: randomPassword().also { secrets.put("dashboard_password", it) }
+        set(value) = secrets.put("dashboard_password", value)
 
     private fun randomPassword(): String {
         val alphabet = "abcdefghijkmnpqrstuvwxyz23456789"
@@ -113,6 +113,21 @@ class Config(ctx: Context) {
                 "Could not persist authentication state"
             }
         }
+
+    /** The built-in MCP server (see [Mcp]); off until the user turns it on. */
+    var mcpEnabled: Boolean
+        get() = prefs.getBoolean("mcp", false)
+        set(v) = prefs.edit().putBoolean("mcp", v).apply()
+
+    /** Lets MCP clients use tools that change things (restarts, redeploys, wake on LAN). */
+    var mcpAllowWrite: Boolean
+        get() = prefs.getBoolean("mcp_write", false)
+        set(v) = prefs.edit().putBoolean("mcp_write", v).apply()
+
+    /** The MCP clients' bearer token, made on first use. */
+    var mcpToken: String
+        get() = secrets.get("mcp_token") ?: McpCore.newToken().also { secrets.put("mcp_token", it) }
+        set(v) = secrets.put("mcp_token", v)
 
     val dashboardPort: Int get() = 8800
 
