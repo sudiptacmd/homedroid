@@ -539,6 +539,8 @@ class Ai(context: Context) {
                 // ~7 cores spinning while idle and drained the battery (0.9.0). Sleep instead, and
                 // let go of the model after 10 idle minutes (it reloads in seconds when asked).
                 "--poll", "0", "--sleep-idle-seconds", "600",
+                // The model's own chat template, which the MCP agent's tool calls need.
+                "--jinja",
             ) + llama.deviceArgs()
             return Spec(SERVICE, llama.command("llama-server", args), llama.env(), workdir = llama.dir)
         }
