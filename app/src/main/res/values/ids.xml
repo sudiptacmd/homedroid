@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- View tags used by the phone design system (MobileUi). -->
+    <item name="checked_state" type="id" />
+    <item name="group_item" type="id" />
+</resources>
