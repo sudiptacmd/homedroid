@@ -122,6 +122,16 @@ class Deploys(private val ctx: Context, private val paths: Paths) {
         require(!d.replica) { "this is a copy of another phone's deployment: change it there" }
         val merged = d.toStored()
         for (k in EDITABLE) if (o.has(k)) merged.put(k, o.get(k))
+        // The API only ever shows env values as "***": sending that back (or nothing) keeps
+        // the saved value, so changing one variable doesn't mean retyping every secret.
+        o.optJSONObject("env")?.let { env ->
+            val kept = JSONObject()
+            for (key in env.keys()) {
+                val v = env.optString(key)
+                kept.put(key, if ((v == "***" || v.isEmpty()) && key in d.env) d.env.getValue(key) else v)
+            }
+            merged.put("env", kept)
+        }
         val next = validate(merged, d.id, d.name, imported = true)
         save(all().map { if (it.id == id) next else it })
         next
