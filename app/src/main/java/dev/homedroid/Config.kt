@@ -116,6 +116,24 @@ class Config(ctx: Context) {
 
     val dashboardPort: Int get() = 8800
 
-    val sshPort: Int get() = 8022
+    /** DNS servers for Alpine and apps, comma-separated; empty uses the network's (see [DnsConfig]). */
+    var appsDns: String
+        get() = prefs.getString("apps_dns", "")!!
+        set(v) = prefs.edit().putString("apps_dns", v).apply()
+
+    /** Another SSH server on the phone (Termux's, for one) may already hold 8022. */
+    var sshPort: Int
+        get() = prefs.getInt("ssh_port", DEFAULT_SSH_PORT).takeIf { validPort(it) } ?: DEFAULT_SSH_PORT
+        set(v) {
+            require(validPort(v)) { "port must be between 1024 and 65535" }
+            prefs.edit().putInt("ssh_port", v).apply()
+        }
     val webPort: Int get() = 8080
+
+    companion object {
+        const val DEFAULT_SSH_PORT = 8022
+
+        /** Ports an app may listen on, minus the ones Homedroid itself uses. */
+        fun validPort(port: Int) = port in 1024..65535 && port != 8800 && port != 8801 && port != 8080
+    }
 }

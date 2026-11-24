@@ -197,8 +197,8 @@ class Dashboard(private val ctx: Context) {
             r.method == "DELETE" && seg.size == 2 && seg[0] == "deploys" -> deleteDeploy(seg[1])
             seg[0] == "files" -> files.handle(r, seg.drop(1).filter { it.isNotEmpty() })
             r.method == "GET" && seg == listOf("terminal") ->
-                if (peer != null) Terminal.open(r, cfg.sshEnabled && ServerService.running, fromPeer = true) { cluster.state.byFingerprint(r.peer) != null }
-                else Terminal.open(r, cfg.sshEnabled && ServerService.running) { sessionValid(r) }
+                if (peer != null) Terminal.open(r, ServerService.running, fromPeer = true) { cluster.state.byFingerprint(r.peer) != null }
+                else Terminal.open(r, ServerService.running) { sessionValid(r) }
             seg[0] == "ssh" -> ssh.handle(r, seg.drop(1))
             seg[0] == "tailscale" -> tailscaleRoute(r, seg.drop(1))
             r.method == "GET" && seg == listOf("update") -> Response.json(Updater.json(ctx, r.query["refresh"] == "1"))
@@ -298,7 +298,7 @@ class Dashboard(private val ctx: Context) {
                     .put("id", m.id)
                     .put("name", m.name)
                     .put("description", m.description)
-                    .put("port", m.port)
+                    .put("port", if (m.id == "ssh") cfg.sshPort else m.port)
                     .put("kind", "core")
                     .put("installed", true)
                     .put("enabled", coreEnabled(m.id))
@@ -397,9 +397,13 @@ class Dashboard(private val ctx: Context) {
             return Response.ok()
         }
         val app = apps.catalog.firstOrNull { it.id == id } ?: return Response.error(404, "no module $id")
-        if (Jobs.running && action in setOf("install", "remove", "clear")) return Response.error(409, "another install is running")
+        if (Jobs.running && action in setOf("install", "update", "remove", "clear")) return Response.error(409, "another install is running")
         when (action) {
             "install" -> ServerService.install(ctx, app)
+            "update" -> {
+                if (!apps.isInstalled(app)) return Response.error(409, "${app.name} isn't installed")
+                ServerService.update(ctx, app)
+            }
             "remove" -> r.json().let {
                 val library = it.optBoolean("deleteLibrary")
                 ServerService.uninstall(ctx, app, it.optBoolean("deleteData") || library, library)
@@ -550,6 +554,7 @@ class Dashboard(private val ctx: Context) {
 
     private fun settings() = JSONObject().put("autostart", cfg.autostart).put("cameraEnabled", cfg.cameraEnabled).put("wolEnabled", cfg.wolEnabled)
         .put("dashboardPort", cfg.dashboardPort).put("sshPort", cfg.sshPort).put("webPort", cfg.webPort)
+        .put("appsDns", cfg.appsDns)
 
     private fun saveSettings(r: Request): Response = synchronized(auth) {
         val body = r.json()
@@ -563,6 +568,21 @@ class Dashboard(private val ctx: Context) {
         }
         if (body.has("autostart") && body.opt("autostart") !is Boolean) return Response.error(400, "Invalid startup preference")
         if (body.has("autostart")) cfg.autostart = body.getBoolean("autostart")
+        if (body.has("appsDns")) {
+            val dns = DnsConfig.parseCustom(body.optString("appsDns"))
+                ?: return Response.error(400, "Enter up to three IP addresses, like 1.1.1.1, 9.9.9.9")
+            cfg.appsDns = dns.joinToString(", ")
+            Thread({ runCatching { Alpine(ctx, paths).refresh() } }, "dns").start()
+        }
+        if (body.has("sshPort")) {
+            val port = body.optInt("sshPort", -1)
+            if (!Config.validPort(port)) return Response.error(400, "Choose a port between 1024 and 65535 that Homedroid doesn't use")
+            if (port != cfg.sshPort) {
+                if (!portFree(port)) return Response.error(409, "Another app on the phone is already using port $port")
+                cfg.sshPort = port
+                if (cfg.sshEnabled) ServerService.restart(ctx)
+            }
+        }
         if (password.isNotEmpty()) {
             synchronized(auth) {
                 cfg.dashboardPassword = password
@@ -571,6 +591,13 @@ class Dashboard(private val ctx: Context) {
             }
         }
         return Response.ok()
+    }
+
+    private fun portFree(port: Int) = try {
+        java.net.ServerSocket(port).close()
+        true
+    } catch (_: java.io.IOException) {
+        false
     }
 
     private fun cameraRoute(r: Request, seg: List<String>): Response {
@@ -702,7 +729,7 @@ class Dashboard(private val ctx: Context) {
         )
 
         private val CORE = listOf(
-            Core("ssh", "SSH & SFTP", "Shell and file transfer, public-key login only.", 8022, "sshd"),
+            Core("ssh", "SSH & SFTP", "Shell and file transfer, public-key login only.", Config.DEFAULT_SSH_PORT, "sshd"),
             Core("web", "Web hosting", "Caddy web server for ~/www and deployed sites.", 8080, "caddy"),
             Core("tunnel", "Cloudflare Tunnel", "Publishes services on the internet, no port forwarding.", 0, "cloudflared"),
             Core("tailscale", "Tailscale", "Private access from your own devices, anywhere. No VPN slot or root needed.", 0, "tailscaled"),

@@ -26,6 +26,7 @@ class ServerService : Service() {
         private const val ACTION_INSTALL = "dev.homedroid.INSTALL"
         private const val ACTION_UNINSTALL = "dev.homedroid.UNINSTALL"
         private const val ACTION_CLEAR = "dev.homedroid.CLEAR"
+        private const val ACTION_UPDATE = "dev.homedroid.UPDATE"
         private const val ACTION_DEPLOY = "dev.homedroid.DEPLOY"
         private const val ACTION_UNDEPLOY = "dev.homedroid.UNDEPLOY"
         private const val EXTRA_APP = "app"
@@ -58,6 +59,9 @@ class ServerService : Service() {
         }
 
         fun install(ctx: Context, app: AppDef) = startJob(ctx, ACTION_INSTALL, app)
+
+        /** Brings [app] to the newest version: its Alpine packages, images and install script. Data is kept. */
+        fun update(ctx: Context, app: AppDef) = startJob(ctx, ACTION_UPDATE, app)
 
         /** Removes [app]; with [deleteData] also its settings and database, with [deleteLibrary] its library. */
         fun uninstall(ctx: Context, app: AppDef, deleteData: Boolean = false, deleteLibrary: Boolean = false) =
@@ -139,7 +143,7 @@ class ServerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_RESTART -> worker.execute { shutdown(); launch() }
-            ACTION_INSTALL, ACTION_UNINSTALL, ACTION_CLEAR -> {
+            ACTION_INSTALL, ACTION_UNINSTALL, ACTION_CLEAR, ACTION_UPDATE -> {
                 val id = intent.getStringExtra(EXTRA_APP)
                 val action = intent.action!!
                 val deleteData = intent.getBooleanExtra(EXTRA_DELETE_DATA, false)
@@ -259,6 +263,7 @@ class ServerService : Service() {
             when (action) {
                 ACTION_INSTALL -> "Installing "
                 ACTION_CLEAR -> "Clearing data of "
+                ACTION_UPDATE -> "Updating "
                 else -> "Removing "
             } + app.name
         )
@@ -272,8 +277,20 @@ class ServerService : Service() {
                 val rc = alpine.run(app.install, Jobs::line)
                 apps.markInstalled(app, true)
                 if (rc == 0) null else "install script exited with $rc"
-            } else if (install) {
-                installApp(app, apps, alpine, paths)
+            } else if (action == ACTION_UPDATE) {
+                if (!apps.isInstalled(app)) throw java.io.IOException("${app.name} isn't installed")
+                // Stop it first: packages and images are replaced under it.
+                apps.markInstalled(app, false)
+                worker.submit { shutdown(); launch() }.get()
+                try {
+                    Jobs.line("Upgrading Alpine packages")
+                    val rc = alpine.run("apk update && apk upgrade --no-cache", Jobs::line)
+                    if (rc != 0) throw java.io.IOException("apk upgrade exited with $rc")
+                    installApp(app, apps, alpine, paths)
+                } finally {
+                    // An app that was installed stays installed, even if the update failed half way.
+                    apps.markInstalled(app, true)
+                }
             } else {
                 // Stop it before deleting its files.
                 apps.markInstalled(app, false)
@@ -288,7 +305,7 @@ class ServerService : Service() {
             e.message ?: e.toString()
         }
         Jobs.finish(error)
-        if ((install || action == ACTION_CLEAR) && apps.isInstalled(app)) worker.execute { shutdown(); launch() }
+        if ((install || action == ACTION_CLEAR || action == ACTION_UPDATE) && apps.isInstalled(app)) worker.execute { shutdown(); launch() }
     }
 
     /** Pulls [app]'s images and runs its install script; returns an error, or null. */
