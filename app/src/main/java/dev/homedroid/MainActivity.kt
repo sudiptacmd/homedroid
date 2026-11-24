@@ -521,7 +521,7 @@ class MainActivity : MobileActivity() {
 
         val load = m?.optDouble("cpu", 0.0) ?: 0.0
         val cores = m?.optInt("cores", Runtime.getRuntime().availableProcessors()) ?: Runtime.getRuntime().availableProcessors()
-        cpu.set("%.0f%%".format(load), "$cores cores · servers", (load / 100).toFloat(), if (load >= 85) Tone.Warning else Tone.Primary,
+        cpu.set("%.0f%%".format(load), "$cores cores", (load / 100).toFloat(), if (load >= 85) Tone.Warning else Tone.Primary,
             spoken = "%.0f percent".format(load))
 
         val ramUsed = 1f - dev.ramFreeMb.toFloat() / dev.ramTotalMb.coerceAtLeast(1)

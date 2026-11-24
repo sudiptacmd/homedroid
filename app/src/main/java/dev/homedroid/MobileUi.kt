@@ -737,12 +737,18 @@ class MobileUi(val activity: Activity) {
         val holder = FrameLayout(activity)
         val gauge = if (ring) RingGauge(activity, p.alpha(p.primary, 0.18f), p.primary) else null
         if (gauge != null) holder.addView(gauge, FrameLayout.LayoutParams(dp(48), dp(48)))
-        else holder.background = shape(p.secondaryContainer, Shape.FULL)
-        val badge = IconView(activity, icon, if (ring) p.primary else p.onSecondaryContainer)
+        // No value to show as a ring: the same circle as a plain track, so every tile matches.
+        else holder.background = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL; setStroke(dp(4), p.alpha(p.primary, 0.18f))
+        }
+        val badge = IconView(activity, icon, p.primary)
         holder.addView(badge, FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
         top.addView(holder, lp(dp(48), dp(48)))
-        top.addView(View(activity), lp(0, 1, 1f))
-        top.addView(text(label, TypeStyle.LabelMedium, p.onSurfaceVariant).apply { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO; gravity = Gravity.END })
+        // The label sits beside its icon, where the eye looks for it.
+        top.addView(text(label, TypeStyle.LabelLarge, p.onSurfaceVariant).apply {
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO; maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+        }, lp(0, -2, 1f).apply { marginStart = dp(Space.MD) })
         v.addView(top)
         val value = text("—", TypeStyle.HeadlineSmall).apply { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
         val caption = text("", TypeStyle.BodySmall, p.onSurfaceVariant).apply { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
