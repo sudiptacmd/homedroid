@@ -93,9 +93,11 @@ test('settings submits startup preference and password then clears sensitive fie
   t.element('#currentPassword').value = 'old-password';
   t.element('#newPassword').value = t.element('#confirmPassword').value = 'a-long-new-password';
   t.element('#settingsAutostart').checked = false;
+  t.element('#settingsSshPort').value = '2222';
+  t.element('#settingsAppsDns').value = '1.1.1.1, 9.9.9.9';
   await t.element('#settingsForm').onsubmit({preventDefault() {}});
   const request = t.requests.find(x => x.path === '/api/settings');
-  assert.deepEqual(JSON.parse(request.options.body), {autostart: false, password: 'a-long-new-password', currentPassword: 'old-password'});
+  assert.deepEqual(JSON.parse(request.options.body), {autostart: false, sshPort: 2222, appsDns: '1.1.1.1, 9.9.9.9', password: 'a-long-new-password', currentPassword: 'old-password'});
   assert.equal(t.element('#currentPassword').value, '');
   assert.equal(t.element('#newPassword').value, '');
   assert.match(t.element('#settingsMessage').textContent, /phone now shows/);
@@ -208,4 +210,28 @@ test('closing a live view during decoding prevents a late frame from being drawn
   decode({width: 640, height: 480, close() { closed++; }});
   await loop;
   assert.equal(draws, 0); assert.equal(closed, 1);
+});
+
+test('settings keeps SSH/DNS edits made while the initial settings response is pending', async () => {
+  let resolveSettings;
+  const t = setup({fetch: async path => ({status: 200, ok: true, json: () => path === '/api/settings'
+    ? new Promise(resolve => { resolveSettings = resolve; }) : Promise.resolve({})})});
+  const pending = t.run('renderSettings()');
+  await new Promise(resolve => setImmediate(resolve));
+  t.element('#settingsSshPort').value = '2222';
+  t.element('#settingsAppsDns').value = '9.9.9.9';
+  t.element('#settingsForm').oninput({target: {id: 'settingsSshPort'}});
+  t.element('#settingsForm').oninput({target: {id: 'settingsAppsDns'}});
+  resolveSettings({autostart: true, sshPort: 8022, appsDns: '', dashboardPort: 8800, webPort: 8080});
+  await pending;
+  assert.equal(t.element('#settingsSshPort').value, '2222');
+  assert.equal(t.element('#settingsAppsDns').value, '9.9.9.9');
+});
+test('settings displays API validation errors and preserves the draft for correction', async () => {
+  const t = setup(); t.fail('Another app on the phone is already using port 3000');
+  t.element('#settingsSshPort').value = '3000'; t.element('#settingsAppsDns').value = '1.1.1.1';
+  await t.element('#settingsForm').onsubmit({preventDefault() {}});
+  assert.match(t.element('#settingsMessage').textContent, /already using port 3000/);
+  assert.equal(t.element('#settingsSshPort').value, '3000');
+  assert.equal(t.element('#saveSettings').disabled, false);
 });
