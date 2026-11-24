@@ -755,7 +755,7 @@ class Dashboard(private val ctx: Context) {
         private val VENDOR = setOf("xterm.js", "xterm.css", "addon-fit.js", "JetBrainsMono-Regular.woff2")
 
         private val SECURITY_HEADERS = mapOf(
-            "Content-Security-Policy" to "default-src 'self'; img-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+            "Content-Security-Policy" to "default-src 'self'; img-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; frame-src http: https:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
             "X-Frame-Options" to "DENY",
             "Referrer-Policy" to "no-referrer",
         )
