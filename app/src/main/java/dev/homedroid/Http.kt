@@ -259,6 +259,7 @@ class Http(
     private fun reason(status: Int) = when (status) {
         200 -> "OK"
         201 -> "Created"
+        202 -> "Accepted"
         204 -> "No Content"
         206 -> "Partial Content"
         302 -> "Found"
@@ -267,6 +268,7 @@ class Http(
         401 -> "Unauthorized"
         403 -> "Forbidden"
         404 -> "Not Found"
+        405 -> "Method Not Allowed"
         409 -> "Conflict"
         413 -> "Payload Too Large"
         416 -> "Range Not Satisfiable"
