@@ -45,21 +45,28 @@ class DashboardActivity : MobileActivity() {
             }
             insets
         }
-        root.addView(design.button("‹  Back to Homedroid") { finish() }.apply {
-            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { setMargins(design.dp(12), design.dp(6), design.dp(12), design.dp(6)) }
-        })
-        message = design.text("Connecting to your phone…", 15f, design.muted).apply { setPadding(design.dp(24), design.dp(24), design.dp(24), design.dp(12)) }
-        root.addView(message)
-        retry = design.button("Start server & connect", true) {
-            if (!ServerService.active) ServerService.start(this)
-            connect()
-        }.apply { layoutParams = LinearLayout.LayoutParams(-1, -2).apply { setMargins(design.dp(24), 0, design.dp(24), design.dp(12)) } }
-        root.addView(retry)
-        val browser = design.button("Open in browser") {
+        val openInBrowser = {
             if (!ServerService.active) ServerService.start(this)
             runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("$base/#${intent.getStringExtra("page").takeIf { it in pages } ?: "overview"}"))) }
-                .onFailure { Toast.makeText(this, "Install a browser to open the dashboard", Toast.LENGTH_LONG).show() }
-        }.apply {
+                .onFailure { design.snackbar("Install a browser to open the dashboard") }
+            Unit
+        }
+        // A slim app bar: back to the native screens, the title and "open in browser".
+        val bar = design.row().apply { minimumHeight = design.dp(56); setPadding(design.dp(4), 0, design.dp(4), 0) }
+        bar.addView(design.iconButton(Icon.ChevronRight, "Back to Homedroid") { finish() }.apply { rotation = 180f })
+        bar.addView(design.text("Control panel", TypeStyle.TitleLarge), design.lp(0, -2, 1f, start = Space.XS))
+        bar.addView(design.iconButton(Icon.OpenExternal, "Open in browser") { openInBrowser() })
+        root.addView(bar)
+        message = design.text("Connecting to your phone…", TypeStyle.BodyLarge, design.muted).apply {
+            setPadding(design.dp(24), design.dp(24), design.dp(24), design.dp(12)); accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        }
+        root.addView(message)
+        retry = design.button("Start server & connect", ButtonKind.Filled, Icon.Power) {
+            if (!ServerService.active) ServerService.start(this)
+            connect()
+        }.apply { layoutParams = LinearLayout.LayoutParams(-1, -2).apply { setMargins(design.dp(24), 0, design.dp(24), design.dp(4)) } }
+        root.addView(retry)
+        val browser = design.button("Open in browser", ButtonKind.Outlined, Icon.OpenExternal) { openInBrowser() }.apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(-1, -2).apply { setMargins(design.dp(24), 0, design.dp(24), design.dp(12)) }
         }
@@ -188,7 +195,7 @@ class DashboardActivity : MobileActivity() {
     @Deprecated("Legacy back callback for API 29–32")
     override fun onBackPressed() { goBack() }
     override fun onPause() { web.onPause(); super.onPause() }
-    override fun onResume() { super.onResume(); if (::web.isInitialized) web.onResume() }
+    override fun onResumeUnlocked() { if (::web.isInitialized) web.onResume() }
     override fun onDestroy() {
         upload?.onReceiveValue(null); upload = null; worker.shutdownNow()
         web.stopLoading(); web.destroy(); super.onDestroy()

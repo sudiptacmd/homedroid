@@ -32,21 +32,29 @@ class LockActivity : Activity() {
         val design = MobileUi(this)
         val page = design.page()
         page.gravity = Gravity.CENTER_HORIZONTAL
-        val card = design.card()
-        card.addView(design.text("Homedroid is locked", 22f, bold = true))
-        card.addView(design.text("Enter your PIN to continue.", 14f, design.muted))
-        pin = design.field(card, "PIN", "", secret = true).apply {
+        page.setPadding(design.dp(Space.XXL), design.dp(72), design.dp(Space.XXL), design.dp(Space.XXL))
+        page.addView(design.iconBadge(Icon.Lock, design.p.primaryContainer, design.p.onPrimaryContainer, 72, Shape.XL))
+        page.addView(design.text("Homedroid is locked", TypeStyle.HeadlineSmall).apply { gravity = Gravity.CENTER; isAccessibilityHeading = true },
+            design.lp(-2, -2, top = Space.XXL))
+        page.addView(design.text("Enter your PIN to continue.", TypeStyle.BodyMedium, design.p.onSurfaceVariant).apply { gravity = Gravity.CENTER },
+            design.lp(-2, -2, top = Space.SM))
+        val form = design.column()
+        pin = design.field(form, "PIN", "", secret = true, numeric = true).edit.apply {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
             imeOptions = EditorInfo.IME_ACTION_DONE
+            letterSpacing = 0.3f
             setOnEditorActionListener { _, action, _ -> if (action == EditorInfo.IME_ACTION_DONE) { submit(); true } else false }
         }
-        message = design.text("", 13f, design.warning).apply { setPadding(0, design.dp(10), 0, 0) }
-        card.addView(message)
-        card.addView(design.button("Unlock", primary = true) { submit() })
-        if (AppLock.biometricEnabled(this) && AppLock.biometricAvailable(this)) {
-            card.addView(design.button("Use fingerprint or face") { biometric() })
+        message = design.text("", TypeStyle.BodyMedium, design.p.error).apply {
+            setPadding(design.dp(Space.LG), design.dp(Space.SM), design.dp(Space.LG), 0)
+            accessibilityLiveRegion = android.view.View.ACCESSIBILITY_LIVE_REGION_ASSERTIVE
         }
-        page.addView(card)
+        form.addView(message)
+        form.addView(design.button("Unlock", ButtonKind.Filled, Icon.Lock, large = true) { submit() }, design.lp(top = Space.LG))
+        if (AppLock.biometricEnabled(this) && AppLock.biometricAvailable(this)) {
+            form.addView(design.button("Use fingerprint or face", ButtonKind.Tonal, Icon.Fingerprint, large = true) { biometric() }, design.lp(top = Space.SM))
+        }
+        page.addView(form, design.lp(-1, -2, top = Space.LG).apply { if (resources.displayMetrics.widthPixels > design.dp(448)) width = design.dp(400) })
         if (Build.VERSION.SDK_INT >= 33) {
             onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT) { moveTaskToBack(true) }
         }

@@ -8,10 +8,30 @@ class Config(ctx: Context) {
     /** Tokens and passwords, encrypted with a keystore key (older plaintext values move over on read). */
     private val secrets = SecretStore(prefs)
 
-    /** Native phone interface only: system, light or dark. */
+    /** Native phone interface only: system, light, dark or oled (true black for OLED screens). */
     var appearance: String
         get() = prefs.getString("appearance", "system")!!
         set(v) = prefs.edit().putString("appearance", v).apply()
+
+    /** Native phone interface only: colours from the wallpaper on Android 12+. */
+    var dynamicColor: Boolean
+        get() = prefs.getBoolean("dynamic_color", true)
+        set(v) = prefs.edit().putBoolean("dynamic_color", v).apply()
+
+    /** Overview only: hold the screen on, for a phone used as a status display. Off lets it time out. */
+    var keepScreenOn: Boolean
+        get() = prefs.getBoolean("keep_screen_on", false)
+        set(v) = prefs.edit().putBoolean("keep_screen_on", v).apply()
+
+    /** Switch an untouched Overview to a dim, drifting standby view (see [BurnIn]). */
+    var burnInProtection: Boolean
+        get() = prefs.getBoolean("burn_in", true)
+        set(v) = prefs.edit().putBoolean("burn_in", v).apply()
+
+    /** Minutes without a touch before the standby view. */
+    var standbyMinutes: Int
+        get() = prefs.getInt("standby_minutes", BurnIn.DEFAULT_MINUTES).coerceIn(1, 60)
+        set(v) = prefs.edit().putInt("standby_minutes", v.coerceIn(1, 60)).apply()
 
     var cameraEnabled: Boolean
         get() = prefs.getBoolean("camera", false)
