@@ -34,6 +34,7 @@ class Dashboard(private val ctx: Context) {
     private val firewall: Firewall = Firewall(ctx) { domains.apply() }
     private val domains: Domains = Domains(ctx, paths, deploys, apps) { firewall.rules }
     private val ddns = Ddns(ctx)
+    private val uiPrefs = UiPrefs(java.io.File(paths.root, "ui-prefs.json"))
 
     fun start() {
         http.start()
@@ -187,6 +188,7 @@ class Dashboard(private val ctx: Context) {
             seg.firstOrNull() == "ddns" -> ddns.handle(r, seg.drop(1))
             seg.firstOrNull() == "domains" -> domains.handle(r, seg.drop(1))
             seg.firstOrNull() == "firewall" -> firewall.handle(r, seg.drop(1))
+            seg.firstOrNull() == "ui" && seg.getOrNull(1) == "prefs" -> uiPrefs.handle(r, seg.drop(2))
             r.method == "GET" && seg == listOf("status") -> Response.json(status())
             // Everything the overview shows, in one request instead of four.
             r.method == "GET" && seg == listOf("overview") -> Response.json(
