@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run a mail server on an old Android phone | Homedroid</title>
+<meta name="description" content="Run your own mail server on an old Android phone with Homedroid and Stalwart: guided setup, DNS records to copy, health checks and mail app settings. Includes the port 25 caveat.">
+<link rel="canonical" href="https://homedroid.seltiv.com/mail/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="Run a mail server on an old Android phone | Homedroid">
+<meta property="og:description" content="Run your own mail server on an old Android phone with Homedroid and Stalwart: guided setup, DNS records to copy, health checks and mail app settings. Includes the port 25 caveat.">
+<meta property="og:url" content="https://homedroid.seltiv.com/mail/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.5 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Run a mail server on an old Android phone | Homedroid">
+<meta name="twitter:description" content="Run your own mail server on an old Android phone with Homedroid and Stalwart: guided setup, DNS records to copy, health checks and mail app settings. Includes the port 25 caveat.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Run a mail server on an old Android phone | Homedroid",
+  "description": "Run your own mail server on an old Android phone with Homedroid and Stalwart: guided setup, DNS records to copy, health checks and mail app settings. Includes the port 25 caveat.",
+  "url": "https://homedroid.seltiv.com/mail/",
+  "dateModified": "2026-11-25",
+  "isPartOf": {
+    "@id": "https://homedroid.seltiv.com/#website"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Homedroid",
+      "item": "https://homedroid.seltiv.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Run a mail server on an old Android phone | Homedroid",
+      "item": "https://homedroid.seltiv.com/mail/"
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article">
+<nav class="breadcrumb" aria-label="Breadcrumb">
+<a href="/">Homedroid</a>
+<span>/</span>Run a mail server on an old Android phone</nav>
+<span class="eyebrow">HOMEDROID / 0.9.5 BETA</span>
+<h1>Run a mail server on an old Android phone.</h1>
+<p class="lead">Homedroid can run Stalwart, a mail server with SMTP, IMAP and JMAP, on an old Android phone without root. A guided setup in the dashboard lists the DNS records to copy, checks the result and shows the settings for your mail apps. Most home internet providers block port 25, so you may need a relay to send mail.</p>
+<img src="/media/dashboard-mail.webp" alt="Homedroid Mail page for a Stalwart mail server with DNS records to copy" width="1440" height="900" loading="eager" decoding="async">
+<h2>Install and set up Stalwart on the phone</h2>
+<p>Open Modules in the dashboard and install Mail server (Stalwart). It downloads about 70 MB and needs about 230 MB. The build is Stalwart’s official one for your phone’s CPU, pinned to one version and checked against its SHA-256. Nothing runs until you finish the setup. Then open Mail and answer the wizard: your domain, the mail hostname (normally mail.example.com) and how mail reaches the phone.</p>
+<h2>Copy the DNS records, then run the health check</h2>
+<p>The Mail page lists the A, MX, SPF, DKIM and DMARC records with the exact name and value and a copy button for each. The Check button looks at the running ports, the TLS certificate, your public address, reverse DNS and each record. It runs from the phone, so it cannot prove the internet can reach you. Send a real message from another provider to be sure.</p>
+<h2>Why port 25 is the hard part</h2>
+<p>Other mail servers deliver to port 25, and most home providers block it. Some connections have no public address at all (CGNAT). Gmail and Outlook also expect reverse DNS that only your provider can set, and home IP addresses are often on spam lists. Pick the route that fits:</p>
+<div class="table-scroll">
+<table>
+<caption>Mail routes in the Homedroid setup wizard</caption>
+<thead>
+<tr><th scope="col">You have</th><th scope="col">Use</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">A public IP, port 25 open both ways, and a provider that sets reverse DNS</th><td>Direct from your home internet</td></tr>
+<tr><th scope="row">A public IP, but port 25 blocked or Gmail rejects you</th><td>Send through a relay (Amazon SES, Mailgun, Brevo, Postmark). Incoming mail still arrives through your router.</td></tr>
+<tr><th scope="row">No public IP, or port 25 blocked</th><td>Receive through a small VPS, plus a relay if you also want to send</td></tr>
+</tbody>
+</table>
+</div>
+<p>For most people a relay for sending is the dependable choice. Mail also arrives only while the phone is on, charged and online. Other servers retry for a few days, then bounce the message.</p>
+<h2>Ports and mail app settings</h2>
+<p>Android apps cannot open ports below 1024, so Stalwart listens on 2525 (SMTP), 2587 (submission, STARTTLS), 4650 (submission, TLS) and 9930 (IMAP over TLS). The web admin and JMAP are on 8825 over plain HTTP: keep that on your own network or Tailscale. The Mail page shows the exact settings for Thunderbird, Apple Mail, Outlook and phone mail apps, for use at home and from outside.</p>
+<h2>Back up, and know the limits</h2>
+<p>Stalwart needs more memory than most apps here, so phones with 2 GB of RAM or less may struggle. Everything lives in one folder inside Alpine and nothing copies it elsewhere for you, so back it up regularly. Homedroid cannot fetch a Let’s Encrypt certificate by itself; you can paste one you obtained elsewhere. The <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md">full mail server guide</a> covers relays, VPS forwarding and troubleshooting. Requirements and ports are in the <a href="/faq/">FAQ</a>.</p>
+<aside class="article-cta">
+<h2>Start with the phone you have.</h2>
+<a class="button primary" href="/#download">Download Homedroid</a>
+<a href="/faq/">Requirements and FAQ</a>
+</aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">0.9.5 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-25">25 November 2026</time> · 0.9.5-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>

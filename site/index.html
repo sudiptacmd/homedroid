@@ -71,8 +71,12 @@
     "MacroPads",
     "Six dashboard layouts and 13 themes",
     "Local AI with OpenAI-compatible API",
-    "MCP server API",
-    "SQLite and JSON document APIs",
+    "MCP server for AI assistants",
+    "SQLite browser, SQL console and JSON document store",
+    "Domains, dynamic DNS, firewall and request logs",
+    "Build pipelines for deployments",
+    "Mail server (Stalwart) with guided setup",
+    "Wi-Fi repeater through a built-in proxy",
     "Phone clusters"
   ]
 }
@@ -97,7 +101,7 @@
     "price": "0",
     "priceCurrency": "USD"
   },
-  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/latest",
+  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta",
   "screenshot": "https://homedroid.seltiv.com/media/phone-macropads-oled.webp",
   "author": {
     "@id": "https://homedroid.seltiv.com/#author"
@@ -210,6 +214,22 @@
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Android does not let an unrooted app bind port 53, so AdGuard Home listens on 1053. Homedroid’s Tailscale integration forwards tailnet DNS port 53 to it. A router that supports a custom upstream DNS port can also use it."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I run a mail server on an Android phone with Homedroid?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, with caveats. Install Mail server (Stalwart) from the app catalog and follow the guided setup in the dashboard. It lists the DNS records to copy, runs health checks and shows the IMAP and SMTP settings for your mail apps. Many home internet providers block port 25, and some give you no public address, so you may need to send through a relay such as Mailgun or Amazon SES, or receive through a small VPS. Phones with 2 GB of RAM or less may struggle."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can the phone share its internet connection like a Wi-Fi repeater?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Partly. The Wi-Fi repeater creates a Wi-Fi Direct network and runs a built-in proxy: HTTP and HTTPS on port 8282, SOCKS5 on 8284 and a PAC file on 8283. Join by scanning a QR code, then point the device's proxy setting at the phone. It is proxy-based, so browsers and many apps work, but games, calls, VPN clients and apps that ignore proxy settings do not. Speed is a fraction of your line speed."
       }
     }
   ]
@@ -349,8 +369,12 @@
 <p>
 <strong>Dock, MacroPads, Desktop.</strong> A standby clock, a custom button deck and a wireless webcam. Your server phone has a day job now.</p>
 <p>
-<strong>More hosting and control.</strong> Deploy hooks, build pipelines, domains, databases and MCP APIs. PIN/biometric app lock and Keystore-encrypted secrets.</p>
-<p class="fine">Also fixed: DNS-related app install failures, configurable SSH ports, and app updates from the dashboard.</p>
+<strong>More hosting and control.</strong> Add your own domain, keep dynamic DNS updated, set firewall rules, read request logs, run build pipelines and browse SQLite databases. AI assistants can manage the server over MCP. PIN/biometric app lock and Keystore-encrypted secrets.</p>
+<p>
+<strong>Your own mail server.</strong> Install Stalwart, follow the guided setup, copy the DNS records and check the result. Home providers often block port 25, so a relay may be needed.</p>
+<p>
+<strong>A Wi-Fi repeater.</strong> The phone hosts a Wi-Fi Direct network and devices connect through its built-in HTTP, SOCKS5 or PAC proxy. Join with a QR code. Apps that ignore proxy settings will not work.</p>
+<p class="fine">Also fixed: DNS-related app install failures, configurable SSH ports, and app updates from the dashboard. Camera controls for the PC webcam and a custom look for MacroPads are in development and not part of this beta.</p>
 </div>
 </section>
 <section class="wrap section" id="features">
@@ -389,17 +413,35 @@
 <article class="feature">
 <span class="eyebrow">05 / HOSTING</span>
 <h3>Deploy a real project</h3>
-<p>Pull from GitHub or upload an archive. Run Node.js, Python, Go, PHP, Bun, Deno or static sites. The hosting APIs add domains, DDNS, firewall rules, request logs and build pipelines.</p>
+<p>Pull from GitHub or upload an archive. Run Node.js, Python, Go, PHP, Bun, Deno or static sites. Add your own domain, keep DDNS updated, set firewall rules, read request logs and run build pipelines.</p>
 <span class="feature-meta">GitHub · deploy hooks · rolling deploys</span>
 </article>
 <article class="feature">
 <span class="eyebrow">06 / COMPUTE & CONTROL</span>
 <h3>Local AI, data and phone clusters</h3>
-<p>Run llama.cpp with an OpenAI-compatible API on :8090/v1. Pair phones, move apps, or load-balance deployments. New APIs cover SQLite schemas and SQL queries, JSON documents and MCP tools.</p>
+<p>Run llama.cpp with an OpenAI-compatible API on :8090/v1. Pair phones, move apps, or load-balance deployments. Browse SQLite databases with a schema diagram and SQL console, and let AI assistants manage the server over MCP.</p>
 <span class="feature-meta">llama.cpp · SQLite · MCP · clusters</span>
 </article>
+<article class="feature">
+<span class="eyebrow">07 / MAIL</span>
+<h3>Your own mail server</h3>
+<p>Install Stalwart and follow the guided setup. The dashboard lists the DNS records to copy, runs health checks and shows the settings for your mail apps. Port 25 is often blocked at home, so plan for a relay.</p>
+<span class="feature-meta">Stalwart · SMTP · IMAP · <a href="/mail/">Mail guide</a></span>
+</article>
+<article class="feature">
+<span class="eyebrow">08 / SHARING</span>
+<h3>A Wi-Fi repeater through a proxy</h3>
+<p>The phone hosts a Wi-Fi Direct network. Join with a QR code, then set the device to use the phone's HTTP, SOCKS5 or PAC proxy. Not every app honours proxy settings.</p>
+<span class="feature-meta">Wi-Fi Direct · ports 8282–8284</span>
+</article>
+<article class="feature">
+<span class="eyebrow">09 / THE DESK</span>
+<h3>Dock, MacroPads and PC webcam</h3>
+<p>A standby clock, a button deck for your computer and a wireless webcam. Camera controls for the webcam and a custom MacroPads look are coming.</p>
+<span class="feature-meta">Dock · MacroPads · Homedroid Desktop</span>
+</article>
 </div>
-<p class="fine">This checkout includes backend APIs for pipelines, domains, databases and MCP; their dedicated dashboard pages are not yet wired in. See the <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/deploy-hooks.md">deploy hook guide</a> and <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mcp.md">MCP API setup</a>.</p>
+<p class="fine">Guides: <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/deploy-hooks.md">deploy hooks and pipelines</a>, <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mcp.md">MCP setup</a>, <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md">mail server</a> and <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md">Wi-Fi repeater</a>.</p>
 </section>
 <section class="section tour-section" id="tour">
 <div class="wrap">
@@ -416,6 +458,11 @@
 <button type="button" data-tab="layouts" aria-controls="panel-layouts">Layouts & themes</button>
 <button type="button" data-tab="apps" aria-controls="panel-apps">Apps</button>
 <button type="button" data-tab="hosting" aria-controls="panel-hosting">Deployments</button>
+<button type="button" data-tab="databases" aria-controls="panel-databases">Databases</button>
+<button type="button" data-tab="domains" aria-controls="panel-domains">Domains</button>
+<button type="button" data-tab="mcp" aria-controls="panel-mcp">MCP</button>
+<button type="button" data-tab="mail" aria-controls="panel-mail">Mail</button>
+<button type="button" data-tab="desktop" aria-controls="panel-desktop">Desktop & MacroPads</button>
 <button type="button" data-tab="files" aria-controls="panel-files">Files & terminal</button>
 <button type="button" data-tab="customize" aria-controls="panel-customize">Customize</button>
 </div>
@@ -446,10 +493,50 @@
 <figure id="panel-hosting" data-panel="hosting">
 <picture>
 <source media="(max-width: 600px)" srcset="/media/dashboard-deploys-mobile.webp">
-<img src="/media/dashboard-deploys.webp" alt="Deployments: Git repositories, build commands, environment variables and deployment logs." width="1440" height="900" class="" loading="lazy" decoding="async">
+<img src="/media/dashboard-deploys.webp" alt="Deployments: a build pipeline with install, test and lint steps and its recent runs." width="1440" height="900" class="" loading="lazy" decoding="async">
 </picture>
 <figcaption>
-<strong>Deployments</strong> Git repositories, build commands, environment variables and deployment logs.</figcaption>
+<strong>Deployments</strong> Git repositories, build commands, environment variables, logs and a Pipelines tab with run history.</figcaption>
+</figure>
+<figure id="panel-databases" data-panel="databases">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-databases-mobile.webp">
+<img src="/media/dashboard-databases.webp" alt="Databases: SQLite schema diagram showing tables and foreign keys." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Databases</strong> Browse the SQLite files your apps keep, with a schema diagram, rows and a SQL console.</figcaption>
+</figure>
+<figure id="panel-domains" data-panel="domains">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-domains-mobile.webp">
+<img src="/media/dashboard-domains.webp" alt="Domains: custom domains with verification status." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Domains</strong> Add your own domain and verify it. Dynamic DNS, firewall and request logs sit beside it.</figcaption>
+</figure>
+<figure id="panel-mcp" data-panel="mcp">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-mcp-mobile.webp">
+<img src="/media/dashboard-mcp.webp" alt="MCP: server addresses, token and the allow-changes switch." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>MCP</strong> Let Claude, Cursor or VS Code manage the server. Write tools stay off until you allow them.</figcaption>
+</figure>
+<figure id="panel-mail" data-panel="mail">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-mail-mobile.webp">
+<img src="/media/dashboard-mail.webp" alt="Mail: DNS records for a Stalwart mail server with copy buttons." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Mail</strong> Guided setup for Stalwart, the DNS records to copy, health checks and mail app settings.</figcaption>
+</figure>
+<figure id="panel-desktop" data-panel="desktop">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-desktop-mobile.webp">
+<img src="/media/dashboard-desktop.webp" alt="Desktop and MacroPads: the deck editor with media keys and shortcuts." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Desktop & MacroPads</strong> Pair computers, edit the MacroPads deck and start the phone webcam.</figcaption>
 </figure>
 <figure id="panel-files" data-panel="files">
 <picture>
@@ -608,12 +695,11 @@
 </div>
 <p class="fine" id="os-note">Choose your operating system and CPU. All four downloads stay available.</p>
 <div class="actions">
-<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/latest">Get Homedroid Desktop <span aria-hidden="true">↓</span>
+<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">Get Homedroid Desktop <span aria-hidden="true">↓</span>
 </a>
 <a href="/desktop/">Webcam setup and platform notes <span aria-hidden="true">↗</span>
 </a>
 </div>
-<p class="fine">The button opens GitHub’s latest stable release. The platform links above target 0.9.5-beta explicitly.</p>
 </div>
 </section>
 <section class="wrap section" id="compare">
@@ -707,7 +793,7 @@
 <section class="wrap section download-section" id="download">
 <span class="eyebrow">HOMEDROID 0.9.5 BETA</span>
 <h2>Give the old phone<br>something to do.</h2>
-<p>Android 10+, no root. Per-ABI APKs have historically been under 50 MB; check the release for exact 0.9.5 sizes. Server apps and AI models download separately.</p>
+<p>Android 10+, no root. Per-ABI APKs are about 50 to 60 MB and the universal APK is larger. Apps and AI models download separately.</p>
 <div class="actions">
 <a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-arm64-v8a.apk">Download APK · ARM64 <span aria-hidden="true">↓</span>
 </a>
@@ -779,6 +865,14 @@
 <summary>Can AdGuard Home use the normal DNS port?</summary>
 <p>Android does not let an unrooted app bind port 53, so AdGuard Home listens on 1053. Homedroid’s Tailscale integration forwards tailnet DNS port 53 to it. A router that supports a custom upstream DNS port can also use it.</p>
 </details>
+<details>
+<summary>Can I run a mail server on an Android phone with Homedroid?</summary>
+<p>Yes, with caveats. Install Mail server (Stalwart) from the app catalog and follow the guided setup in the dashboard. It lists the DNS records to copy, runs health checks and shows the IMAP and SMTP settings for your mail apps. Many home internet providers block port 25, and some give you no public address, so you may need to send through a relay such as Mailgun or Amazon SES, or receive through a small VPS. Phones with 2 GB of RAM or less may struggle.</p>
+</details>
+<details>
+<summary>Can the phone share its internet connection like a Wi-Fi repeater?</summary>
+<p>Partly. The Wi-Fi repeater creates a Wi-Fi Direct network and runs a built-in proxy: HTTP and HTTPS on port 8282, SOCKS5 on 8284 and a PAC file on 8283. Join by scanning a QR code, then point the device's proxy setting at the phone. It is proxy-based, so browsers and many apps work, but games, calls, VPN clients and apps that ignore proxy settings do not. Speed is a fraction of your line speed.</p>
+</details>
 </div>
 </section>
 </main>
@@ -794,6 +888,7 @@
 <a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
 <a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
 <a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
 <a href="/macropads/">MacroPads</a>
 <a href="/compare/">Phone vs Raspberry Pi</a>
 <a href="/llms.txt">llms.txt</a>

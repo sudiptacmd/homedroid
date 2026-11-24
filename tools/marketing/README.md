@@ -57,18 +57,18 @@ Copy was checked against `app/build.gradle.kts`, `apps.json`, the Kotlin service
 the three guides and `docs/desktop-protocol.md`. Raspberry Pi comparison facts use the
 linked official Pi 5 specification, not a generic speed or power claim.
 
-In this checkout, pipelines, databases, domains and MCP have backend APIs but their dashboard
-pages are still navigation-slot comments. No screen captures were fabricated for these.
-`site/media/capture-notes.json` records the omission. Schema relationships and SQL-query APIs
-exist, but the schema-diagram and SQL-console dashboard views are not wired in.
+Pipelines, databases, domains, MCP, mail and Desktop & MacroPads all have dashboard pages now.
+The 25 November refresh captured them from the mock server (Mail via the mock-only
+`POST /api/mail/_mock {phase:"ready"}` route) at 1440x900 and 390x844, one headless Chrome at a
+time. `dashboard-deploys` now shows the Pipelines tab.
 
 Windows 11 virtual camera and macOS input remain experimental; release notes also limit
-physical multi-phone load-balancing verification. APK size is not stated as a measured 0.9.5
-number. Per-ABI historical guidance is under 50 MB; check the release for exact sizes.
-Desktop's approximately 1 MB figure applies to Linux. Direct beta links follow the asset names
-in the workflows; publishing/release availability is outside this local-only change.
+physical multi-phone load-balancing verification. Per-ABI APKs are about 50 to 60 MB and the
+universal APK is larger.
+Desktop's approximately 1 MB figure applies to Linux. Every download link points at the v0.9.5-beta tag, because /releases/latest skips pre-releases. Asset names follow
+the Desktop and release workflows.
 
 The final copy pass rewrote the hero, release band, grouped features, phone/dashboard tour,
-Dock/MacroPads/Desktop sections, comparison, setup/downloads, FAQ, all five topic pages,
+Dock/MacroPads/Desktop sections, comparison, setup/downloads, FAQ, all six topic pages (including /mail/),
 README and both llms files. It removed broad speed/heat claims and distinguished local AI
 from optional cloud requests. The banned-phrase checker runs over all public copy.

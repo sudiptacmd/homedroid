@@ -5,12 +5,7 @@
     "1440x900",
     "390x844"
   ],
-  "missingDashboardPages": [
-    "pipelines",
-    "databases",
-    "domains",
-    "mcp"
-  ],
+  "missingDashboardPages": [],
   "videos": "Actual CDP screencast frames encoded by Chrome MediaRecorder at 1280x800, 30 fps",
   "videoFiles": [
     {
@@ -25,5 +20,6 @@
     }
   ],
   "stillImages": 20,
-  "phoneOriginals": "Seven supplied PNGs and three supplied MP4s preserved in new/; seven optimized WebP copies"
+  "phoneOriginals": "Seven supplied PNGs and three supplied MP4s preserved in new/; seven optimized WebP copies",
+  "refreshed": "2026-11-25: databases, domains, mcp, deploys (pipelines), mail, desktop"
 }

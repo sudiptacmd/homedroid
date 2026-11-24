@@ -9,6 +9,7 @@ Requires Android 10+. 64-bit recommended; Immich and local llama.cpp need 64-bit
 - [Desktop webcam](https://homedroid.seltiv.com/desktop/): Linux v4l2loopback, experimental Windows 11 camera, OBS on all platforms.
 - [MacroPads](https://homedroid.seltiv.com/macropads/): Android stream deck alternative and pairing.
 - [Dock mode](https://homedroid.seltiv.com/dock/): five-face standby clock and server tiles.
+- [Mail server](https://homedroid.seltiv.com/mail/): Stalwart on the phone, DNS records, and the port 25 caveat.
 - [FAQ](https://homedroid.seltiv.com/faq/): requirements, ports, privacy and limitations.
 - [Phone vs Raspberry Pi](https://homedroid.seltiv.com/compare/): hardware trade-offs.
 - [Full project facts](https://homedroid.seltiv.com/llms-full.txt): features, setup and FAQ in plain text.
@@ -19,9 +20,11 @@ Requires Android 10+. 64-bit recommended; Immich and local llama.cpp need 64-bit
 - [Release notes](https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.5-beta.md): changes and verification limits.
 - [MacroPads guide](https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/macropads.md): actions and permissions.
 - [Deploy hooks](https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/deploy-hooks.md): CI and pipelines.
-- [MCP guide](https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mcp.md): assistant connection and API setup.
+- [MCP guide](https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mcp.md): assistant connection and client setup.
+- [Mail server guide](https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md): setup, relays and troubleshooting.
+- [Wi-Fi repeater guide](https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md): Wi-Fi Direct and the built-in proxy.
 - [Desktop documentation](https://github.com/sudiptacmd/homedroid/blob/main/desktop/README.md): platform-specific instructions.
 - [License](https://github.com/sudiptacmd/homedroid/blob/main/LICENSE): GPL-3.0.
 
 ## Scope notes
-Dashboard images contain demo data, not device benchmarks. Backend APIs for domains, databases, MCP and pipelines exist in this checkout; their dashboard pages are not yet wired in. Windows virtual camera and macOS input remain experimental. AI cloud providers receive prompts only when configured and used; local inference stays on the phone.
+Dashboard images contain demo data, not device benchmarks. New in 0.9.5: a mail server (Stalwart) with guided setup, a Wi-Fi repeater that works through a built-in proxy, domains, databases, MCP and build pipelines in the dashboard. Home providers often block port 25, so mail may need a relay. The repeater does not carry apps that ignore proxy settings. Camera controls for the PC webcam and a custom MacroPads look are in development and not in this beta. Windows virtual camera and macOS input remain experimental. APKs: per-ABI about 50 to 60 MB, universal larger. AI cloud providers receive prompts only when configured and used; local inference stays on the phone.

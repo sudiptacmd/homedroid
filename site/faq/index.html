@@ -162,6 +162,22 @@
         "@type": "Answer",
         "text": "Android does not let an unrooted app bind port 53, so AdGuard Home listens on 1053. Homedroid’s Tailscale integration forwards tailnet DNS port 53 to it. A router that supports a custom upstream DNS port can also use it."
       }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I run a mail server on an Android phone with Homedroid?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, with caveats. Install Mail server (Stalwart) from the app catalog and follow the guided setup in the dashboard. It lists the DNS records to copy, runs health checks and shows the IMAP and SMTP settings for your mail apps. Many home internet providers block port 25, and some give you no public address, so you may need to send through a relay such as Mailgun or Amazon SES, or receive through a small VPS. Phones with 2 GB of RAM or less may struggle."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can the phone share its internet connection like a Wi-Fi repeater?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Partly. The Wi-Fi repeater creates a Wi-Fi Direct network and runs a built-in proxy: HTTP and HTTPS on port 8282, SOCKS5 on 8284 and a PAC file on 8283. Join by scanning a QR code, then point the device's proxy setting at the phone. It is proxy-based, so browsers and many apps work, but games, calls, VPN clients and apps that ignore proxy settings do not. Speed is a fraction of your line speed."
+      }
     }
   ]
 }
@@ -241,6 +257,14 @@
 <summary>Can AdGuard Home use the normal DNS port?</summary>
 <p>Android does not let an unrooted app bind port 53, so AdGuard Home listens on 1053. Homedroid’s Tailscale integration forwards tailnet DNS port 53 to it. A router that supports a custom upstream DNS port can also use it.</p>
 </details>
+<details>
+<summary>Can I run a mail server on an Android phone with Homedroid?</summary>
+<p>Yes, with caveats. Install Mail server (Stalwart) from the app catalog and follow the guided setup in the dashboard. It lists the DNS records to copy, runs health checks and shows the IMAP and SMTP settings for your mail apps. Many home internet providers block port 25, and some give you no public address, so you may need to send through a relay such as Mailgun or Amazon SES, or receive through a small VPS. Phones with 2 GB of RAM or less may struggle.</p>
+</details>
+<details>
+<summary>Can the phone share its internet connection like a Wi-Fi repeater?</summary>
+<p>Partly. The Wi-Fi repeater creates a Wi-Fi Direct network and runs a built-in proxy: HTTP and HTTPS on port 8282, SOCKS5 on 8284 and a PAC file on 8283. Join by scanning a QR code, then point the device's proxy setting at the phone. It is proxy-based, so browsers and many apps work, but games, calls, VPN clients and apps that ignore proxy settings do not. Speed is a fraction of your line speed.</p>
+</details>
 <h2>Default ports</h2>
 <div class="table-scroll">
 <table>
@@ -317,6 +341,7 @@
 <a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
 <a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
 <a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
 <a href="/macropads/">MacroPads</a>
 <a href="/compare/">Phone vs Raspberry Pi</a>
 <a href="/llms.txt">llms.txt</a>

@@ -39,28 +39,33 @@ mock API data, not hardware benchmarks. Last updated: 25 November 2026.*
   while charging or as Android’s screen saver. Four status widget sizes and a new clock widget.
 - **MacroPads + Homedroid Desktop:** custom phone buttons for your computer, plus a wireless
   phone webcam. Linux, Windows and macOS companion downloads below.
-- **Hosting APIs:** custom domains with verification, DuckDNS/Cloudflare dynamic DNS, firewall
-  rules and request logs. Go, PHP, Bun and Deno join Node.js, Python and static deployments.
-  Upload ZIP/tar artifacts, trigger deploys from CI, run build pipelines and roll deployments
-  across load-balanced cluster phones.
-- **MCP and data APIs:** connect AI assistants to the server, with opt-in write tools. The
-  on-phone agent backend waits for approval before changes. Browse SQLite schemas and tables,
-  run SQL queries, or use the JSON document store.
+- **Hosting from the dashboard:** add your own domain, keep dynamic DNS (DuckDNS or Cloudflare)
+  updated, set firewall rules and read request logs. Go, PHP, Bun and Deno join Node.js, Python
+  and static deployments. Upload ZIP/tar archives, trigger deploys from CI, run build pipelines
+  and roll deployments across load-balanced cluster phones.
+- **MCP and databases:** let AI assistants such as Claude, Cursor and VS Code manage the server
+  over MCP, with write tools off until you allow them and an on-phone agent that asks before
+  it changes anything. Browse SQLite databases with a schema diagram and a SQL console, or use
+  the JSON document store.
+- **Your own mail server:** install Stalwart from the app catalog and follow the guided setup
+  in the dashboard. It lists the DNS records to copy, runs health checks and shows the settings
+  for your mail apps. Many home internet providers block port 25, so you may need a relay.
+- **Wi-Fi repeater:** the phone hosts a Wi-Fi Direct network and shares its connection through
+  a built-in HTTP, SOCKS5 and PAC proxy. Join with a QR code. It is proxy-based, so apps that
+  ignore proxy settings will not work.
 - **Security and fixes:** PIN/biometric app lock, Keystore-encrypted secrets, DNS install fixes,
   configurable SSH port, a terminal that works with SSH off, and installed-app updates from
   the phone or dashboard.
 
-**Checkout status:** the backend APIs for pipelines, domains, databases and MCP are implemented,
-but their dedicated pages in `dashboard.html` are still navigation slots. The release notes
-describe the broader feature set; this README does not imply those screens are already wired
-in. The [deploy hooks](docs/guides/deploy-hooks.md) and [MCP guide](docs/guides/mcp.md) include API
-examples. See [0.9.5 release notes](docs/releases/v0.9.5-beta.md) for verification limits.
+Camera controls for the PC webcam and a customizable look for MacroPads (backgrounds, fonts
+and icons) are being worked on and are not in this beta yet. See the
+[0.9.5 release notes](docs/releases/v0.9.5-beta.md) for verification limits.
 
 ## Download
 
 Homedroid is **0.9.5 beta**. Android 10+ is required. Use ARM64 for most modern phones;
-Immich and local llama.cpp need 64-bit. Per-ABI APKs have historically been under 50 MB;
-check the release for exact 0.9.5 sizes. Apps and models download separately.
+Immich and local llama.cpp need 64-bit. Per-ABI APKs are about 50 to 60 MB and the universal
+APK is larger. Apps and AI models download separately.
 
 | Phone | APK |
 |---|---|
@@ -139,7 +144,9 @@ use a trusted network or an encrypted tunnel.
 | Network tools | Discovery, ping, traceroute, DNS, nmap, HTTP checks, whois, speed tests | 8800 |
 | Wake on LAN | Magic packets for saved computers | 8800 |
 | Cluster | Paired phones, service management and file/app moves over mutual TLS | 8801 |
-| MCP API | Assistant tools, separate token, off by default | 8800, `/mcp` |
+| MCP server | Assistant tools, separate token, off by default | 8800, `/mcp` |
+| Mail (Stalwart) | SMTP, IMAP and JMAP for your own domain; web admin | 2525, 2587, 4650, 9930, 8825 |
+| Wi-Fi repeater | Wi-Fi Direct network with HTTP, SOCKS5 and PAC proxies | 8282, 8283, 8284 |
 | Tailscale / Cloudflare Tunnel | Private / public remote access | Service-dependent |
 
 Nothing you turn off needs to keep running. A foreground service supervises enabled processes,
@@ -166,6 +173,13 @@ Use Ctrl/Cmd+K to jump between pages.
   <img src="docs/screenshots/dashboard-customize.png" width="440" alt="Dashboard customization panel for themes, fonts and layouts">
 </p>
 
+The dashboard has pages for Domains, Databases, MCP, Mail and Desktop & MacroPads:
+
+<p>
+  <img src="docs/screenshots/dashboard-domains-dark.png" width="440" alt="Homedroid Domains page for custom domains with verification">
+  <img src="docs/screenshots/dashboard-desktop-dark.png" width="440" alt="Homedroid Desktop and MacroPads page with the deck editor">
+</p>
+
 [Watch the current short phone and dashboard recordings](https://homedroid.seltiv.com/#tour).
 The [older 0.9.4 walkthrough](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4)
 still demonstrates media, storage, AI and clusters, but its interface predates this release.
@@ -189,7 +203,8 @@ sizes, and a separate clock widget opens Dock mode.
 
 Open **Tools → MacroPads**. Long-press a button to set a hotkey, media key, text, app, URL,
 mouse action or command. Make profiles and pages, change icons and colours, or chain desktop
-actions into sequences. Grids range from 2×2 to 6×8. Import/export JSON backs up your deck.
+actions into sequences. Grids range from 2×2 to 6×8. Import/export JSON backs up your deck. A custom look with backgrounds, fonts and icons is
+coming in a later build.
 
 Tap the computer icon to pair Homedroid Desktop with a six-digit code. Codes last five minutes;
 you can pair up to eight computers. The companion stays connected and acknowledges each action.
@@ -226,6 +241,7 @@ homedroid-desktop status
 Enable Desktop webcam access on the phone first. There is one stream per phone; stop IPCam
 before starting the webcam because they reserve the camera exclusively. The camera picks a
 nearby supported resolution and frame rate.
+Camera controls (such as zoom and torch) are in development for a later build.
 [Download table](#homedroid-desktop-downloads) · [Full Desktop instructions](desktop/README.md).
 
 ## USB drives and SD cards as a NAS
@@ -255,21 +271,21 @@ Camera/microphone access must be enabled from the phone, including again after a
 
 ## Hosting and deploying from GitHub
 
-<img src="docs/screenshots/dashboard-deploys-dark.png" width="900" alt="Homedroid deployments dashboard: repositories, running apps and build controls">
+<img src="docs/screenshots/dashboard-deploys-dark.png" width="900" alt="Homedroid deployments dashboard with a build pipeline and its recent runs">
 
 Give Homedroid a repository URL, branch and port. Set build/start commands and environment
 variables as needed; apps receive `$PORT`. A failed build keeps the previous version running.
 Auto-deploy checks the branch every five minutes. The runtime backend supports Node.js,
 Python, Go, PHP, Bun, Deno and static sites.
 
-The 0.9.5 hosting APIs add verified domains, path routes, DuckDNS/Cloudflare DDNS, firewall
-rules and request logs. Deploy from ZIP/tar archives or CI with per-deployment tokens. Hooks
+The dashboard also has pages for verified domains and path routes, DuckDNS/Cloudflare dynamic
+DNS, firewall rules and request logs. Deploy from ZIP/tar archives or CI with per-deployment tokens. Hooks
 work with GitHub Actions, GitLab and CircleCI; GitHub push webhooks use signature verification.
 A `.homedroid/pipeline.json` lists steps after the build and before startup. A failed step
-stops the deploy. Rolling deployment and load balancing target paired cluster phones.
+stops the deploy. Rolling deployment and load balancing target paired cluster phones. Each
+deployment has a Pipelines tab with run history and per-step timings.
 
 [Deploy hooks, archive uploads and pipeline examples](docs/guides/deploy-hooks.md).
-The dedicated new hosting/pipeline dashboard screens are not yet connected in this checkout.
 Load balancing has emulator verification, not verification across two physical phones.
 
 ## Local AI, MCP and databases
@@ -283,13 +299,49 @@ cloud requests go to the provider you choose.
 **MCP:** assistants such as Claude, Cursor and VS Code can read status, logs, deployments and
 files. A separate token protects `/mcp`; it is off by default. Write tools require Allow write.
 The dashboard-agent backend uses the same tools and holds changes for approval.
-The [MCP guide](docs/guides/mcp.md) includes HTTP API setup and client configurations; its
-Settings UI instructions are ahead of the current dashboard wiring.
+The dashboard's **MCP** page has the switches, server addresses, token and an audit log. The
+[MCP guide](docs/guides/mcp.md) includes client configurations.
 
-**Databases:** the SQLite backend lists tables and schema relations and accepts SQL queries.
-Reads are the default; writes require explicit confirmation and are refused while the owning
-app is running. A JSON document store is also available through the API. Schema-diagram and
-SQL-console dashboard views are not implemented in the current HTML.
+**Databases:** the **Databases** page lists the SQLite files your apps keep, draws the schema
+with its foreign keys, shows rows and has a SQL console. Reads are the default; writes need
+explicit confirmation and are refused while the owning app is running. A JSON document store
+sits next to it under **Documents**.
+
+<p>
+  <img src="docs/screenshots/dashboard-databases-dark.png" width="440" alt="Homedroid Databases page with a SQLite schema diagram of tables and foreign keys">
+  <img src="docs/screenshots/dashboard-mcp-dark.png" width="440" alt="Homedroid MCP page with server addresses, token and write-access switch for AI assistants">
+</p>
+
+## Your own mail server
+
+<img src="docs/screenshots/dashboard-mail-dark.png" width="900" alt="Homedroid Mail page for a Stalwart mail server on an old Android phone, with DNS records to copy">
+
+Install **Mail server (Stalwart)** from Modules, then open **Mail** in the dashboard. A wizard
+asks for your domain, hostname and how mail reaches the phone. After that you get the DNS
+records (MX, SPF, DKIM, DMARC) with copy buttons, health checks, mailboxes and the IMAP/SMTP
+settings for your phone and computer mail apps. Phones with 2 GB of RAM or less may struggle; Stalwart wants
+more memory than most apps here.
+
+Running mail at home often does not work, and the phone cannot change why. Most home
+providers block port 25. Many have no public address at all (CGNAT), and Gmail and Outlook
+want reverse DNS that only your provider can set. The wizard offers three routes: direct,
+send through a relay such as Mailgun or Amazon SES, or receive through a small VPS. A relay is
+the dependable choice for sending. The checks run from the phone, so send a real message from
+another provider to confirm.
+[Mail server guide](docs/guides/mail.md).
+
+## Wi-Fi repeater
+
+The phone can share its connection through its own Wi-Fi network, without root. It creates a
+Wi-Fi Direct group and runs an HTTP/HTTPS proxy on port 8282, a SOCKS5 proxy on 8284 and a PAC
+file on 8283. Join the network by scanning the QR code, then point the device's proxy setting
+at the phone, normally `192.168.49.1`.
+
+This is a proxy, not a hotspot. Browsers and most apps built on the system networking work.
+Games, calls, VPN clients and anything that ignores the proxy setting will not. Speed is a
+fraction of your line speed because one radio serves both connections. Turn it on under
+**Settings → Services & connections → Wi-Fi repeater** or from **Modules** in the dashboard.
+[Wi-Fi repeater guide](docs/guides/wifi-repeater.md).
 
 ## Network services and phone clusters
 
