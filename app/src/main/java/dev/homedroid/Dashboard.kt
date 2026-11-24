@@ -28,12 +28,17 @@ class Dashboard(private val ctx: Context) {
     private val ai = Ai(ctx)
     private val wol = WakeOnLan(ctx, cfg)
     private val routines = Routines(ctx, ai)
+    private val firewall: Firewall = Firewall(ctx) { domains.apply() }
+    private val domains: Domains = Domains(ctx, paths, deploys, apps) { firewall.rules }
+    private val ddns = Ddns(ctx)
 
     fun start() {
         http.start()
         phoneInstance = this
         ai.start()
         routines.start()
+        domains.start()
+        ddns.start()
         try {
             cluster.start()
         } catch (e: java.io.IOException) {
@@ -44,6 +49,7 @@ class Dashboard(private val ctx: Context) {
     fun stop() {
         if (phoneInstance === this) phoneInstance = null
         routines.stop()
+        ddns.stop()
         ai.stop()
         network.stop()
         cluster.stop()
@@ -51,6 +57,8 @@ class Dashboard(private val ctx: Context) {
     }
 
     private fun handle(r: Request): Response {
+        // Loopback (the phone itself) is never blocked; see FirewallCore.allows.
+        if (!firewall.allows(r)) return Response.error(403, "This address is blocked by the dashboard firewall")
         if (r.method == "GET" && (r.path == "/" || r.path == "/index.html")) return page(r)
         if (r.method == "GET" && r.path == "/favicon.svg") {
             val svg = ctx.assets.open("favicon.svg").use { it.readBytes() }
@@ -167,6 +175,9 @@ class Dashboard(private val ctx: Context) {
             seg.firstOrNull() == "ai" -> ai.handle(r, seg.drop(1))
             seg.firstOrNull() == "wol" -> wol.handle(r, seg.drop(1))
             seg.firstOrNull() == "network" -> network.handle(r, seg.drop(1))
+            seg.firstOrNull() == "ddns" -> ddns.handle(r, seg.drop(1))
+            seg.firstOrNull() == "domains" -> domains.handle(r, seg.drop(1))
+            seg.firstOrNull() == "firewall" -> firewall.handle(r, seg.drop(1))
             r.method == "GET" && seg == listOf("status") -> Response.json(status())
             // Everything the overview shows, in one request instead of four.
             r.method == "GET" && seg == listOf("overview") -> Response.json(
