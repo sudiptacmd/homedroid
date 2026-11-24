@@ -165,10 +165,22 @@ class DesktopWebcamService : Service() {
                         val time = System.currentTimeMillis() - if (
                             characteristics.get(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE) == CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME
                         ) ((SystemClock.elapsedRealtimeNanos() - it.timestamp) / 1_000_000).coerceAtLeast(0) else 0
-                        val frame = Frame(jpeg(it, c.settings), ++c.sequence, time)
-                        synchronized(c.lock) { c.frame = frame; c.lock.notifyAll() }
-                        c.ready.complete(null)
-                        c.pending?.complete(Response.json(JSONObject().put("ok", true).put("settings", JSONObject(c.settings.toString())))); c.pending = null
+                        // Newest frame wins: while one is still compressing, the next is dropped.
+                        if (!encoding) {
+                            val pixels = nv21(it, c.settings); val quality = c.settings.getInt("quality")
+                            encoding = true
+                            encoder.execute {
+                                try {
+                                    val frame = Frame(jpeg(pixels, quality), ++c.sequence, time)
+                                    synchronized(c.lock) { c.frame = frame; c.lock.notifyAll() }
+                                    handler.post {
+                                        c.ready.complete(null)
+                                        c.pending?.complete(Response.json(JSONObject().put("ok", true).put("settings", JSONObject(c.settings.toString())))); c.pending = null
+                                    }
+                                } catch (e: Exception) { handler.post { fail(c, e.message ?: "JPEG encoding failed") } }
+                                finally { encoding = false }
+                            }
+                        }
                     }.onFailure { fail(c, it.message ?: "JPEG encoding failed") }
                 }
             }
@@ -207,24 +219,52 @@ class DesktopWebcamService : Service() {
                 if (requested == "front") CameraCharacteristics.LENS_FACING_FRONT else CameraCharacteristics.LENS_FACING_BACK
         } ?: throw IllegalArgumentException("No $requested camera") else requested.also { require(it in manager.cameraIdList) { "Unknown camera" } }
     }
-    /** Transform Y and subsampled chroma before encoding: preview and virtual output are identical. */
-    private fun jpeg(image: Image, o: JSONObject): ByteArray {
-        val rotate = o.optInt("rotate"); val swap = rotate == 90 || rotate == 270
-        val w = if (swap) image.height else image.width; val h = if (swap) image.width else image.height
-        val data = ByteArray(w * h * 3 / 2); var offset = 0
-        fun sample(plane: Int, x: Int, y: Int, ow: Int, oh: Int): Byte {
-            val px = if (o.optBoolean("mirror")) ow - 1 - x else x
-            val py = if (o.optBoolean("flip")) oh - 1 - y else y
-            val (sx, sy) = when (rotate) { 90 -> py to ow - 1 - px; 180 -> ow - 1 - px to oh - 1 - py; 270 -> oh - 1 - py to px; else -> px to py }
-            val p = image.planes[plane]
-            return p.buffer.get(sy * p.rowStride + sx * p.pixelStride)
+    /** A frame's pixels as NV21 after rotate/mirror/flip, so preview and virtual output are identical. */
+    private class Nv21(val data: ByteArray, val width: Int, val height: Int)
+
+    /**
+     * Copies [image] out as NV21 with the transform applied. Runs on the camera thread, so it has
+     * to be quick: settings are read once, and the untransformed case copies whole rows.
+     */
+    private fun nv21(image: Image, o: JSONObject): Nv21 {
+        val rotate = o.optInt("rotate"); val mirror = o.optBoolean("mirror"); val flip = o.optBoolean("flip")
+        val iw = image.width; val ih = image.height
+        val swap = rotate == 90 || rotate == 270
+        val w = if (swap) ih else iw; val h = if (swap) iw else ih
+        val data = ByteArray(w * h * 3 / 2)
+        val yp = image.planes[0]; val up = image.planes[1]; val vp = image.planes[2]
+        val yBuf = yp.buffer; val uBuf = up.buffer; val vBuf = vp.buffer
+        val yRow = yp.rowStride; val yPix = yp.pixelStride
+        val cRow = vp.rowStride; val cPix = vp.pixelStride; val uRow = up.rowStride; val uPix = up.pixelStride
+        if (rotate == 0 && !mirror && !flip && yPix == 1) {
+            for (y in 0 until h) { yBuf.position(y * yRow); yBuf.get(data, y * w, w) }
+        } else {
+            var offset = 0
+            for (y in 0 until h) for (x in 0 until w) {
+                val px = if (mirror) w - 1 - x else x; val py = if (flip) h - 1 - y else y
+                val sx: Int; val sy: Int
+                when (rotate) { 90 -> { sx = py; sy = w - 1 - px }; 180 -> { sx = w - 1 - px; sy = h - 1 - py }; 270 -> { sx = h - 1 - py; sy = px }; else -> { sx = px; sy = py } }
+                data[offset++] = yBuf.get(sy * yRow + sx * yPix)
+            }
         }
-        for (y in 0 until h) for (x in 0 until w) data[offset++] = sample(0, x, y, w, h)
-        for (y in 0 until h / 2) for (x in 0 until w / 2) {
-            data[offset++] = sample(2, x, y, w / 2, h / 2); data[offset++] = sample(1, x, y, w / 2, h / 2)
+        var offset = w * h
+        val cw = w / 2; val ch = h / 2
+        for (y in 0 until ch) for (x in 0 until cw) {
+            val px = if (mirror) cw - 1 - x else x; val py = if (flip) ch - 1 - y else y
+            val sx: Int; val sy: Int
+            when (rotate) { 90 -> { sx = py; sy = cw - 1 - px }; 180 -> { sx = cw - 1 - px; sy = ch - 1 - py }; 270 -> { sx = ch - 1 - py; sy = px }; else -> { sx = px; sy = py } }
+            data[offset++] = vBuf.get(sy * cRow + sx * cPix); data[offset++] = uBuf.get(sy * uRow + sx * uPix)
         }
-        return ByteArrayOutputStream().also { check(YuvImage(data, ImageFormat.NV21, w, h, null).compressToJpeg(Rect(0, 0, w, h), o.getInt("quality"), it)) }.toByteArray()
+        return Nv21(data, w, h)
     }
+
+    private fun jpeg(f: Nv21, quality: Int): ByteArray =
+        ByteArrayOutputStream().also { check(YuvImage(f.data, ImageFormat.NV21, f.width, f.height, null).compressToJpeg(Rect(0, 0, f.width, f.height), quality, it)) }.toByteArray()
+
+    /** JPEG compression runs here, off the camera thread, so controls never wait behind a frame. */
+    private val encoder = java.util.concurrent.Executors.newSingleThreadExecutor()
+    @Volatile private var encoding = false
+
     fun control(computer: String, body: JSONObject): Response {
         val c = current?.takeIf { it.active && it.computer == computer } ?: return Response.error(409, "This computer has no active webcam stream")
         val result = CompletableFuture<Response>()
@@ -287,7 +327,7 @@ class DesktopWebcamService : Service() {
     override fun onDestroy() {
         stopping = true
         if (instance === this) instance = null
-        stopStream(); handler.post { thread.quitSafely() }
+        stopStream(); handler.post { thread.quitSafely() }; encoder.shutdown()
         super.onDestroy()
     }
 }
