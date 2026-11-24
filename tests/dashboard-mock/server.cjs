@@ -9,6 +9,7 @@ const crypto = require('node:crypto');
 const net = require('node:net');
 const zlib = require('node:zlib');
 const F = require('./fixtures.cjs');
+const X = require('./extras.cjs');
 const CSP = "default-src 'self'; img-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
 const MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.png': 'image/png', '.wav': 'audio/wav', '.webm': 'video/webm'};
 const fail = (code, message) => { throw Object.assign(new Error(message), {code}); };
@@ -52,7 +53,7 @@ function download(req, res, url, name, data, type) {
   send(res, data, 200, headers);
 }
 function createMockServer({log = console.warn, jobStepMs = 350, delayMs = 800} = {}) {
-  const cluster = F.createCluster(), timers = new Set();
+  const cluster = F.createCluster(), timers = new Set(), extras = X.createExtras();
   const later = (fn, ms = delayMs) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); return t; };
   const phones = () => [cluster.self, ...cluster.members];
   const phoneById = id => need(phones().find(p => p.id === id), 'No such phone');
@@ -390,13 +391,23 @@ function createMockServer({log = console.warn, jobStepMs = 350, delayMs = 800} =
       if (method === 'GET' && s[2] === 'logs') return send(res, need(F.logs(p, s[1]), 'Service is not running'));
       if (method === 'POST' && s[2] === 'restart') { need(F.daemon(p, s[1]), 'Service is not running'); F.bump(p, s[1], true); return send(res, ok); }
     }
+    // Console pages: databases, documents, domains, logs, DDNS, firewall, MCP, deployment settings and hooks, MacroPads, desktop.
+    if (['db', 'docs', 'domains', 'ddns', 'firewall', 'mcp', 'macropads', 'desktop', 'mail', 'repeater'].includes(s[0]) || (s[0] === 'deploys' && s.length >= 3 && ['settings', 'token', 'upload', 'pipeline', 'runs'].includes(s[2]))) {
+      const handled = await X.route(extras, p, s, method, b, raw, url, res, send, {later, stepMs: jobStepMs});
+      if (handled !== false) return;
+    }
     if (s[0] === 'deploys') {
       if (method === 'POST' && s.length === 1) {
-        if (!b.name?.trim() || !b.repo || !(b.port >= 1024 && b.port <= 65535)) fail(400, 'Enter a name, repository URL and port');
+        const upload = b.source === 'upload';
+        if (!b.name?.trim() || (!upload && !b.repo) || !(b.port >= 1024 && b.port <= 65535)) fail(400, upload ? 'Enter a name and port' : 'Enter a name, repository URL and port');
+        if (p.deploys.some(x => x.port === b.port || x.balanced?.port === b.port)) fail(400, `port ${b.port} is already used`);
         if (p.job.running) fail(409, 'Another job is running');
-        const d = {...b, id: b.name.toLowerCase().replace(/[^\w-]/g, '-'), branch: b.branch || 'main', env: b.env || {}, commit: null, detected: b.runtime === 'auto' ? 'node' : b.runtime, error: null};
-        if (p.deploys.some(x => x.id === d.id)) fail(409, 'A deployment has this name'); p.deploys.push(d);
-        job(p, `Deploying ${d.name}`, () => { d.commit = F.hex(40); }); return send(res, F.deployJson(p, d));
+        const d = {...b, id: b.name.toLowerCase().replace(/[^\w-]/g, '-'), repo: upload ? '' : b.repo, source: b.source || 'git', branch: b.branch || 'main', env: b.env || {}, commit: null, detected: b.runtime === 'auto' ? 'node' : b.runtime, error: null,
+          token: 'hd_' + F.hex(40), webhookSecret: upload ? '' : 'whsec_' + F.hex(40), balanced: b.balanced || null, pipeline: b.pipeline || []};
+        if (p.deploys.some(x => x.id === d.id)) fail(400, `a deployment called ${d.id} already exists`); p.deploys.push(d);
+        const created = {...F.deployJson(p, d), token: d.token, webhookSecret: d.webhookSecret};
+        if (!upload) job(p, `Deploying ${d.name}`, () => { d.commit = F.hex(40); });
+        return send(res, created);
       }
       if (method === 'POST' && s[2] === 'move') {
         const from = phoneById(b.from), d = need(from.deploys.find(x => x.id === s[1]));

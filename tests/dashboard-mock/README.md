@@ -17,3 +17,8 @@ WebSocket, and `GET/PUT/DELETE /api/ui/prefs` (JSON object up to 256 KB; writes 
 object with `updated`).
 
 `visual-check.cjs` is optional browser QA (needs a Playwright module and Chrome). `node --test tests/` covers the server shapes.
+
+Console pages (`extras.cjs`): `/api/db` (files, schema, rows, query with 400/408/409 cases), `/api/docs`, `/api/domains` (+ verify, logs), `/api/ddns`, `/api/firewall` (409 on lock-out), `/api/mcp/*` (settings, token, audit, agent with approvals),
+deployment `settings`, `token`, `upload`, `pipeline` and `runs`, and `/api/macropads` plus `/api/desktop/*` (the deck is validated with the dashboard's own helper code). `shots.cjs console-` screenshots every one of these pages at desktop and mobile, dark and light.
+
+Mail and Wi-Fi repeater (`extras.cjs`): `/api/mail` follows the Stalwart module (install it through Modules, answer `/api/mail/setup`, it is "starting" for a few seconds, then ready) with `dns`, `check`, `clients`, `accounts` and `certificate`; `/api/repeater` has the switch, permission and settings. The dashboard's own helper code validates the setup. Mock-only: `POST /api/mail/_mock {phase}` and `POST /api/repeater/_mock {state, ...}` jump to a state (the screenshots use them). `shots.cjs console-mail,console-repeater` screenshots every phase.
