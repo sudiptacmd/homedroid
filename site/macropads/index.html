@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Android stream deck alternative with MacroPads | Homedroid</title>
+<meta name="description" content="Use an old Android phone as a stream deck alternative. MacroPads sends hotkeys, media keys, text and commands to your PC through Homedroid Desktop.">
+<link rel="canonical" href="https://homedroid.seltiv.com/macropads/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="Android stream deck alternative with MacroPads | Homedroid">
+<meta property="og:description" content="Use an old Android phone as a stream deck alternative. MacroPads sends hotkeys, media keys, text and commands to your PC through Homedroid Desktop.">
+<meta property="og:url" content="https://homedroid.seltiv.com/macropads/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.5 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Android stream deck alternative with MacroPads | Homedroid">
+<meta name="twitter:description" content="Use an old Android phone as a stream deck alternative. MacroPads sends hotkeys, media keys, text and commands to your PC through Homedroid Desktop.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Android stream deck alternative with MacroPads | Homedroid",
+  "description": "MacroPads turns an old Android phone into a custom button deck for your computer. Pair Homedroid Desktop to send hotkeys, media keys, text, app launches and commands over your network.",
+  "url": "https://homedroid.seltiv.com/macropads/",
+  "dateModified": "2026-11-25",
+  "isPartOf": {
+    "@id": "https://homedroid.seltiv.com/#website"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Homedroid",
+      "item": "https://homedroid.seltiv.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Android stream deck alternative with MacroPads | Homedroid",
+      "item": "https://homedroid.seltiv.com/macropads/"
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article">
+<nav class="breadcrumb" aria-label="Breadcrumb">
+<a href="/">Homedroid</a>
+<span>/</span>Android stream deck alternative with MacroPads</nav>
+<span class="eyebrow">HOMEDROID / 0.9.5 BETA</span>
+<h1>MacroPads: an Android stream deck alternative.</h1>
+<p class="lead">MacroPads turns an old Android phone into a custom button deck for your computer. Pair Homedroid Desktop to send hotkeys, media keys, text, app launches and commands over your network.</p>
+<div class="article-media">
+<video controls playsinline preload="none" poster="/media/phone-macropads-oled.webp" width="1080" height="2400" aria-label="MacroPads Android stream deck alternative: button grid and editor walkthrough">
+<source src="/media/new/phone-macropads.mp4" type="video/mp4">
+</video>
+</div>
+<h2>Build an Android stream deck around your shortcuts</h2>
+<p>Open Tools → MacroPads. Long-press a key to change its label, icon, colour and action. Make separate profiles for work, calls or media; add pages when the grid fills up. Grid sizes range from 2×2 to 6×8.</p>
+<p>The starter deck includes copy, paste, undo, media keys and a mute shortcut. Shortcuts vary by app and OS, so edit them for your computer. A green button means the computer acknowledged the action, not that the microphone’s real mute state was measured.</p>
+<h2>Pair once, keep the companion running</h2>
+<ol>
+<li>Tap the computer icon in MacroPads, then Pair a computer.</li>
+<li>
+<a href="/desktop/">Download and run Homedroid Desktop</a>.</li>
+<li>Enter the phone address and six-digit code in its local control page. Codes last five minutes. Up to eight computers can be paired.</li>
+</ol>
+<h2>Actions on the computer and the phone</h2>
+<p>Send hotkeys, single keys, Unicode text, media keys, mouse actions, URLs, files and app launches. Sequences combine desktop actions with short delays. Shell commands are blocked until Allow commands is enabled on the computer.</p>
+<p>HTTP buttons run on the phone and can call Home Assistant webhooks. The starter Home Assistant button is disabled until you give it a real URL and enable it. Export deck JSON to back it up; exports can contain private webhook URLs.</p>
+<h2>Platform details that matter</h2>
+<p>Linux uses XTEST on X11, or uinput on Wayland with the right device permissions. Windows input needs matching administrator privileges to reach administrator windows. macOS needs Accessibility permission; that backend is experimental and untested on hardware.</p>
+<p>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/macropads.md">Read the MacroPads guide: editing, pairing and actions</a>
+</p>
+<aside class="article-cta">
+<h2>Start with the phone you have.</h2>
+<a class="button primary" href="/#download">Download Homedroid</a>
+<a href="/faq/">Requirements and FAQ</a>
+</aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">0.9.5 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-25">25 November 2026</time> · 0.9.5-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>

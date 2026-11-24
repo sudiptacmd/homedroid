@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Android home server FAQ: requirements, root and privacy | Homedroid</title>
+<meta name="description" content="Homedroid Android home server FAQ: Android 10+ requirements, no-root setup, Jellyfin, remote access, battery care, webcam support, MacroPads and privacy.">
+<link rel="canonical" href="https://homedroid.seltiv.com/faq/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="Android home server FAQ: requirements, root and privacy | Homedroid">
+<meta property="og:description" content="Homedroid Android home server FAQ: Android 10+ requirements, no-root setup, Jellyfin, remote access, battery care, webcam support, MacroPads and privacy.">
+<meta property="og:url" content="https://homedroid.seltiv.com/faq/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.5 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Android home server FAQ: requirements, root and privacy | Homedroid">
+<meta name="twitter:description" content="Homedroid Android home server FAQ: Android 10+ requirements, no-root setup, Jellyfin, remote access, battery care, webcam support, MacroPads and privacy.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Android home server FAQ: requirements, root and privacy | Homedroid",
+  "description": "Homedroid runs a home server on Android 10 or newer without root. This FAQ covers phone requirements, remote access, battery care, Jellyfin, webcam support, MacroPads and privacy.",
+  "url": "https://homedroid.seltiv.com/faq/",
+  "dateModified": "2026-11-25",
+  "isPartOf": {
+    "@id": "https://homedroid.seltiv.com/#website"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Homedroid",
+      "item": "https://homedroid.seltiv.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Android home server FAQ: requirements, root and privacy | Homedroid",
+      "item": "https://homedroid.seltiv.com/faq/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is Homedroid?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Homedroid is a free, open-source Android home server app. Install one APK on an old Android phone to run Jellyfin, file storage, web apps and other services, then manage them from a browser on port 8800."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Homedroid need root or Termux?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Homedroid runs as an ordinary Android app. It bundles its own tools and uses proot for apps that need Alpine Linux. You do not need root, Termux or a replacement Android ROM."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which phones can run Homedroid?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I leave an old phone plugged in as a server?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use a phone with a healthy battery and keep it ventilated. Stop using a swollen or damaged battery. Watch temperature under load, reduce heavy jobs if it gets hot, and use the manufacturer’s charge limit if available. Homedroid does not add charge limiting without root. Dock mode’s OLED care reduces static screen exposure; it cannot guarantee against burn-in."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I access the server away from home?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use Tailscale for private access from your own devices, or Cloudflare Tunnel to publish a service at an HTTPS hostname. Both work behind CGNAT without router port forwarding. The direct LAN dashboard uses plain HTTP, so use it only on a trusted network."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does an old phone compare with a Raspberry Pi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A phone you already own includes a screen, camera, Wi-Fi and battery. A Raspberry Pi is a better fit for GPIO, USB radios and full Linux administration. Homedroid runs inside Android’s app sandbox, with proot overhead for Linux apps and no privileged ports or raw hardware access."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Homedroid free and open source?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Homedroid and Homedroid Desktop are free software under GPL-3.0. There is no Homedroid subscription. Optional cloud services, domains and hardware may have their own costs. Source and release downloads are on GitHub."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I use my phone as a webcam on Linux, Windows or macOS?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pair Homedroid Desktop with the phone and enable Desktop webcam access on the phone. Linux uses v4l2loopback; Windows 11 has an experimental virtual camera. All platforms can send the local MJPEG stream at http://127.0.0.1:8891/stream to OBS. macOS and Windows 10 use OBS for virtual camera output."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do MacroPads work?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "MacroPads is a customizable button grid on the phone. The paired Homedroid Desktop program receives actions and runs hotkeys, media controls, text, apps and URLs on the computer. Shell commands are refused until you enable Allow commands on the computer. Phone-side HTTP buttons can call Home Assistant webhooks."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does my data stay on the phone?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Files and local AI inference stay on your hardware. Cloud AI sends the prompts you choose to the configured provider; tunnels and remote access use the services you enable. The dashboard password, tunnel keys and other stored secrets are encrypted with Android Keystore. LAN HTTP is not encrypted."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Jellyfin use hardware transcoding on Android?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Homedroid connects Jellyfin to Android MediaCodec for H.264 and HEVC encoding where the phone supports them. Decoding, scaling, subtitle burn-in and HDR tone mapping still run in software. Performance depends on the phone and video format."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can AdGuard Home use the normal DNS port?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Android does not let an unrooted app bind port 53, so AdGuard Home listens on 1053. Homedroid’s Tailscale integration forwards tailnet DNS port 53 to it. A router that supports a custom upstream DNS port can also use it."
+      }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article">
+<nav class="breadcrumb" aria-label="Breadcrumb">
+<a href="/">Homedroid</a>
+<span>/</span>Android home server FAQ: requirements, root and privacy</nav>
+<span class="eyebrow">HOMEDROID / 0.9.5 BETA</span>
+<h1>Homedroid Android home server FAQ.</h1>
+<p class="lead">Homedroid runs a home server on Android 10 or newer without root. This FAQ covers phone requirements, remote access, battery care, Jellyfin, webcam support, MacroPads and privacy.</p>
+<h2>Android home server requirements and answers</h2>
+<details>
+<summary>What is Homedroid?</summary>
+<p>Homedroid is a free, open-source Android home server app. Install one APK on an old Android phone to run Jellyfin, file storage, web apps and other services, then manage them from a browser on port 8800.</p>
+</details>
+<details>
+<summary>Does Homedroid need root or Termux?</summary>
+<p>No. Homedroid runs as an ordinary Android app. It bundles its own tools and uses proot for apps that need Alpine Linux. You do not need root, Termux or a replacement Android ROM.</p>
+</details>
+<details>
+<summary>Which phones can run Homedroid?</summary>
+<p>Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install.</p>
+</details>
+<details>
+<summary>Can I leave an old phone plugged in as a server?</summary>
+<p>Use a phone with a healthy battery and keep it ventilated. Stop using a swollen or damaged battery. Watch temperature under load, reduce heavy jobs if it gets hot, and use the manufacturer’s charge limit if available. Homedroid does not add charge limiting without root. Dock mode’s OLED care reduces static screen exposure; it cannot guarantee against burn-in.</p>
+</details>
+<details>
+<summary>How do I access the server away from home?</summary>
+<p>Use Tailscale for private access from your own devices, or Cloudflare Tunnel to publish a service at an HTTPS hostname. Both work behind CGNAT without router port forwarding. The direct LAN dashboard uses plain HTTP, so use it only on a trusted network.</p>
+</details>
+<details>
+<summary>How does an old phone compare with a Raspberry Pi?</summary>
+<p>A phone you already own includes a screen, camera, Wi-Fi and battery. A Raspberry Pi is a better fit for GPIO, USB radios and full Linux administration. Homedroid runs inside Android’s app sandbox, with proot overhead for Linux apps and no privileged ports or raw hardware access.</p>
+</details>
+<details>
+<summary>Is Homedroid free and open source?</summary>
+<p>Yes. Homedroid and Homedroid Desktop are free software under GPL-3.0. There is no Homedroid subscription. Optional cloud services, domains and hardware may have their own costs. Source and release downloads are on GitHub.</p>
+</details>
+<details>
+<summary>How do I use my phone as a webcam on Linux, Windows or macOS?</summary>
+<p>Pair Homedroid Desktop with the phone and enable Desktop webcam access on the phone. Linux uses v4l2loopback; Windows 11 has an experimental virtual camera. All platforms can send the local MJPEG stream at http://127.0.0.1:8891/stream to OBS. macOS and Windows 10 use OBS for virtual camera output.</p>
+</details>
+<details>
+<summary>How do MacroPads work?</summary>
+<p>MacroPads is a customizable button grid on the phone. The paired Homedroid Desktop program receives actions and runs hotkeys, media controls, text, apps and URLs on the computer. Shell commands are refused until you enable Allow commands on the computer. Phone-side HTTP buttons can call Home Assistant webhooks.</p>
+</details>
+<details>
+<summary>Does my data stay on the phone?</summary>
+<p>Files and local AI inference stay on your hardware. Cloud AI sends the prompts you choose to the configured provider; tunnels and remote access use the services you enable. The dashboard password, tunnel keys and other stored secrets are encrypted with Android Keystore. LAN HTTP is not encrypted.</p>
+</details>
+<details>
+<summary>Does Jellyfin use hardware transcoding on Android?</summary>
+<p>Homedroid connects Jellyfin to Android MediaCodec for H.264 and HEVC encoding where the phone supports them. Decoding, scaling, subtitle burn-in and HDR tone mapping still run in software. Performance depends on the phone and video format.</p>
+</details>
+<details>
+<summary>Can AdGuard Home use the normal DNS port?</summary>
+<p>Android does not let an unrooted app bind port 53, so AdGuard Home listens on 1053. Homedroid’s Tailscale integration forwards tailnet DNS port 53 to it. A router that supports a custom upstream DNS port can also use it.</p>
+</details>
+<h2>Default ports</h2>
+<div class="table-scroll">
+<table>
+<thead>
+<tr>
+<th scope="col">Service</th>
+<th scope="col">Port</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Dashboard / MCP / IPCam</th>
+<td>8800</td>
+</tr>
+<tr>
+<th scope="row">SSH / SFTP (configurable)</th>
+<td>8022</td>
+</tr>
+<tr>
+<th scope="row">Caddy web hosting</th>
+<td>8080</td>
+</tr>
+<tr>
+<th scope="row">Jellyfin</th>
+<td>8096</td>
+</tr>
+<tr>
+<th scope="row">Immich</th>
+<td>2283</td>
+</tr>
+<tr>
+<th scope="row">qBittorrent</th>
+<td>8081</td>
+</tr>
+<tr>
+<th scope="row">Home Assistant</th>
+<td>8123</td>
+</tr>
+<tr>
+<th scope="row">AI API</th>
+<td>8090</td>
+</tr>
+<tr>
+<th scope="row">AdGuard UI / DNS</th>
+<td>3000 / 1053</td>
+</tr>
+<tr>
+<th scope="row">Cluster mutual TLS</th>
+<td>8801</td>
+</tr>
+<tr>
+<th scope="row">Desktop local control / MJPEG</th>
+<td>127.0.0.1:8891</td>
+</tr>
+</tbody>
+</table>
+</div>
+<aside class="article-cta">
+<h2>Start with the phone you have.</h2>
+<a class="button primary" href="/#download">Download Homedroid</a>
+<a href="/faq/">Requirements and FAQ</a>
+</aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">0.9.5 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-25">25 November 2026</time> · 0.9.5-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>

@@ -5,486 +5,402 @@
   </picture>
 </p>
 
-<h1 align="center">Homedroid: turn your old Android phone into a home server</h1>
+# Homedroid: turn an old Android phone into a home server
 
-<p align="center">
-  <a href="https://github.com/sudiptacmd/homedroid/releases"><img alt="Release" src="https://img.shields.io/github/v/release/sudiptacmd/homedroid?include_prereleases&label=release&color=2ea043"></a>
-  <a href="https://github.com/sudiptacmd/homedroid/actions/workflows/build.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/sudiptacmd/homedroid/build.yml?branch=main"></a>
-  <a href="LICENSE"><img alt="License: GPL-3.0" src="https://img.shields.io/github/license/sudiptacmd/homedroid"></a>
-  <img alt="Android 10+" src="https://img.shields.io/badge/Android-10%2B-3ddc84">
-  <img alt="No root" src="https://img.shields.io/badge/root-not%20needed-00e5ff">
-</p>
+[![Release](https://img.shields.io/github/v/release/sudiptacmd/homedroid?include_prereleases&label=release&color=2ea043)](https://github.com/sudiptacmd/homedroid/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/sudiptacmd/homedroid/build.yml?branch=main)](https://github.com/sudiptacmd/homedroid/actions/workflows/build.yml)
+[![GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-3ddc84)](LICENSE)
+![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84)
+![No root](https://img.shields.io/badge/root-not%20needed-00e5ff)
 
-<p align="center">
-  <b><a href="https://sudiptacmd.github.io/homedroid/">Website</a></b> ·
-  <b><a href="https://github.com/sudiptacmd/homedroid/releases">Download the APK</a></b> ·
-  <b><a href="#walkthrough">Watch the walkthrough</a></b> ·
-  <b><a href="https://github.com/sudiptacmd/homedroid/issues/new/choose">Send feedback</a></b>
-</p>
+**[Website](https://homedroid.seltiv.com/) · [Download 0.9.5 beta](https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta) · [Desktop companion](#homedroid-desktop) · [Send feedback](https://github.com/sudiptacmd/homedroid/issues/new/choose)**
 
-That phone in your drawer has an 8-core CPU, a hardware video encoder, gigabytes of RAM, Wi-Fi,
-a battery that works as a built-in UPS, and it sips about as much power as an LED bulb.
-**Homedroid turns it into a self-hosted home server**: a media server, a NAS for your USB drive
-or microSD card, a photo backup, a torrent box, a web host, a network-wide ad blocker, a private AI and a smart-home hub,
-all managed from a beautiful web dashboard. **No root, no Termux, no Linux skills needed:
-one APK.**
+That phone in your drawer still has a CPU, a camera, Wi-Fi and storage. It can do more than
+hold a charge badly. **Homedroid turns an old Android phone into a self-hosted home server**:
+Jellyfin, a NAS for USB drives and microSD cards, photo backup, web apps, local AI and home
+automation. Install one APK, start the server, open the web dashboard. **No root or Termux.**
 
-- 🎬 **Jellyfin** streams your movies to every screen, transcoded by the **phone's own video
-  encoder**.
-- 💾 **A pocket NAS.** Plug in a USB drive or microSD card and reach it from any browser or over
-  SFTP.
-- 🧠 **AI on the phone.** llama.cpp runs models locally, with an OpenAI-compatible API for your
-  other apps.
-- 🌍 **Online in minutes.** Cloudflare Tunnel or Tailscale, so it works behind CGNAT with no
-  port forwarding.
-- 🛡️ **Ad blocking everywhere.** AdGuard Home filters ads and trackers for every device on your
-  tailnet, at home or on mobile data.
-- ⚡ **Wake on LAN from anywhere.** Turn on your desktop from the other side of the world.
-- 🔎 **Network tools.** See who's on your network, scan ports, look up DNS and run speed tests.
-- 🚀 **Deploy from GitHub.** Node.js, Python and static sites, rebuilt when you push.
-- 📱 **Several phones, one dashboard.** Pair old phones into a cluster and move apps between them.
+In **0.9.5 beta**, it also earns its place on the desk: a standby clock, a MacroPads button
+deck and a wireless webcam through Homedroid Desktop. Free software, built by Sudipta Goswami.
 
-<p align="center">
-  <img src="docs/screenshots/dashboard-overview-dark.png" width="820" alt="Homedroid web dashboard: CPU, temperature, network, battery, memory and storage of an Android home server, with SSH, web hosting, AI, Jellyfin and qBittorrent running">
-</p>
+<img src="docs/screenshots/dashboard-overview-dark.png" width="1000" alt="Homedroid 0.9.5 web dashboard: an old Android phone home server, Forest theme, server health and live vitals">
 
-## Walkthrough
+*Phone screenshots are from an emulator. Dashboard screenshots use the actual dashboard with
+mock API data, not hardware benchmarks. Last updated: 25 November 2026.*
 
-<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4"><img src="docs/walkthrough-preview.gif" alt="Homedroid walkthrough: the phone app, the web dashboard, files on an SD card, Alpine Linux in the browser, Jellyfin, on-phone AI, deploying from GitHub and a phone cluster" width="720"></a>
+## What’s new in 0.9.5
 
-A 4½-minute tour: the phone app, the dashboard, files on an SD card, a Linux shell in
-the browser, Jellyfin, AI on the phone, a deployment from GitHub and two phones working as
-one. [Watch the full video (MP4, 13 MB)](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4)
-or see the clips on the [website](https://sudiptacmd.github.io/homedroid/).
+- **A redesigned phone app:** Material 3, wallpaper colours on Android 12+, OLED black and
+  burn-in protection. The app library and settings have been rebuilt too.
+- **A dashboard you can arrange:** six layouts (sidebar, rail, top bar, split, focus and kiosk),
+  13 themes, font choices, overview widgets and a Ctrl/Cmd+K command palette. Preferences live
+  on the phone and follow you between browsers.
+- **Dock mode:** five clock faces, live server tiles, a red night mode and OLED care. Works
+  while charging or as Android’s screen saver. Four status widget sizes and a new clock widget.
+- **MacroPads + Homedroid Desktop:** custom phone buttons for your computer, plus a wireless
+  phone webcam. Linux, Windows and macOS companion downloads below.
+- **Hosting APIs:** custom domains with verification, DuckDNS/Cloudflare dynamic DNS, firewall
+  rules and request logs. Go, PHP, Bun and Deno join Node.js, Python and static deployments.
+  Upload ZIP/tar artifacts, trigger deploys from CI, run build pipelines and roll deployments
+  across load-balanced cluster phones.
+- **MCP and data APIs:** connect AI assistants to the server, with opt-in write tools. The
+  on-phone agent backend waits for approval before changes. Browse SQLite schemas and tables,
+  run SQL queries, or use the JSON document store.
+- **Security and fixes:** PIN/biometric app lock, Keystore-encrypted secrets, DNS install fixes,
+  configurable SSH port, a terminal that works with SSH off, and installed-app updates from
+  the phone or dashboard.
 
-<p align="center">
-  <img src="docs/screenshots/phone-main.png" width="200" alt="The Homedroid Android app: server online, battery, temperature, memory and storage">
-  <img src="docs/screenshots/phone-apps.png" width="200" alt="The app library: install Jellyfin, qBittorrent, Home Assistant and Immich with one tap">
-  <img src="docs/screenshots/phone-storage.png" width="200" alt="Choosing where an app keeps its library: inside the app, internal storage or an SD card">
-  <img src="docs/screenshots/phone-settings.png" width="200" alt="Phone settings: SSH, web hosting, Tailscale, Cloudflare Tunnel and security">
-</p>
+**Checkout status:** the backend APIs for pipelines, domains, databases and MCP are implemented,
+but their dedicated pages in `dashboard.html` are still navigation slots. The release notes
+describe the broader feature set; this README does not imply those screens are already wired
+in. The [deploy hooks](docs/guides/deploy-hooks.md) and [MCP guide](docs/guides/mcp.md) include API
+examples. See [0.9.5 release notes](docs/releases/v0.9.5-beta.md) for verification limits.
 
 ## Download
 
-Homedroid is in **beta (0.9.4)** and free. Get the APK from the
-[latest release](https://github.com/sudiptacmd/homedroid/releases):
+Homedroid is **0.9.5 beta**. Android 10+ is required. Use ARM64 for most modern phones;
+Immich and local llama.cpp need 64-bit. Per-ABI APKs have historically been under 50 MB;
+check the release for exact 0.9.5 sizes. Apps and models download separately.
 
-| Your phone | APK |
-|------------|-----|
-| Almost every phone from the last ~8 years (64-bit) | `homedroid-<version>-arm64-v8a.apk` |
-| Older 32-bit phones | `homedroid-<version>-armeabi-v7a.apk` |
-| Emulators, Chromebooks | `homedroid-<version>-x86_64.apk` |
-| Not sure | `homedroid-<version>-universal.apk` (larger, runs everywhere) |
+| Phone | APK |
+|---|---|
+| Most phones, 64-bit ARM | [homedroid-0.9.5-beta-arm64-v8a.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-arm64-v8a.apk) |
+| Older 32-bit ARM phones | [homedroid-0.9.5-beta-armeabi-v7a.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-armeabi-v7a.apk) |
+| x86_64 emulators / compatible Chromebooks | [homedroid-0.9.5-beta-x86_64.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-x86_64.apk) |
+| Not sure; larger download | [homedroid-0.9.5-beta-universal.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-universal.apk) |
 
-Open it on the phone and allow installing from your browser or file manager, or run
-`adb install homedroid-<version>-arm64-v8a.apk`. `SHA256SUMS` in each release lets you check
-the download. Every release is signed with the same key, so newer versions install over older
-ones and keep your data.
+Open the APK on the phone and allow installation from your browser or file manager, or run:
 
-**Updating:** in the dashboard open **Settings → App updates → Download and install**. The phone
-fetches the right APK itself and Android asks you to confirm (on Android 12 and later, updates
-after the first install without a prompt). The server comes back on the new version by itself.
+```sh
+adb install homedroid-0.9.5-beta-arm64-v8a.apk
+```
 
-## What you get
+Check APK downloads against [SHA256SUMS](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/SHA256SUMS).
+Signed releases install over earlier signed releases and keep your apps and data.
+**Updating Homedroid:** dashboard → Settings → App updates. Android may ask for confirmation
+on the phone. **Updating installed server apps:** use their Update button in Apps or Modules.
 
-| Module | What it does | Port |
-|--------|--------------|------|
-| **Dashboard** | Manage everything from any browser: live load, files, a terminal, apps, logs, updates | 8800 |
-| **SSH & SFTP** | A real shell and file transfer, public-key login, `ssh -L` port forwarding | 8022 |
-| **Web hosting** | Caddy serving `~/www`, plus sites deployed from GitHub | 8080 |
-| **Cloudflare Tunnel** | Publish services on the internet without port forwarding; works behind CGNAT | – |
-| **Tailscale** | Reach every module privately from your own devices, anywhere; optional HTTPS, exit node and subnet routes. No root, no VPN slot | – |
-| **Jellyfin** | Media server with **hardware transcoding on the phone's video encoder** | 8096 |
-| **Immich** | Google Photos-style backup of your photos and videos | 2283 |
-| **qBittorrent** | Torrents download in order into the media library and show up in Jellyfin; `torrent <magnet>` over SSH | 8081 |
-| **Home Assistant** | Home automation (network and cloud integrations) | 8123 |
-| **IPCam** | Live view from any camera, photos, video, motion recording, the microphone, and spoken announcements | 8800 |
-| **AI** | Chat and an OpenAI-compatible API, with models **on the phone** (llama.cpp, GPU or CPU) or cloud services; scheduled **routines** that brief you by voice or push | 8090 |
-| **AdGuard Home** | Network-wide ad and tracker blocking, with blocklists, statistics and a query log; tailnet devices can use the phone as their DNS server | 3000 (DNS 1053) |
-| **Network tools** | This phone's network, device discovery, ping, traceroute, DNS lookups, port scans, HTTP checks, LAN and internet speed tests | 8800 |
-| **Wake on LAN** | Wake computers at home from anywhere the dashboard reaches; also from scripts and phone shortcuts | 8800 |
-| **Cluster** | Several phones, one dashboard: pick which phone runs each app, move apps with their data, every camera on one page | 8801 |
+### Homedroid Desktop downloads
 
-- **Everything is a module.** Add, remove, turn on or off at any time. Nothing you don't use runs.
-- **Your storage, your choice.** Keep app data inside the app (no permissions needed) or put
-  media and photos on internal storage, a **microSD card or a USB drive**, per app.
-- **Built to stay up.** A foreground service, wakelocks, start on boot, automatic restarts with
-  backoff, and per-service logs. Crash loops show their reason right in the UI.
-- **Light.** One APK under 50 MB per ABI; apps are downloaded only when you install them.
+The companion is a small Rust binary, about 1 MB on Linux, with no separate language runtime.
+Unpack it and run `homedroid-desktop` (`homedroid-desktop.exe` on Windows). With no arguments,
+it opens a local control page at `http://127.0.0.1:8891`.
+
+| Computer | 0.9.5 beta download |
+|---|---|
+| Linux x86_64 | [homedroid-desktop-v0.9.5-beta-linux-x86_64.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-linux-x86_64.tar.gz) |
+| Linux ARM64 | [homedroid-desktop-v0.9.5-beta-linux-aarch64.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-linux-aarch64.tar.gz) |
+| Windows x86_64 | [homedroid-desktop-v0.9.5-beta-windows-x86_64.zip](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-windows-x86_64.zip) |
+| macOS Intel + Apple Silicon | [homedroid-desktop-v0.9.5-beta-macos-universal.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-macos-universal.tar.gz) |
+
+[All releases](https://github.com/sudiptacmd/homedroid/releases) ·
+[Desktop setup and permissions](desktop/README.md) ·
+[Desktop protocol](docs/desktop-protocol.md)
 
 ## Getting started
 
-1. Install the APK from [Download](#download) (or [build it](#building)) and open Homedroid.
-2. Tap **Start server**. The overview shows the dashboard address, like `http://192.168.1.20:8800`,
-   and **Dashboard login** shows its password.
-3. Let it run in the background: **Settings → Battery settings → allow**. On Samsung also add
-   Homedroid to *Battery → Background usage limits → Never sleeping apps*. On Android 12+ turn
-   off the phantom process killer (the app shows you how).
-4. Open the dashboard from your computer, or tap **Open control panel** on the phone.
-5. For SSH, paste your public key (`~/.ssh/id_ed25519.pub`) under **Settings → SSH public keys**.
-6. Keep the phone cool and, if your phone supports it, limit charging to about 80%.
+1. Install the APK and open Homedroid.
+2. Tap **Start server**. Copy the dashboard address, such as `http://192.168.1.20:8800`.
+   **Dashboard login** shows the password.
+3. Let it run in the background: **Settings → Battery settings → allow**. On Samsung, add
+   Homedroid to *Never sleeping apps*. Follow the app’s Android 12+ process-limit guidance.
+4. Open that address from a browser on the same trusted network, or tap **Open control panel**
+   on the phone. Install the modules you want.
+5. For SSH, add your public key (`~/.ssh/id_ed25519.pub`) under **Settings → SSH public keys**.
+6. Keep the phone ventilated. Use a manufacturer charge limit if available. Do not leave a
+   damaged or swollen battery in service.
 
-```bash
-ssh -p 8022 <phone-ip>                       # a shell; `alpine` opens a root shell in Alpine Linux
-sftp -P 8022 <phone-ip>                      # files; put your website in www/
-ssh -p 8022 <phone-ip> torrent 'magnet:?…'   # download, in order, into Media/Downloads
-ssh -p 8022 <phone-ip> torrent list          # progress
+```sh
+ssh -p 8022 <phone-ip>                     # shell; `alpine` enters Alpine Linux
+sftp -P 8022 <phone-ip>                    # files; put a website in www/
+ssh -p 8022 <phone-ip> torrent 'magnet:?…' # download into Media/Downloads
+ssh -p 8022 <phone-ip> torrent list        # progress
 ```
 
-**Reach it from anywhere.** Turn on the **Tailscale** module and log in with the link it shows:
-every module is then at `http://homedroid:<port>` on your tailnet. Or publish a service on the
-internet with a **Cloudflare Tunnel**: create a tunnel in Cloudflare Zero Trust, point a public
-hostname at `http://localhost:<port>` and paste the tunnel token. Both modules have a
-step-by-step **Setup guide** in the dashboard.
+For remote access, enable **Tailscale** and follow its login link, or set up a **Cloudflare
+Tunnel** with a hostname pointing to the service’s local port. Both work behind CGNAT without
+router port forwarding. Each module includes a setup guide. The direct LAN address is HTTP;
+use a trusted network or an encrypted tunnel.
 
-## Tour
+## What runs on the phone
 
-### The dashboard
+| Service | What it does | Default port |
+|---|---|---|
+| Dashboard | Live vitals, modules, files, terminal, settings and updates | 8800 |
+| SSH & SFTP | Public-key login, file transfer and SSH port forwarding | 8022, configurable |
+| Caddy | Serves `~/www` and hosted sites | 8080 |
+| Jellyfin | Media library with phone hardware encoding through MediaCodec | 8096 |
+| Immich | Photo/video backup; machine learning disabled | 2283 |
+| qBittorrent | Downloads into Jellyfin’s shared Media folder | 8081 |
+| Home Assistant | Network and cloud integrations | 8123 |
+| IPCam | Live camera, photos, motion clips, microphone and spoken announcements | 8800 |
+| Local AI | llama.cpp, chat, routines, OpenAI-compatible API at `/v1` | 8090 |
+| AdGuard Home | DNS filtering, blocklists and query logs | UI 3000, DNS 1053 |
+| Network tools | Discovery, ping, traceroute, DNS, nmap, HTTP checks, whois, speed tests | 8800 |
+| Wake on LAN | Magic packets for saved computers | 8800 |
+| Cluster | Paired phones, service management and file/app moves over mutual TLS | 8801 |
+| MCP API | Assistant tools, separate token, off by default | 8800, `/mcp` |
+| Tailscale / Cloudflare Tunnel | Private / public remote access | Service-dependent |
 
-Open `http://<phone-ip>:8800` on a computer or a phone. It works without internet access:
-everything it needs is inside the app.
+Nothing you turn off needs to keep running. A foreground service supervises enabled processes,
+restarts failures with backoff, and keeps logs. Start-on-boot is optional.
 
-<p align="center">
-  <img src="docs/screenshots/dashboard-files-dark.png" width="410" alt="Files: browse a microSD card or USB drive on the phone from the browser">
-  <img src="docs/screenshots/dashboard-terminal-dark.png" width="410" alt="Terminal: Alpine Linux in the browser, adding a torrent with the torrent command">
+## The phone app and dashboard
+
+<p>
+  <img src="docs/screenshots/phone-main.png" width="210" alt="Homedroid Material 3 phone overview with server vitals">
+  <img src="docs/screenshots/phone-apps.png" width="210" alt="Homedroid app library with install and update controls">
+  <img src="docs/screenshots/phone-settings.png" width="210" alt="Homedroid settings in the OLED black theme">
 </p>
 
-- **Overview:** CPU load, temperature, network speed, battery, memory and storage, and every
-  service with its logs and a restart button.
-- **Modules:** install, remove and turn modules on or off; set up Cloudflare Tunnel and
-  Tailscale with built-in guides. **Clear data** resets an app like a fresh install.
-- **Files:** the media and photo libraries, the SSH home with your website, phone storage, and
-  **SD cards and USB drives**. Upload files or whole folders (drag and drop works), download
-  files or folders as zip, play videos and music and open pictures and PDFs in the browser,
-  rename, move and delete.
-- **Terminal & SSH:** a terminal in the browser, in the phone's shell or straight into Alpine
-  Linux; the SSH keys that may log in; a log of every SSH and terminal session (who, from where,
-  what they ran, and rejected logins).
-- **Deployments**, **AI**, **IPCam** and **Cluster**, below.
+The phone app follows your wallpaper colours on Android 12+, or uses light, dark and OLED
+black themes. An idle Overview can become a dim, drifting clock. App lock protects the phone
+interface with a PIN or biometrics.
 
-### A NAS in your pocket: USB drives and SD cards
+The dashboard ships inside the APK, so it works on your LAN without internet access. Pick
+sidebar, rail, top bar, split, focus or kiosk mode; choose a theme and arrange overview widgets.
+Use Ctrl/Cmd+K to jump between pages.
 
-Plug a USB drive into the phone (with an OTG adapter) or insert a microSD card, and it shows up
-in **Files** next to the phone's own storage. Stream a video straight from it, drop a folder of
-photos onto it, or download a whole folder as a zip. Over SFTP the drive is at
-`/storage/<volume-id>`, so `sshfs`, rclone, WinSCP, Cyberduck or your file manager's
-`sftp://` support can mount it like a network drive.
-
-Apps can live there too: choose **Storage location** on an app and pick the card. On Android
-11+ the data goes to a visible `Homedroid/<name>` folder (this needs *All files access*, which
-the app asks for). Databases and settings always stay in internal storage, because cards and
-drives are usually FAT32 or exFAT. If the card is removed, apps wait for it instead of writing
-somewhere else, and the location simply disappears from Files until it's back. With storage
-access every volume also appears inside Alpine at `/storage/…`, so existing folders can be added
-to Jellyfin.
-
-> Good to know: FAT32 can't hold files over 4 GB (use exFAT for movies), and on Android 10 apps
-> can only write to their own folder on removable storage, which Android deletes if Homedroid
-> is uninstalled. The storage picker tells you when that applies.
-
-### Media: Jellyfin and qBittorrent
-
-<img src="docs/screenshots/jellyfin.png" width="820" alt="Jellyfin running on an Android phone with Homedroid: a movie library with posters">
-
-Jellyfin and qBittorrent share one *Media* folder. Installing both adds a *Downloads* library
-to Jellyfin that picks up finished torrents within a minute, and torrents download in order so
-you can start watching before they finish. Jellyfin transcodes with the phone's video encoder,
-so the CPU stays cool (see [how](#hardware-transcoding-on-a-phone)).
-
-### Deploying from GitHub
-
-<img src="docs/screenshots/dashboard-deploys-dark.png" width="820" alt="Deployments: a static site deployed from a GitHub repository and running on the phone">
-
-Give a repository URL, branch and port. Node.js, Python and static sites are detected; build
-and start commands and environment variables can be set. Apps get `$PORT`; static sites are
-served by Caddy. **Redeploy** pulls and rebuilds, and a failed build keeps the old version
-running. **Auto-deploy** checks the branch every 5 minutes, so no public webhook is needed. For
-private repositories use `https://<token>@github.com/you/repo` with a read-only token; it is
-never shown back in the dashboard.
-
-### AI on your phone
-
-<img src="docs/screenshots/dashboard-ai-dark.png" width="820" alt="On-phone AI: a chat with Qwen2.5 running on the phone through llama.cpp">
-
-Turn on **AI** in Modules, then open the AI page:
-
-- **On this phone:** install llama.cpp (built for Android by this project, about 17 MB) and
-  download a model (Gemma 4 E2B, Qwen2.5, Llama 3.2 or Gemma 3), paste any Hugging Face `.gguf` link, or
-  upload one. The page **recommends** the best model your phone runs well, from its memory, free
-  space and measured speed. Nothing leaves the phone.
-- **GPU or CPU:** the **Benchmark** measures both and *Auto* uses the faster: Vulkan on most
-  phone GPUs, OpenCL on Qualcomm Adreno. A GPU whose driver crashes llama.cpp is detected and
-  never used.
-- **Cloud services:** connect OpenAI, Google Gemini or any OpenAI-compatible API (OpenRouter,
-  Groq, Ollama or LM Studio on your computer). Keys stay on the phone, and a cloud model can
-  stand in when the phone is too hot.
-- **For your other apps:** `http://<phone-ip>:8090/v1` is an OpenAI-compatible API with its own
-  key. Use `local/<model>` or `<service>/<model>` as the model name.
-- **Routines** run on a schedule: they read news feeds, web pages, the weather, your phones'
-  health and unread email (IMAP with an app password; nothing is marked read), and write a brief
-  that is read aloud on any phone, kept under *Briefs*, or pushed with ntfy or Telegram.
-
-Expect a few to a dozen words a second with small (0.5–3B) models. llama.cpp needs a 64-bit
-phone.
-
-### IPCam
-
-Turn on **IPCam**, then tap **Enable camera access** in the phone app once. From the dashboard
-you can watch a live view from any camera, take photos, record video, toggle the torch, listen
-to or record the microphone, and **Announce** a typed message with the phone's voice.
-
-- **Continuous monitoring** keeps one camera ready with the browser closed and saves a clip only
-  when something moves. Each camera has its own resolution (240p–1080p), frame rate, rotation,
-  motion threshold, quiet period and clip length.
-- **Capture storage** has a shared limit (128 MB–100 GB); the oldest captures make room
-  automatically and active recordings are never touched.
-- Android requires camera and microphone services to start while the app is visible, so after a
-  reboot tap **Enable camera access** again. Android's privacy indicators stay on while IPCam is
-  active, and its notification has a **Stop** button.
-
-### Ad blocking with AdGuard Home
-
-Install **AdGuard Home** from Modules and it filters ads and trackers out of DNS lookups for
-every device you point at it, with blocklists, statistics and a query log in its web UI (port
-3000; the login is on the app card).
-
-Android won't let an app use port 53, the port every device asks for DNS on, so AdGuard Home
-listens on **1053**. The easiest way round that is Tailscale: Homedroid's Tailscale passes port
-53 on the phone's tailnet address to 1053, so in the Tailscale admin console you add the phone
-as a custom nameserver, turn on **Override DNS servers**, and every device on your tailnet is
-filtered, at home or on mobile data. Routers that can forward DNS to a port (OpenWrt, pfSense,
-anything with dnsmasq) can send the whole home network there too. The **Setup guide** on the
-card walks through both.
-
-### Network tools
-
-Turn on **Network tools** and a **Network** page shows this phone's addresses, gateway, DNS
-servers and live throughput, and finds the devices around it (mDNS, SSDP/UPnP and quick TCP
-probes of the local network). Its tools run on the phone and stream their output to the page:
-ping, traceroute, DNS lookups (handy for testing AdGuard Home), port scans with nmap, HTTP
-checks with timings and certificate expiry, whois, LAN speed tests with iperf3 (the phone can be
-the server too) and an internet speed test. Live packet capture needs root, so there's no
-Wireshark capture; everything else works as an app.
-
-### Wake on LAN
-
-Turn on **Wake on LAN**, add your computers with their MAC addresses, and wake them with one
-click from anywhere the dashboard reaches: over Tailscale, through a Cloudflare tunnel, or from
-another phone in your cluster. Homedroid sends the magic packet on every network the phone is
-on, and shows whether a computer is on when you give it an address. Scripts and phone shortcuts
-can call `POST /api/wol/wake` with the dashboard password as a Bearer token.
-
-### Cluster: several phones, one dashboard
-
-<img src="docs/screenshots/dashboard-cluster-dark.png" width="820" alt="Cluster: two phones paired, live health of each and a table of which phone runs which app">
-
-Got more than one old phone? Open **Cluster → Add a phone**: phones on the same network show up
-by themselves (or enter an address, for example over Tailscale). Both phones show the same
-6-digit code; approve it on the phone being added.
-
-- **One dashboard.** Pick a phone at the top of the sidebar and every page shows that phone.
-- **Where apps run.** See every app and deployment on every phone. **Move** an app and its
-  settings, database and (if you like) library go with it; deployments are rebuilt from Git.
-- **All cameras** on one page, and **Copy/Move to another phone** for files and folders.
-
-Phones talk over mutual TLS on port 8801 and trust only phones they were paired with. A phone
-in the cluster can fully control the others, so give each one a strong dashboard password.
-
-### Home-screen widget
-
-Add **Homedroid status** from your launcher's widgets: every phone in the cluster (online,
-battery, temperature) and the services running on this one, refreshed every minute.
-
-## How it works: the clever bits
-
-Android was never meant to run servers, and apps don't get root. Here's how Homedroid gets a
-full Linux server stack running inside an ordinary app, without asking you to root anything.
-
-<p align="center">
-  <img src="docs/architecture.svg" width="900" alt="Homedroid architecture: clients reach the phone through the dashboard, SSH, apps, the AI API, Cloudflare Tunnel or Tailscale; paired phones connect over mutual TLS; routines and the AI router use cloud services or llama.cpp running natively on the phone's GPU or CPU; supervised native daemons and apps under proot use Android storage and MediaCodec transcoding">
+<p>
+  <img src="docs/screenshots/dashboard-overview-light.png" width="440" alt="Homedroid web dashboard with top bar layout and light theme">
+  <img src="docs/screenshots/dashboard-customize.png" width="440" alt="Dashboard customization panel for themes, fonts and layouts">
 </p>
 
-### Linux programs inside an Android app
+[Watch the current short phone and dashboard recordings](https://homedroid.seltiv.com/#tour).
+The [older 0.9.4 walkthrough](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4)
+still demonstrates media, storage, AI and clusters, but its interface predates this release.
 
-Since Android 10, apps may only run programs that shipped inside their APK, from the folder
-where Android unpacks native libraries. So Homedroid's own servers (SSH, Caddy, cloudflared,
-Tailscale, FFmpeg) are compiled for Android and packed into the APK **disguised as libraries**
-(`libsshd.so`, `libcaddy.so` and so on). Android unpacks them, and Homedroid runs them from there.
+## Dock mode
 
-Everything else runs in **Alpine Linux** under [proot](https://github.com/termux/proot). proot
-intercepts a program's system calls and translates them, so software that expects a normal Linux
-machine (paths like `/usr/bin`, a root user, `/proc`) believes it has one, while really it is
-living inside the app's private folder. Alpine (3 MB, checksum-verified) is downloaded on first
-use and unpacked by Homedroid's own small extractor, because Android 10's `tar` gives up on
-ownership changes apps aren't allowed to make.
+<img src="docs/screenshots/phone-dock.png" width="900" alt="Homedroid Dock mode: Android standby clock with server, battery, CPU and memory tiles">
 
-### Docker images, without Docker
+The server phone can be a clock while it charges. Pick one of five faces and add tiles for
+server status, battery, CPU, memory, storage, network, uptime, Tailscale or the next alarm.
+Use the red night mode at the bedside, open it when charging, or set it as Android’s screen saver.
 
-Docker needs kernel features no Android app can use. But a container image is really just a
-stack of tarballs plus a recipe. [`Oci.kt`](app/src/main/java/dev/homedroid/Oci.kt) talks to
-Docker Hub and ghcr.io directly: it picks your phone's architecture, downloads each layer,
-verifies its checksum, and stacks them the way Docker would, including deleted-file markers.
-Android forbids hard links in app storage, so those become copies, and absolute symlinks are
-rewritten to stay inside the image. The result runs under proot like any other Alpine program.
-That's how **Immich runs from its official images** on a phone, PostgreSQL and all.
+OLED care includes pixel shifts, clock/tile swaps, dimming and screen-off hours. It reduces
+static exposure; it is not a guarantee against burn-in. The redesigned status widget has four
+sizes, and a separate clock widget opens Dock mode.
+[Dock mode and battery care](https://homedroid.seltiv.com/dock/).
 
-### Hardware transcoding on a phone
+## MacroPads: custom buttons for your computer
 
-Every phone has a dedicated video encoder that can squeeze 1080p video in real time while
-barely warming up. On a PC, Jellyfin reaches such hardware through Linux interfaces (VAAPI,
-V4L2). On Android the encoder is only reachable through **MediaCodec**, which lives in
-Android's own libraries and talks to system services, so a normal Linux FFmpeg can't use it.
+<img src="docs/screenshots/phone-macropads.png" width="240" alt="MacroPads Android stream deck alternative with custom media keys and shortcuts">
 
-So Homedroid builds a **separate FFmpeg for Android** with MediaCodec support and plays a small
-trick on Jellyfin: it turns on Jellyfin's V4L2 hardware option and points Jellyfin at a tiny shim.
-When Jellyfin asks for `h264_v4l2m2m`, the shim quietly runs the Android FFmpeg with
-`h264_mediacodec` instead; everything else goes to Jellyfin's own FFmpeg. To let that Android
-binary run inside Alpine, Android's `/system`, `/apex` and `/vendor` are mounted into the
-Alpine world. Jellyfin never knows it's on a phone.
+Open **Tools → MacroPads**. Long-press a button to set a hotkey, media key, text, app, URL,
+mouse action or command. Make profiles and pages, change icons and colours, or chain desktop
+actions into sequences. Grids range from 2×2 to 6×8. Import/export JSON backs up your deck.
 
-### Patches that make it all fit
+Tap the computer icon to pair Homedroid Desktop with a six-digit code. Codes last five minutes;
+you can pair up to eight computers. The companion stays connected and acknowledges each action.
+**Commands are refused until Allow commands is enabled on the computer.** Phone-side HTTP
+buttons can call Home Assistant webhooks; the example is disabled until configured.
 
-Some upstream code needed help with Android's sandbox. `native/patches/` keeps the changes,
-each one small and explained:
+A toggle button’s colour is local feedback, not the computer’s measured mute/playback state.
+The starter shortcuts may need changing for your OS and apps.
+[MacroPads editing, pairing and action guide](docs/guides/macropads.md).
 
-| Patch | Why |
-|-------|-----|
-| `proot-fork-to-clone` | Android rejects `fork`/`vfork` on x86_64 and armv7, and musl uses them; rewrite them as `clone(SIGCHLD)`. |
-| `proot-sigsys-fork` | The same rewrite for syscalls the sandbox traps with SIGSYS, so proot's fast seccomp mode works everywhere (≈50× faster for syscall-heavy work). |
-| `proot-sigsys-syscall-number` | On x86, proot's SIGSYS emulation read the syscall number from a register it had already overwritten, breaking `rename(2)` and with it `uv`. |
-| `proot-sysvipc-memfd` | Apps targeting Android 10+ can't open `/dev/ashmem`; back emulated System V shared memory (PostgreSQL) with `memfd`. |
-| `proot-netlink-reads` | Android lets apps read rtnetlink but not write it; proot took that as "netlink blocked" and faked empty replies, hiding every IPv4 address. |
-| `proot-android-default-routes` | Android keeps default routes in per-network policy tables, so Linux software thought it was offline (libtorrent: no tracker announces, no DHT). Report them in the main table. |
-| `proot-android-siocgifname` | Android denies `SIOCGIFNAME` to apps, breaking `if_indextoname(3)`; answer it from the tracer. |
-| `ffmpeg-mediacodec-extradata-without-eos` | MP4/HLS headers were probed with a dummy frame plus end-of-stream; some encoders stay at EOS afterwards. |
-| `ffmpeg-mediacodec-parameter-sets` | Codec2 encoders report SPS/PPS in the output format; capture them and repeat them before every key frame. |
-| `ffmpeg-mediacodec-sync-frames` | Honour forced key frames (HLS segment boundaries) with `request-sync`, and start with a key frame after the probe. |
+## Homedroid Desktop
 
-The supervisor starts every process in its own session and signals whole process groups: proot
-ignores SIGTERM, and killing only proot would orphan the program it runs.
+Use the old Android phone as a wireless webcam and run MacroPads actions from the same companion.
+The computer connects to the phone’s port 8800. Pair on a trusted LAN or use Tailscale; plain
+HTTP does not encrypt tokens or video.
 
-## Requirements
+```sh
+homedroid-desktop pair 192.168.1.20 123456
+homedroid-desktop webcam --camera back --size 1280x720 --fps 30
+homedroid-desktop run       # MacroPads without webcam
+homedroid-desktop status
+```
 
-- Android 10 or newer; a 64-bit phone is recommended (Immich and on-phone AI need one, the rest
-  also runs on 32-bit ARM). Runs daily on a Galaxy S9+ (Exynos 9810) and is tested on emulated
-  Android 10 and 16.
-- Free storage for the apps you pick: Jellyfin ≈ 420 MB (and wants 2 GB free), Immich ≈ 1.6 GB,
-  Home Assistant ≈ 900 MB.
+- **Linux:** v4l2loopback exposes the webcam to desktop apps. Without the module, preview and
+  the network stream still work. MacroPads uses XTEST on X11 or uinput on Wayland; uinput needs
+  device permissions.
+- **Windows 11:** experimental virtual camera. Keep the DLL beside the executable and run
+  `homedroid-desktop.exe install-camera` once as administrator. This has been compile-checked,
+  not tested on real Windows hardware.
+- **macOS and Windows 10:** add `http://127.0.0.1:8891/stream` to OBS and start OBS Virtual Camera.
+  No signed macOS camera extension is shipped. macOS input needs Accessibility permission and
+  remains experimental and untested on hardware.
 
-## Measurements
+Enable Desktop webcam access on the phone first. There is one stream per phone; stop IPCam
+before starting the webcam because they reserve the camera exclusively. The camera picks a
+nearby supported resolution and frame rate.
+[Download table](#homedroid-desktop-downloads) · [Full Desktop instructions](desktop/README.md).
 
-Measured with [`tools/bench.py`](tools/bench.py), which drives a phone over adb and SSH. **Run it
-on your phone and [share the output](https://github.com/sudiptacmd/homedroid/issues/new/choose)**
-to add your phone to this table.
+## USB drives and SD cards as a NAS
 
-| | Emulator (Android 10, x86_64, 3 GB RAM) |
-|---|---|
-| **Idle RAM**, SSH + web only | 136 MB (3 processes) |
-| **Idle RAM**, + Jellyfin, qBittorrent, Immich | 1.19 GB (34 processes; Immich ≈ 800 MB) |
-| **Idle CPU**, SSH + web only | 0.1 % of one core |
-| **Idle CPU**, + Jellyfin, qBittorrent, Immich | 2.6 % of one core |
-| **Network**, phone → computer | 457 MB/s HTTP, 194 MB/s SSH (virtual NIC) |
-| **Transcoding**, 1080p → 720p H.264 | 114 fps (3.8× real time) through MediaCodec¹ |
+Connect a USB OTG drive or insert a microSD card. **Files** shows it beside the phone’s storage:
+upload folders, stream media, preview pictures/PDFs and download folders as ZIP. SFTP exposes
+accessible volumes under `/storage/<volume-id>` for sshfs, rclone, WinSCP or Cyberduck.
 
-¹ The emulator's MediaCodec encoder is software running on the host. On a phone MediaCodec uses
-the dedicated video hardware, which is the point: it keeps the CPU free and cool.
+Choose a storage location per app. Media can go on removable storage; settings and databases
+stay internal because removable drives are often FAT32 or exFAT. On Android 11+, granting
+All files access allows a visible `Homedroid/<name>` folder. On Android 10, app-owned folders
+on removable storage are deleted when Homedroid is uninstalled. The picker explains the limit.
+FAT32 cannot hold files over 4 GB. If a drive disappears, apps wait for it instead of writing
+somewhere unexpected.
 
-## Good to know
+## Jellyfin, Immich and home automation
 
-Homedroid does a lot inside an ordinary app, and a few things follow from that:
+Jellyfin and qBittorrent share the Media folder. Completed downloads appear in Jellyfin’s
+Downloads library. **Hardware transcoding is encode-side:** H.264 and HEVC use the phone’s
+MediaCodec encoder where supported. Decoding, scaling, subtitle burn-in and HDR tone mapping
+still use software. Check your phone with your actual videos before promising it movie night.
 
-- **No root, so** no ports below 1024 (use 8080 or the Cloudflare tunnel), and proot adds some
-  overhead to syscall-heavy work such as package installs, Home Assistant's startup and
-  databases. Programs run at full speed once they are computing.
-- **Battery managers.** Vendor battery savers (Samsung, Xiaomi, …) and Android 12+'s phantom
-  process killer need the one-time settings in [Getting started](#getting-started).
-- **No raw hardware access for apps.** Home Assistant can't use USB radios (Zigbee, Z-Wave) or
-  Bluetooth, and nothing can use serial ports or GPIO.
-- **Transcoding is encode-side.** Decoding, scaling, subtitle burn-in and HDR tone mapping run
-  in software; H.264 and HEVC encoding use the phone's encoder.
-- **Immich** runs with machine learning (faces, smart search) turned off: it's too heavy for a
-  phone.
-- **CPU figures.** Android doesn't let apps read system-wide CPU load or most temperature
-  sensors, so the dashboard shows Homedroid's own load (which is all the servers), the battery
-  temperature and Android's thermal status, plus the CPU temperature on phones that expose it.
-- **No port 53, no packet capture.** Without root an app can't listen on ports below 1024 or
-  sniff traffic, so AdGuard Home answers on 1053 (Tailscale and capable routers bridge that) and
-  the network tools work with ordinary connections.
-- **Plain HTTP on your LAN.** The dashboard and apps speak HTTP on your home network (traffic
-  between cluster phones is encrypted). From outside, use Tailscale, the Cloudflare tunnel or
-  `ssh -L`.
-- **App updates.** Apps come from Alpine and container registries at install time; update them
-  with `apk upgrade` over SSH or by reinstalling from the Apps screen.
+Immich backs up photos and videos, with machine learning (faces and smart search) disabled.
+Home Assistant supports network and cloud integrations; the Linux app cannot access USB
+Zigbee/Z-Wave radios or Bluetooth. IPCam offers live view, captures and motion-triggered clips.
+Camera/microphone access must be enabled from the phone, including again after a reboot.
+
+## Hosting and deploying from GitHub
+
+<img src="docs/screenshots/dashboard-deploys-dark.png" width="900" alt="Homedroid deployments dashboard: repositories, running apps and build controls">
+
+Give Homedroid a repository URL, branch and port. Set build/start commands and environment
+variables as needed; apps receive `$PORT`. A failed build keeps the previous version running.
+Auto-deploy checks the branch every five minutes. The runtime backend supports Node.js,
+Python, Go, PHP, Bun, Deno and static sites.
+
+The 0.9.5 hosting APIs add verified domains, path routes, DuckDNS/Cloudflare DDNS, firewall
+rules and request logs. Deploy from ZIP/tar archives or CI with per-deployment tokens. Hooks
+work with GitHub Actions, GitLab and CircleCI; GitHub push webhooks use signature verification.
+A `.homedroid/pipeline.json` lists steps after the build and before startup. A failed step
+stops the deploy. Rolling deployment and load balancing target paired cluster phones.
+
+[Deploy hooks, archive uploads and pipeline examples](docs/guides/deploy-hooks.md).
+The dedicated new hosting/pipeline dashboard screens are not yet connected in this checkout.
+Load balancing has emulator verification, not verification across two physical phones.
+
+## Local AI, MCP and databases
+
+**Local AI:** install llama.cpp and a GGUF model on a 64-bit phone. Benchmark CPU and GPU to
+pick the faster; GPU support depends on drivers. Chat locally or expose the keyed,
+OpenAI-compatible API at `http://<phone-ip>:8090/v1`. Optional cloud providers and scheduled
+routines can summarize feeds, email and server health. Local inference stays on the phone;
+cloud requests go to the provider you choose.
+
+**MCP:** assistants such as Claude, Cursor and VS Code can read status, logs, deployments and
+files. A separate token protects `/mcp`; it is off by default. Write tools require Allow write.
+The dashboard-agent backend uses the same tools and holds changes for approval.
+The [MCP guide](docs/guides/mcp.md) includes HTTP API setup and client configurations; its
+Settings UI instructions are ahead of the current dashboard wiring.
+
+**Databases:** the SQLite backend lists tables and schema relations and accepts SQL queries.
+Reads are the default; writes require explicit confirmation and are refused while the owning
+app is running. A JSON document store is also available through the API. Schema-diagram and
+SQL-console dashboard views are not implemented in the current HTML.
+
+## Network services and phone clusters
+
+**AdGuard Home** answers on **1053** because unrooted Android apps cannot bind port 53.
+Homedroid’s Tailscale forwards tailnet DNS port 53 to it. Set the phone as a custom nameserver
+and enable Override DNS servers in Tailscale, or use a router that supports an upstream DNS
+port. AdGuard’s UI is on 3000.
+
+**Wake on LAN** sends magic packets to saved computers from wherever you can reach the
+dashboard. **Network tools** run on the phone: discovery, ping, traceroute, DNS, nmap, HTTP
+checks, whois and iperf3/internet speed tests. Packet capture needs root and is not included.
+
+**Cluster → Add a phone** pairs devices with a matching code. Switch phones in one dashboard,
+move apps with their data, copy files directly between phones and view every camera together.
+Cluster traffic uses mutual TLS on 8801. Paired phones can control one another, so protect
+every dashboard. General app failover is not automatic.
+
+<a id="known-limitations"></a>
+
+## Requirements and limitations
+
+- Android 10+; a 64-bit phone is recommended. Allow space for apps as well as media:
+  Jellyfin roughly 420 MB (2 GB free recommended), Immich roughly 1.6 GB and Home Assistant
+  roughly 900 MB. Sizes vary as upstream packages change.
+- Linux apps use proot. System-call-heavy work, such as package installation and databases,
+  has overhead. This is not a replacement for full Linux hardware access.
+- Dashboard CPU is the load of Homedroid’s processes. Temperature is battery temperature and
+  thermal status, plus CPU temperature where the phone exposes it.
+- Battery savers can stop servers. Follow setup guidance, watch heat under load, and use a
+  healthy battery. Homedroid cannot add charge limiting without root.
+- Local HTTP is unencrypted. Use Tailscale or Cloudflare Tunnel for remote access.
+
+A phone is useful for files, media and small services. A Raspberry Pi is a better fit for
+GPIO, USB radios and an unrestricted Linux system.
+[Old phone vs Raspberry Pi](https://homedroid.seltiv.com/compare/).
+
+## How it works
+
+Android will not run downloaded executables from app storage. Homedroid’s native servers are
+packaged as `lib*.so` files so Android extracts them into the executable native-library path.
+Linux apps run in Alpine under proot. Container images are unpacked and their processes run
+under proot; there is no Docker daemon.
+
+For Jellyfin, an FFmpeg shim redirects hardware encoding to an Android-built FFmpeg using
+MediaCodec. The rest goes to Jellyfin’s own FFmpeg. Patches and build scripts live in
+[`native/`](native/). The supervisor handles process groups so stopping proot does not leave
+its child servers behind.
+
+<img src="docs/architecture.svg" width="900" alt="Homedroid architecture: Android app, native services, Alpine apps and web dashboard">
 
 ## Security
 
-- SSH accepts public keys only. The dashboard uses a generated password; sessions are
-  HttpOnly/SameSite cookies, and scripts can send the password as a Bearer token. The dashboard
-  password also opens the web terminal, so treat it like an SSH key. SSH and terminal sessions,
-  including rejected logins, are logged in the dashboard.
-- Five failed password checks from one address trigger a 15-minute cooldown, with a shared
-  budget across addresses. Sessions expire after 24 hours. See the
-  [0.8.5 security review](docs/SECURITY-REVIEW-0.8.5.md).
-- Cluster phones pair with a code checked on both phones, talk over mutual TLS, and can fully
-  control each other, so the weakest dashboard password protects the whole cluster. The AI API
-  has its own key; cloud keys and the email password never leave the phone. See the
-  [0.9.0 security review](docs/SECURITY-REVIEW-0.9.0.md).
-- Files from your libraries are served so they can't run script on the dashboard's address.
-- Everything listens on the phone's network, so keep the phone on a network you trust and expose
-  services through the Cloudflare tunnel rather than port forwarding.
-- Other apps on the same phone can reach `localhost`. Homedroid binds databases to localhost and
-  protects them with generated passwords. qBittorrent skips authentication for localhost so the
-  `torrent` command works.
+SSH accepts public keys only. The dashboard has a generated password and expiring
+HttpOnly/SameSite sessions. That password also opens the web terminal, so treat it like an
+SSH key. Authentication attempts are rate-limited; changing the password revokes sessions.
+
+PIN/biometric app lock protects the phone UI, and Android Keystore encrypts stored secrets.
+MCP has its own token and call audit log. Desktop command execution requires local opt-in.
+Pair only computers and cluster phones you trust. Other Android apps can reach localhost;
+qBittorrent’s localhost authentication exception exists for the `torrent` helper.
+
+See the [0.8.5 security review](docs/SECURITY-REVIEW-0.8.5.md),
+[0.9.0 security review](docs/SECURITY-REVIEW-0.9.0.md), and [Desktop security notes](desktop/README.md#security-notes).
 
 ## Building
 
-Needs JDK 17+, Go 1.23+ and the Android SDK with NDK r27+ (`ANDROID_NDK_HOME`).
+Needs JDK 17+, Go 1.23+ and the Android SDK with NDK r27+. Linux/macOS setup helpers install
+project-local tools (currently JDK 21, SDK 36 and NDK 30):
 
-```bash
-native/build-all.sh                 # sshd, Caddy, cloudflared, proot, FFmpeg for arm64, armv7, x86_64
-./gradlew assembleRelease           # APKs in app/build/outputs/apk/release/
+```sh
+tools/setup-dev.sh --ndk --go
+source tools/dev.sh
+native/build-all.sh
+./gradlew assembleRelease
 adb install app/build/outputs/apk/release/app-arm64-v8a-release.apk
 ```
 
-The individual scripts take ABIs as arguments (`native/build-ffmpeg.sh arm64-v8a`), and
-versions can be overridden (`CADDY_VERSION=… CLOUDFLARED_VERSION=… native/build.sh`). To sign
-release builds with your own key, copy `keystore.properties.example` to `keystore.properties`;
-without it they use the debug key. Releases are built by CI: pushing a tag such as
-`v0.9.4-beta` builds every ABI, signs the APKs and publishes them with `SHA256SUMS`.
+On Windows, `tools/dev.ps1` selects already-installed project-local tools. Native build scripts accept ABI
+arguments, for example `native/build-ffmpeg.sh arm64-v8a`. To sign with your own key, copy
+`keystore.properties.example` to `keystore.properties`; otherwise local builds use the debug
+key and cannot update an official signed release. CI tags such as `v0.9.5-beta` publish signed
+APKs and runtime archives; the Desktop workflow publishes the companion archives.
 
-### Adding an app
+```sh
+./gradlew testDebugUnitTest
+node --test tests/*.test.cjs
+cd desktop
+cargo build --release
+cargo test
+```
 
-Apps are data: add an entry to [`apps.json`](app/src/main/assets/apps.json). A simple app runs
-an install script and a command in Alpine (see Jellyfin). A multi-service app pulls container
-images and runs several processes, with `{{secret}}` passwords and `@data`/`@storage` binds (see
-Immich). See [CONTRIBUTING.md](CONTRIBUTING.md).
+The marketing site is static HTML/CSS/JS in [`site/`](site/), published by
+[GitHub Pages](.github/workflows/pages.yml) at <https://homedroid.seltiv.com/>.
+[Site validation and media capture](tools/marketing/README.md) needs no npm dependencies.
 
 ## Contributing and feedback
 
-Homedroid is built in the open, and the most useful thing you can do is **try it on your phone
-and tell us how it went**:
+The most useful contribution is trying it on a phone and reporting what happened. Include the
+model, Android version and service log. [`tools/bench.py`](tools/bench.py) measures your device;
+emulator throughput is not evidence of real Wi-Fi performance.
 
-- 🐛 [Report a bug](https://github.com/sudiptacmd/homedroid/issues/new?template=bug_report.yml):
-  phone model, Android version and the service's log help most.
-- 📱 [Share your phone](https://github.com/sudiptacmd/homedroid/issues/new?template=phone_report.yml):
-  "works on my Pixel 4a" and `tools/bench.py` numbers fill the measurements table.
-- 💡 [Suggest an app or a feature](https://github.com/sudiptacmd/homedroid/issues/new?template=feature_request.yml).
-- 🛠️ Pull requests are welcome: new apps in `apps.json`, fixes, translations, docs. Start with
-  [CONTRIBUTING.md](CONTRIBUTING.md).
-- ⭐ If Homedroid gave an old phone a second life, a star helps others find it.
+- 🐛 [Report a bug](https://github.com/sudiptacmd/homedroid/issues/new?template=bug_report.yml).
+- 📱 [Share your phone](https://github.com/sudiptacmd/homedroid/issues/new?template=phone_report.yml).
+- 💡 [Suggest an app or feature](https://github.com/sudiptacmd/homedroid/issues/new?template=feature_request.yml).
+- 🛠️ Add apps to [`apps.json`](app/src/main/assets/apps.json), fix a bug or improve the docs.
+  Start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Roadmap
+## Credits and license
 
-- Cluster failover: restart an app on another phone when its phone goes away
-- Root mode: chroot at native speed, ports below 1024, charge limiting
-- More apps: Vaultwarden, Syncthing
-- Capture this phone's own traffic for Wireshark (through Android's VPN service)
-- Hostname routing for deployments through Caddy
-- Verify hardware transcoding on more chips (Exynos, Snapdragon, MediaTek)
-
-## License
-
-Homedroid is free software under the [GNU General Public License v3.0](LICENSE). It bundles and
-builds third-party components under their own licenses; see [THIRD_PARTY.md](THIRD_PARTY.md).
-The walkthrough uses Blender Foundation open movies (*Sintel*, *Big Buck Bunny*, *Elephants
-Dream*, *Tears of Steel*), © Blender Foundation, [CC BY](https://creativecommons.org/licenses/by/3.0/).
+Built by **Sudipta Goswami** and contributors. Homedroid and Homedroid Desktop are free software
+under the [GNU General Public License v3.0](LICENSE). Bundled components keep their own
+licenses; see [THIRD_PARTY.md](THIRD_PARTY.md). The earlier media walkthrough uses Blender
+Foundation open movies (*Sintel*, *Big Buck Bunny*, *Elephants Dream*, *Tears of Steel*),
+© Blender Foundation, [CC BY](https://creativecommons.org/licenses/by/3.0/).

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Old Android phone vs Raspberry Pi home server | Homedroid</title>
+<meta name="description" content="Compare an old Android phone and Raspberry Pi for a home server. See storage, hardware, Jellyfin and Linux trade-offs before choosing Homedroid or a Pi.">
+<link rel="canonical" href="https://homedroid.seltiv.com/compare/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="Old Android phone vs Raspberry Pi home server | Homedroid">
+<meta property="og:description" content="Compare an old Android phone and Raspberry Pi for a home server. See storage, hardware, Jellyfin and Linux trade-offs before choosing Homedroid or a Pi.">
+<meta property="og:url" content="https://homedroid.seltiv.com/compare/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.5 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Old Android phone vs Raspberry Pi home server | Homedroid">
+<meta name="twitter:description" content="Compare an old Android phone and Raspberry Pi for a home server. See storage, hardware, Jellyfin and Linux trade-offs before choosing Homedroid or a Pi.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Old Android phone vs Raspberry Pi home server | Homedroid",
+  "description": "An old Android phone is a useful home server if you already own one and want media, files or small web apps. A Raspberry Pi is a better fit for GPIO, USB radios and control over the whole Linux system.",
+  "url": "https://homedroid.seltiv.com/compare/",
+  "dateModified": "2026-11-25",
+  "isPartOf": {
+    "@id": "https://homedroid.seltiv.com/#website"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Homedroid",
+      "item": "https://homedroid.seltiv.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Old Android phone vs Raspberry Pi home server | Homedroid",
+      "item": "https://homedroid.seltiv.com/compare/"
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article">
+<nav class="breadcrumb" aria-label="Breadcrumb">
+<a href="/">Homedroid</a>
+<span>/</span>Old Android phone vs Raspberry Pi home server</nav>
+<span class="eyebrow">HOMEDROID / 0.9.5 BETA</span>
+<h1>Old Android phone vs Raspberry Pi: which home server fits?</h1>
+<p class="lead">An old Android phone is a useful home server if you already own one and want media, files or small web apps. A Raspberry Pi is a better fit for GPIO, USB radios and control over the whole Linux system.</p>
+<h2>Compare an old Android phone and a Raspberry Pi 5</h2>
+<div class="table-scroll">
+<table>
+<caption>Old Android phone with Homedroid vs Raspberry Pi 5</caption>
+<thead>
+<tr>
+<th scope="col">What matters</th>
+<th scope="col">Old phone + Homedroid</th>
+<th scope="col">Raspberry Pi 5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Starting point</th>
+<td>Reuse an Android 10+ phone; install an APK</td>
+<td>A board, power supply, storage and an OS</td>
+</tr>
+<tr>
+<th scope="row">Screen, camera, battery</th>
+<td>Already in the phone, if still healthy</td>
+<td>Separate accessories</td>
+</tr>
+<tr>
+<th scope="row">Storage &amp; networking</th>
+<td>USB OTG / microSD where supported; usually Wi-Fi</td>
+<td>USB 3, microSD, Gigabit Ethernet, PCIe via adapter</td>
+</tr>
+<tr>
+<th scope="row">Hardware access</th>
+<td>Android sandbox; no GPIO or USB radios for Home Assistant</td>
+<td>40-pin header and full Linux hardware access</td>
+</tr>
+<tr>
+<th scope="row">Linux apps</th>
+<td>proot adds overhead to system calls</td>
+<td>Native Linux; more control over the OS</td>
+</tr>
+<tr>
+<th scope="row">Best fit</th>
+<td>Media, files, small web apps, webcam, desk clock</td>
+<td>Hardware projects and a general-purpose Linux server</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="fine">Hardware varies by phone. No blanket speed or power claim here. Raspberry Pi details: <a href="https://www.raspberrypi.com/products/raspberry-pi-5/">official Raspberry Pi 5 specifications</a>.</p>
+<h2>What the phone already has</h2>
+<p>A screen for Dock mode, a camera for IPCam or a webcam, and Wi-Fi. Its battery can keep the phone running during a short power cut, but it will not power your router or an external drive. A worn battery is a maintenance problem, not a free UPS.</p>
+<h2>Where Android gets in the way</h2>
+<p>Homedroid runs without root. Linux apps use proot, which adds overhead to system calls. Apps cannot bind ports below 1024 or access GPIO, serial devices and USB Zigbee/Z-Wave radios. Home Assistant is for network and cloud integrations here.</p>
+<p>Vendor battery savers and Android 12+ background process limits need one-time setup. USB storage depends on OTG support, the adapter and the filesystem. FAT32 files cannot exceed 4 GB.</p>
+<h2>Jellyfin and local AI depend on the phone</h2>
+<p>Jellyfin uses the phone’s MediaCodec encoder where supported; decoding, scaling and subtitle burn-in remain on the CPU. Small llama.cpp models run on 64-bit phones, with speed limited by memory, temperature and GPU drivers. There is no useful single “phone vs Pi” benchmark for all of that.</p>
+<p>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/tools/bench.py">Measure your own phone with tools/bench.py</a> and share the result with its model and Android version.</p>
+<aside class="article-cta">
+<h2>Start with the phone you have.</h2>
+<a class="button primary" href="/#download">Download Homedroid</a>
+<a href="/faq/">Requirements and FAQ</a>
+</aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">0.9.5 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-25">25 November 2026</time> · 0.9.5-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>

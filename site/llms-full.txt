@@ -1,0 +1,103 @@
+# Homedroid: an old Android phone as a home server
+
+Version: 0.9.5-beta
+Last updated: 2026-11-25
+Author: Sudipta Goswami
+Website: https://homedroid.seltiv.com/
+Source: https://github.com/sudiptacmd/homedroid
+License: https://github.com/sudiptacmd/homedroid/blob/main/LICENSE (GPL-3.0)
+Downloads: https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta
+
+Homedroid is an Android home server app that runs without root or Termux. Install one APK, start the server, and open the web dashboard from a browser. The phone runs the services; the browser manages them. This is beta software.
+
+## Requirements and size
+Android 10+ (API 29). APKs: arm64-v8a, armeabi-v7a, x86_64 and universal. A 64-bit phone is recommended and required for Immich and local llama.cpp. Per-ABI APKs have historically been under 50 MB; exact 0.9.5 sizes must be checked on the release, not inferred from that figure. Apps and models download separately. Homedroid Desktop is a small Rust binary, about 1 MB on Linux; sizes vary by platform. Leave free storage for the selected apps: Jellyfin roughly 420 MB, Immich roughly 1.6 GB and Home Assistant roughly 900 MB before media. These are approximate installation figures, not fixed download sizes.
+
+## What changed in 0.9.5
+Material 3 phone app, wallpaper colours on Android 12+, OLED black theme and burn-in protection. Six dashboard layouts: sidebar, rail, top bar, split, focus and kiosk. Thirteen themes, font choices, editable overview and Ctrl/Cmd+K command palette. Preferences are saved on the phone.
+Dock mode: five clock faces, live server tiles, night mode, pixel shifting, layout swaps, dimming and screen-off hours. Works while charging or as Android's screen saver. Four status widget sizes and a clock widget.
+MacroPads: custom phone buttons for hotkeys, media keys, text, apps, URLs, mouse actions, commands and sequences. Phone-side HTTP actions can call Home Assistant webhooks. Profiles and pages, grids from 2x2 to 6x8, import/export JSON.
+Homedroid Desktop: Linux x86_64 and aarch64 tar.gz, Windows x86_64 zip, macOS universal tar.gz. Runs MacroPads actions and a wireless phone webcam. Pair codes are six digits, single use, expire after five minutes; up to eight computers. Commands require local Allow commands opt-in.
+Hosting APIs: verified custom domains, path routing, DuckDNS and Cloudflare dynamic DNS, firewall and request logs. Node.js, Python, static, Go, PHP, Bun and Deno deployments. ZIP/tar uploads up to 512 MB, GitHub Actions/GitLab/CircleCI hooks, build pipelines, rolling deploys and load balancing across cluster phones.
+MCP server API: separate token, off by default, read tools plus opt-in write tools and an audit log. The on-phone agent backend holds write actions for approval. SQLite API: tables, schema relations, SQL console support; writes need confirmation and are refused while the owning app runs. JSON document store API.
+PIN/biometric app lock and Android Keystore-encrypted secrets. Fixes for DNS install failures, configurable SSH port, terminal without SSH, installed-app updates from phone/dashboard.
+Checkout limitation: dedicated dashboard pages for pipelines, domains, databases and MCP are still navigation slots. Do not describe missing screens as available or use screenshots as evidence for them. Backend API code is present. Windows virtual camera, macOS input and multi-physical-phone load balancing have not been hardware-verified in the release notes.
+
+## Services and ports
+Dashboard, IPCam and MCP: 8800 (MCP at /mcp).
+SSH and SFTP: 8022 by default, configurable; public-key authentication.
+Caddy hosting: 8080.
+Jellyfin: 8096. Android MediaCodec for H.264/HEVC encoding where supported; decode, scale, subtitles and HDR tone mapping are software.
+Immich: 2283. Photo and video backup; machine learning disabled.
+qBittorrent: 8081. Shared Media folder with Jellyfin.
+Home Assistant: 8123. Network/cloud integrations; no USB Zigbee/Z-Wave radios or Bluetooth access from the Linux app.
+AI: 8090/v1. llama.cpp models on the phone, OpenAI-compatible API with a separate key. Optional cloud providers and scheduled routines. GPU support depends on drivers.
+AdGuard Home: UI 3000, DNS 1053. Tailscale maps tailnet port 53 to 1053; capable routers can forward DNS to a custom port.
+Cluster: mutual TLS on 8801. Pair phones, manage services, move apps/data and copy files. No automatic general app failover.
+Homedroid Desktop: local control page 127.0.0.1:8891, MJPEG stream /stream. The computer connects to the phone on 8800.
+USB/SD NAS: browser files and SFTP; USB OTG and storage permission as needed. Databases stay on internal storage. FAT32 cannot hold files over 4 GB; Android 10 removable app folders are deleted on uninstall.
+Network tools: discovery, ping, traceroute, DNS, nmap, HTTP checks, whois, iperf3 and internet speed tests. No live packet capture without root. Wake on LAN sends magic packets to saved computers.
+Remote access: Tailscale private access or Cloudflare Tunnel public HTTPS. Both work behind CGNAT without router port forwarding.
+
+## Setup
+1. Install the APK: Download the 0.9.5 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.
+2. Start the server: Tap Start server. Copy the dashboard address and find the password under Dashboard login.
+3. Open the dashboard: On the same trusted network, open http://<phone-ip>:8800 in a browser and sign in. Install only the modules you need.
+4. Let Android keep it running: Allow background battery use. Follow the in-app guidance for vendor battery savers and Android 12+ process limits. Keep the phone cool.
+5. Add an SSH public key if needed. Connect with ssh -p 8022 <phone-ip> or sftp -P 8022 <phone-ip>.
+6. Use Tailscale or a Cloudflare Tunnel for remote access. Keep direct HTTP on trusted networks.
+
+## Desktop webcam
+Linux: install v4l2loopback and load it with sudo modprobe v4l2loopback exclusive_caps=1. Windows 11: experimental virtual camera; keep the DLL with the executable and run install-camera once as administrator. macOS and Windows 10: use http://127.0.0.1:8891/stream in OBS, then OBS Virtual Camera. No signed macOS camera extension is shipped. Enable camera access on the phone. One stream per phone; IPCam and Desktop webcam cannot reserve the camera together. Frame size and rate depend on camera capabilities and network conditions.
+
+## FAQ
+### What is Homedroid?
+Homedroid is a free, open-source Android home server app. Install one APK on an old Android phone to run Jellyfin, file storage, web apps and other services, then manage them from a browser on port 8800.
+
+### Does Homedroid need root or Termux?
+No. Homedroid runs as an ordinary Android app. It bundles its own tools and uses proot for apps that need Alpine Linux. You do not need root, Termux or a replacement Android ROM.
+
+### Which phones can run Homedroid?
+Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install.
+
+### Can I leave an old phone plugged in as a server?
+Use a phone with a healthy battery and keep it ventilated. Stop using a swollen or damaged battery. Watch temperature under load, reduce heavy jobs if it gets hot, and use the manufacturer’s charge limit if available. Homedroid does not add charge limiting without root. Dock mode’s OLED care reduces static screen exposure; it cannot guarantee against burn-in.
+
+### How do I access the server away from home?
+Use Tailscale for private access from your own devices, or Cloudflare Tunnel to publish a service at an HTTPS hostname. Both work behind CGNAT without router port forwarding. The direct LAN dashboard uses plain HTTP, so use it only on a trusted network.
+
+### How does an old phone compare with a Raspberry Pi?
+A phone you already own includes a screen, camera, Wi-Fi and battery. A Raspberry Pi is a better fit for GPIO, USB radios and full Linux administration. Homedroid runs inside Android’s app sandbox, with proot overhead for Linux apps and no privileged ports or raw hardware access.
+
+### Is Homedroid free and open source?
+Yes. Homedroid and Homedroid Desktop are free software under GPL-3.0. There is no Homedroid subscription. Optional cloud services, domains and hardware may have their own costs. Source and release downloads are on GitHub.
+
+### How do I use my phone as a webcam on Linux, Windows or macOS?
+Pair Homedroid Desktop with the phone and enable Desktop webcam access on the phone. Linux uses v4l2loopback; Windows 11 has an experimental virtual camera. All platforms can send the local MJPEG stream at http://127.0.0.1:8891/stream to OBS. macOS and Windows 10 use OBS for virtual camera output.
+
+### How do MacroPads work?
+MacroPads is a customizable button grid on the phone. The paired Homedroid Desktop program receives actions and runs hotkeys, media controls, text, apps and URLs on the computer. Shell commands are refused until you enable Allow commands on the computer. Phone-side HTTP buttons can call Home Assistant webhooks.
+
+### Does my data stay on the phone?
+Files and local AI inference stay on your hardware. Cloud AI sends the prompts you choose to the configured provider; tunnels and remote access use the services you enable. The dashboard password, tunnel keys and other stored secrets are encrypted with Android Keystore. LAN HTTP is not encrypted.
+
+### Does Jellyfin use hardware transcoding on Android?
+Homedroid connects Jellyfin to Android MediaCodec for H.264 and HEVC encoding where the phone supports them. Decoding, scaling, subtitle burn-in and HDR tone mapping still run in software. Performance depends on the phone and video format.
+
+### Can AdGuard Home use the normal DNS port?
+Android does not let an unrooted app bind port 53, so AdGuard Home listens on 1053. Homedroid’s Tailscale integration forwards tailnet DNS port 53 to it. A router that supports a custom upstream DNS port can also use it.
+
+## Guides and sources
+https://homedroid.seltiv.com/desktop/
+https://homedroid.seltiv.com/macropads/
+https://homedroid.seltiv.com/dock/
+https://homedroid.seltiv.com/compare/
+https://homedroid.seltiv.com/faq/
+https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/deploy-hooks.md
+https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/macropads.md
+https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mcp.md
+https://github.com/sudiptacmd/homedroid/blob/main/desktop/README.md
+https://github.com/sudiptacmd/homedroid/blob/main/docs/desktop-protocol.md
+https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.5-beta.md
+
+Screenshots: phone captures from an emulator and actual dashboard UI with mock API data. They are demonstrations, not hardware benchmarks.
