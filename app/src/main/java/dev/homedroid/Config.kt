@@ -114,7 +114,10 @@ class Config(ctx: Context) {
 
     /** Password for the web dashboard, generated on first use. */
     var dashboardPassword: String
-        get() = secrets.get("dashboard_password") ?: randomPassword().also { secrets.put("dashboard_password", it) }
+        // An unreadable one is not replaced: no password matches "" until the keystore recovers
+        // or the user sets a new password on the phone.
+        get() = secrets.get("dashboard_password")
+            ?: if (secrets.unreadable("dashboard_password")) "" else randomPassword().also { secrets.put("dashboard_password", it) }
         set(value) = secrets.put("dashboard_password", value)
 
     private fun randomPassword(): String {
@@ -146,7 +149,8 @@ class Config(ctx: Context) {
 
     /** The MCP clients' bearer token, made on first use. */
     var mcpToken: String
-        get() = secrets.get("mcp_token") ?: McpCore.newToken().also { secrets.put("mcp_token", it) }
+        get() = secrets.get("mcp_token")
+            ?: if (secrets.unreadable("mcp_token")) "" else McpCore.newToken().also { secrets.put("mcp_token", it) }
         set(v) = secrets.put("mcp_token", v)
 
     val dashboardPort: Int get() = 8800

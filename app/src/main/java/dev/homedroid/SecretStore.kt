@@ -88,6 +88,11 @@ class SecretStore(private val prefs: SharedPreferences, private val sealer: Secr
         plain
     }
 
+    /** Stored encrypted but can't be read now (keystore trouble): callers must not replace it. */
+    fun unreadable(name: String): Boolean = synchronized(LOCK) {
+        prefs.getString("$name.enc", null)?.let { SecretEnvelope.open(sealer, it) == null && prefs.getString(name, null) == null } == true
+    }
+
     fun put(name: String, value: String) = synchronized(LOCK) {
         val sealed = seal(value)
         if (sealed != null) prefs.edit().putString("$name.enc", sealed).remove(name).apply()

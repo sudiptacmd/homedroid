@@ -73,7 +73,9 @@ object DomainsCore {
             }
             "port" -> {
                 val port = o.optInt("port", 0)
-                if (port !in 1..65535 || port == 8080) fail("Enter the local port the service listens on (not 8080, Caddy's own)")
+                // Not Caddy's own port, and not the dashboard's: Caddy is a loopback client, so the
+                // dashboard would trust a Cf-Connecting-Ip header the visitor sent.
+                if (port !in 1..65535 || port in setOf(8080, 8800, 8801)) fail("Enter the local port the service listens on (not 8080, 8800 or 8801, Homedroid's own)")
                 else Result.success(JSONObject().put("type", "port").put("port", port))
             }
             else -> fail("Unknown target type \"${type.take(20)}\"")

@@ -265,8 +265,9 @@ class Dashboard(private val ctx: Context) {
             .put("retryAfter", result.retrySeconds), 429, mapOf("Retry-After" to result.retrySeconds.toString()))
     } else Response.error(status, "Incorrect password")
 
-    private fun passwordMatches(given: String) =
-        MessageDigest.isEqual(given.toByteArray(), cfg.dashboardPassword.toByteArray())
+    private fun passwordMatches(given: String) = cfg.dashboardPassword.let { pw ->
+        pw.isNotEmpty() && MessageDigest.isEqual(given.toByteArray(), pw.toByteArray())
+    }
 
     // --- views --------------------------------------------------------------------------
 
