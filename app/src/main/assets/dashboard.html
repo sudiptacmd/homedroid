@@ -5958,7 +5958,7 @@ function drawPair() {
   if (!p) { el.innerHTML = ''; return; }
   el.innerHTML = `<div class="card pad stack"><div class="paircode" aria-live="polite"><span class="pair-code big">${esc(fmtCode(p.code))}</span><span class="hint" id="dkCount"></span></div>
     <p style="margin:0">On the computer, install <b>Homedroid Desktop</b>, open a terminal and run:</p>${copyLine(pairCommand(dkHostPort(), p.code), 'Command copied')}
-    <div class="row" style="flex-wrap:wrap"><a class="btn" href="https://github.com/sudiptacmd/homedroid/releases/latest" target="_blank" rel="noopener">${icon('download')}Download Homedroid Desktop</a>
+    <div class="row" style="flex-wrap:wrap"><a class="btn" href="https://github.com/sudiptacmd/homedroid/releases" target="_blank" rel="noopener">${icon('download')}Download Homedroid Desktop</a>
       <button class="btn ghost" data-act="dkPair">New code</button><button class="btn ghost" data-act="dkPairClose">Done</button></div>
     <div class="hint">The code works once and expires after 5 minutes. The computer connects to this address, so it must be able to reach the phone (same Wi-Fi, Tailscale, or a tunnel).</div></div>`;
   const tick = () => { const left = Math.max(0, Math.round((p.expires - Date.now()) / 1000)), c = $('#dkCount'); if (!c) return clearInterval(mp.timer);
