@@ -1,0 +1,158 @@
+name: Desktop
+
+# Homedroid Desktop (desktop/): checks on every change, release binaries on v* tags.
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+  pull_request:
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)build and upload release binaries for
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    if: ${{ !startsWith(github.ref, 'refs/tags/') && github.event_name != 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+
+  check-windows:
+    if: ${{ !startsWith(github.ref, 'refs/tags/') && github.event_name != 'workflow_dispatch' }}
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop
+      - run: cargo check --workspace
+
+  build:
+    if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x86_64
+            target: x86_64-unknown-linux-musl
+          - os: ubuntu-latest
+            platform: linux-aarch64
+            target: aarch64-unknown-linux-musl
+          - os: windows-latest
+            platform: windows-x86_64
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            platform: macos-universal
+            target: universal-apple-darwin
+    runs-on: ${{ matrix.os }}
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Linux: pure Rust, so rust-lld links the static musl binaries (also cross to aarch64).
+      - name: Build Linux
+        if: startsWith(matrix.platform, 'linux')
+        run: |
+          rustup target add ${{ matrix.target }}
+          RUSTFLAGS="-C linker=rust-lld -C link-self-contained=yes" \
+            cargo build --release --target ${{ matrix.target }}
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/homedroid-desktop dist/
+          cp README.md dist/
+          tar -C dist -czf homedroid-desktop-$TAG-${{ matrix.platform }}.tar.gz .
+
+      - name: Build Windows
+        if: startsWith(matrix.platform, 'windows')
+        run: |
+          cargo build --release --workspace
+          mkdir -p dist
+          cp target/release/homedroid-desktop.exe target/release/homedroid_vcam.dll README.md dist/
+          cd dist && 7z a -tzip ../homedroid-desktop-$TAG-${{ matrix.platform }}.zip .
+
+      - name: Build macOS universal
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+          cargo build --release --target aarch64-apple-darwin
+          cargo build --release --target x86_64-apple-darwin
+          mkdir -p dist
+          lipo -create -output dist/homedroid-desktop \
+            target/aarch64-apple-darwin/release/homedroid-desktop \
+            target/x86_64-apple-darwin/release/homedroid-desktop
+          cp README.md dist/
+          tar -C dist -czf homedroid-desktop-$TAG-${{ matrix.platform }}.tar.gz .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.platform }}
+          path: |
+            desktop/homedroid-desktop-*.tar.gz
+            desktop/homedroid-desktop-*.zip
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          pattern: desktop-*
+          merge-multiple: true
+
+      # The Release workflow creates the GitHub release for the tag; wait up to ~30 minutes for it.
+      - name: Wait for the release
+        run: |
+          for i in $(seq 1 60); do
+            if gh release view "$TAG" > /dev/null 2>&1; then exit 0; fi
+            echo "Release $TAG does not exist yet ($i/60)"; sleep 30
+          done
+          echo "Release $TAG never appeared" >&2; exit 1
+
+      - name: Upload binaries
+        run: |
+          ls -l assets
+          for i in 1 2 3 4 5; do
+            gh release upload "$TAG" assets/* --clobber && exit 0
+            echo "Upload failed, retrying ($i/5)"; sleep 20
+          done
+          exit 1

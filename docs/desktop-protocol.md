@@ -23,8 +23,8 @@ POST /desktop/v1/pair
 ```
 
 Wrong codes are rate limited (5 per minute per address). The token is stored by the desktop
-app in its config file (`~/.config/homedroid-desktop/config.toml`, or `%APPDATA%\Homedroid\
-desktop.toml`), and on the phone only as a SHA-256 hash. Paired computers are listed and
+app in its config file (`~/.config/homedroid-desktop/config.json`, or `%APPDATA%\Homedroid\
+desktop.json`), and on the phone only as a SHA-256 hash. Paired computers are listed and
 can be removed on the phone; a removed computer's requests get 401 and it shows "Pair again".
 
 Every other request carries `Authorization: Bearer <token>`.
@@ -93,7 +93,7 @@ drops, the desktop app reconnects with backoff (1 s, 2 s, 5 s, then every 10 s).
 | `open` | `target`: URL, file or folder | opens with the default app |
 | `launch` | `path`, `args` (array) | starts a program |
 | `command` | `command`, `shell` (bool) | runs a command; **refused unless the user turned on "Allow commands" in the desktop app** |
-| `mouse` | `action`: `click`/`right_click`/`move`/`scroll`, `x`,`y` (move), `dy` (scroll) | mouse input |
+| `mouse` | `action`: `click`/`right_click`/`move`/`scroll`, `x`,`y` (move), `dy` (scroll) | mouse input; `move` is absolute pixels, except relative on Wayland (uinput) |
 | `sequence` | `steps`: array of actions, each may have `delayMs` before it | runs steps in order |
 
 Key names: `ctrl`, `shift`, `alt`, `meta` (Windows/Command key), `enter`, `tab`, `escape`,
