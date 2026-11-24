@@ -105,6 +105,9 @@ object DdnsCore {
 class Ddns(ctx: Context) {
     private val file = File(ctx.filesDir, "ddns.json")
     private val rnd = SecureRandom()
+    // Held across the network calls of a tick; the entries' own lock (this) is not, or the
+    // dashboard's DDNS page would hang for as long as the address lookups time out.
+    private val tickLock = Any()
     private val timer = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "ddns").apply { isDaemon = true } }
 
     @Synchronized private fun load(): MutableList<JSONObject> = try {
@@ -153,9 +156,9 @@ class Ddns(ctx: Context) {
     }
 
     /** Looks up the public address and updates entries that are due (or just [only], forced). */
-    @Synchronized private fun tick(force: Boolean, only: String? = null) {
+    private fun tick(force: Boolean, only: String? = null) = synchronized(tickLock) {
         val entries = load().filter { only == null || it.optString("id") == only }
-        if (entries.isEmpty()) return
+        if (entries.isEmpty()) return@synchronized
         val ip4 = lookup(DdnsCore.IPV4_SOURCES, false)
         val ip6 = if (entries.any { it.optBoolean("ipv6") }) lookup(DdnsCore.IPV6_SOURCES, true) else null
         val now = System.currentTimeMillis()
@@ -167,6 +170,7 @@ class Ddns(ctx: Context) {
             e.getString("id") to error
         }
         // Reload so edits made while the network calls ran aren't lost.
+        synchronized(this) {
         val list = load()
         for (e in list) {
             val id = e.optString("id")
@@ -181,6 +185,7 @@ class Ddns(ctx: Context) {
             }
         }
         save(list)
+        }
     }
 
     /** The first answer from [sources] that is a public address of the right family. */
