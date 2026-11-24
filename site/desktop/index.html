@@ -192,7 +192,7 @@ sudo modprobe v4l2loopback exclusive_caps=1 card_label="Homedroid Camera"</code>
 <p>Add <code>http://127.0.0.1:8891/stream</code> as an OBS Browser source or a Media Source with Local File disabled. Start OBS Virtual Camera to use it in calls. Homedroid does not ship a signed macOS camera extension.</p>
 <h2>Connection and camera limits</h2>
 <p>The computer connects to the phone’s dashboard port, 8800. Use a trusted LAN or Tailscale; direct HTTP does not encrypt frames or pairing tokens. The local control page binds only to 127.0.0.1. A phone can serve one webcam stream at a time, and IPCam and Desktop webcam cannot hold the camera together.</p>
-<p>Camera size and frame rate depend on the phone. Slow connections get the newest frame instead of a growing queue. Camera controls for the webcam are in development and are not in the 0.9.5 beta.</p>
+<p>Camera size and frame rate depend on the phone. Slow connections get the newest frame instead of a growing queue. The Camera panel in Homedroid Desktop sets zoom, torch, focus (including tap to focus), exposure, white balance, rotation and mirroring, and shows only the controls your phone's camera supports. Save a setup as a preset, like "Desk" or "Low light".</p>
 <img src="/media/phone-macropads-oled.webp" alt="Pair an Android phone with Homedroid Desktop for webcam and MacroPads" width="540" height="1200" class="article-phone" loading="lazy" decoding="async">
 <p>
 <a href="https://github.com/sudiptacmd/homedroid/blob/main/desktop/README.md">Full Desktop setup, permissions and troubleshooting</a> · <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/desktop-protocol.md">Desktop protocol</a>

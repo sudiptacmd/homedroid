@@ -203,8 +203,8 @@ sizes, and a separate clock widget opens Dock mode.
 
 Open **Tools → MacroPads**. Long-press a button to set a hotkey, media key, text, app, URL,
 mouse action or command. Make profiles and pages, change icons and colours, or chain desktop
-actions into sequences. Grids range from 2×2 to 6×8. Import/export JSON backs up your deck. A custom look with backgrounds, fonts and icons is
-coming in a later build.
+actions into sequences. Grids range from 2×2 to 6×8. Import/export JSON backs up your deck. Restyle the deck with a
+background colour, gradient or photo, your own font, key corners and glow, and 88 icons or your own images.
 
 Tap the computer icon to pair Homedroid Desktop with a six-digit code. Codes last five minutes;
 you can pair up to eight computers. The companion stays connected and acknowledges each action.
@@ -241,7 +241,8 @@ homedroid-desktop status
 Enable Desktop webcam access on the phone first. There is one stream per phone; stop IPCam
 before starting the webcam because they reserve the camera exclusively. The camera picks a
 nearby supported resolution and frame rate.
-Camera controls (such as zoom and torch) are in development for a later build.
+The Camera panel sets zoom, torch, focus (tap the preview to focus), exposure, white balance, rotation
+and mirroring, shows only what your phone supports, and saves presets.
 [Download table](#homedroid-desktop-downloads) · [Full Desktop instructions](desktop/README.md).
 
 ## USB drives and SD cards as a NAS
