@@ -14,6 +14,7 @@ pub struct Config {
     pub phone: String,
     pub phone_id: String,
     pub allow_commands: bool,
+    pub camera_presets: std::collections::BTreeMap<String, serde_json::Value>,
 }
 impl Config {
     pub fn path() -> io::Result<PathBuf> {
@@ -49,6 +50,12 @@ impl Config {
                 || self.address.is_empty())
         {
             return Err(invalid("invalid pairing credentials"));
+        }
+        if self.camera_presets.len() > 32 { return Err(invalid("at most 32 camera presets")); }
+        for (name, settings) in &self.camera_presets {
+            if name.trim().is_empty() || name.len() > 80 { return Err(invalid("preset name must be 1–80 bytes")); }
+            crate::controls::validate(settings)?;
+            if settings.get("x").is_some() || settings.get("reset").is_some() { return Err(invalid("presets cannot contain transient controls")); }
         }
         Ok(())
     }

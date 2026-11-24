@@ -30,7 +30,7 @@ can be removed on the phone; a removed computer's requests get 401 and it shows 
 Every other request carries `Authorization: Bearer <token>`.
 
 ```
-GET /desktop/v1/hello → {"phone": "Pixel 6", "computerId": "c-3f2a9b", "cameras": [{"id": "0", "facing": "back", "sizes": [[1920,1080],[1280,720],[640,480]], "fps": [15,30]}], "features": ["webcam", "macros"]}
+GET /desktop/v1/hello → {"phone": "Pixel 6", "computerId": "c-3f2a9b", "cameras": [{"id": "0", "facing": "back", "sizes": [[1920,1080],[1280,720],[640,480]], "fps": [15,30], "capabilities": {"torch": true, "zoom": [1.0, 8.0]}}], "features": ["webcam", "macros"]}
 ```
 
 ## Webcam
@@ -58,8 +58,49 @@ X-Time: <capture time, ms since epoch on the phone>\r\n
   rather than queueing them (it always sends the newest one).
 - One webcam stream at a time per phone; a second one gets `409` while the first is open.
 - Closing the connection stops the camera (unless the phone's IPCam is using it).
-- `POST /desktop/v1/webcam/control {"torch": true, "zoom": 1.5, "focus": "auto|tap", "x":0.5, "y":0.5, "mirror": false}`
-  adjusts the running stream (optional on both sides).
+- `POST /desktop/v1/webcam/control {...}` adjusts the running stream. The body is a patch of the
+  fields below; it is validated atomically against the active camera's capabilities (an unknown
+  field, a bad type or value, or an unsupported control returns `400` and changes nothing).
+  The reply is `{"ok": true, "settings": {...}}` with the full effective settings. Changing
+  `camera`, `width`, `height` or `fps` restarts the capture pipeline on the phone (the desktop
+  connection stays open; frames pause briefly). `409` if no stream is active.
+
+  | Field | Type / range | Notes |
+  |---|---|---|
+  | `camera` | camera id, `front`, `back` | switches source; resets controls to that camera's defaults |
+  | `width`, `height`, `fps` | from the camera's `sizes` / `fps` | restart |
+  | `quality` | 1-100 | JPEG quality |
+  | `zoom` | within `capabilities.zoom` | zoom ratio (crop region fallback before Android 11) |
+  | `torch` | bool | needs `capabilities.torch` |
+  | `focus` | `continuous`, `auto`, `manual` | only values listed in `capabilities.focus` |
+  | `focusDistance` | 0..`capabilities.focusDistance` (diopters) | required with `focus: "manual"` |
+  | `x`, `y` | 0..1, both required | tap to focus on the (output-space) point; implies `focus: "auto"` |
+  | `ev` | within `capabilities.ev`, multiple of `evStep` | exposure compensation in EV |
+  | `aeLock`, `awbLock` | bool | needs the matching capability |
+  | `wb` | `auto`, `incandescent`, `fluorescent`, `daylight`, `cloudy` | those in `capabilities.wb` |
+  | `manualSensor`, `iso`, `shutterNs` | bool, int, int | manual exposure; `iso` and `shutterNs` required together and only with `manualSensor: true` |
+  | `stabilization` | bool | video stabilization |
+  | `antiBanding` | `auto`, `50hz`, `60hz` | those in `capabilities.antiBanding` |
+  | `mirror`, `flip` | bool | applied on the phone before JPEG encoding |
+  | `rotate` | 0, 90, 180, 270 | clockwise, applied on the phone |
+  | `reset` | bool | restore the camera's defaults, then apply the rest of the patch |
+
+### Camera capabilities
+
+Each entry of `cameras` in `hello` carries what that camera supports, so the desktop only offers
+usable controls (read from `CameraCharacteristics`, never guessed from the lens facing):
+
+```
+{"id": "0", "facing": "back", "sensorOrientation": 90, "sizes": [[1920,1080]], "fps": [15,30],
+ "capabilities": {
+   "torch": true, "focus": ["continuous","auto","manual"], "focusDistance": 10.0, "tapFocus": true,
+   "zoom": [1.0, 8.0], "ev": [-4.0, 4.0], "evStep": 0.5, "aeLock": true, "awbLock": true,
+   "wb": ["auto","daylight"], "antiBanding": ["auto","50hz","60hz"], "stabilization": true,
+   "manualSensor": true, "iso": [50, 3200], "shutterNs": [100000, 500000000],
+   "quality": [1, 100], "mirror": true, "flip": true, "rotate": [0,90,180,270]}}
+```
+
+Keys that are absent or `false`/empty are unsupported. `sizes` lists only even sizes up to 4096x2160 pixels.
 
 ## MacroPads events
 

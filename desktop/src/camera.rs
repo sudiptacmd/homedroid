@@ -13,6 +13,7 @@ pub struct Options {
     pub quality: u32,
     pub device: Option<String>,
     pub mirror: bool,
+    pub controls: serde_json::Value,
 }
 impl Default for Options {
     fn default() -> Self {
@@ -24,6 +25,7 @@ impl Default for Options {
             quality: 80,
             device: None,
             mirror: false,
+            controls: serde_json::json!({}),
         }
     }
 }
@@ -36,14 +38,15 @@ impl Options {
                 .bytes()
                 .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
             || !(2..=4096).contains(&self.width)
-            || !(2..=2160).contains(&self.height)
-            || !(1..=60).contains(&self.fps)
+            || !(2..=4096).contains(&self.height)
+            || !(1..=120).contains(&self.fps)
             || !(1..=100).contains(&self.quality)
         {
             return Err(invalid(
-                "invalid camera, dimensions, fps (1–60), or quality (1–100)",
+                "invalid camera, dimensions, fps (1–120), or quality (1–100)",
             ));
         }
+        crate::controls::validate(&self.controls)?;
         Ok(())
     }
     pub fn path(&self) -> String {
@@ -57,7 +60,7 @@ pub fn decode(jpeg: &[u8], mirror: bool) -> io::Result<(Vec<u8>, usize, usize)> 
     let options = DecoderOptions::default()
         .jpeg_set_out_colorspace(ColorSpace::RGB)
         .set_max_width(4096)
-        .set_max_height(2160);
+        .set_max_height(4096);
     let mut decoder = JpegDecoder::new_with_options(jpeg, options);
     let mut rgb = decoder
         .decode()
@@ -87,7 +90,8 @@ pub fn yuyv(rgb: &[u8], width: usize, height: usize, stride: usize) -> io::Resul
         || width & 1 != 0
         || height == 0
         || width > 4096
-        || height > 2160
+        || height > 4096
+        || width * height > 4096 * 2160
         || stride < width * 2
         || stride > 65536
         || rgb.len() != width * height * 3

@@ -909,6 +909,13 @@ textarea.jsoned { min-height: 220px; resize: vertical; white-space: pre; overflo
 .mpgrid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 8px; padding: 12px; background: var(--code); border-radius: var(--r); border: 1px solid var(--line); }
 .mpkey, .mpempty { aspect-ratio: 1 / .92; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px; min-width: 0; cursor: pointer; border: 2px solid transparent; font: inherit; }
 .mpkey svg.i { width: 26px; height: 26px; }
+.mpgrid { position: relative; overflow: hidden; }
+.mpgrid > .mpbg { pointer-events: none; }
+.mpgrid > button { position: relative; z-index: 1; }
+.mpimg { width: 26px; height: 26px; object-fit: contain; border-radius: 4px; }
+.mplook output { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
+.mplook .lookrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.mplook .lookthumb { width: 72px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid var(--line); }
 .mpkey .mpemoji { font-size: 24px; line-height: 1; }
 .mplabel { font-size: calc(11.5px * var(--fs)); font-weight: 600; line-height: 1.15; max-width: 100%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-align: center; }
 .mpkey.sel { border-color: var(--text); box-shadow: 0 0 0 2px var(--accent); }
@@ -5006,21 +5013,22 @@ function mpActionError(a, depth = 0) {
 /** Every problem the phone would reject in a whole deck, in plain words (empty when it's valid). */
 function macroProblems(model) {
   const out = [], hex = /^#[0-9a-fA-F]{6}$/;
-  if (!model || model.version !== 1) return ['The deck needs "version": 1'];
+  if (!model || ![1, 2].includes(model.version)) return ['The deck needs "version": 2 (1 is still read)'];
   const profiles = model.profiles;
   if (!Array.isArray(profiles) || profiles.length < 1 || profiles.length > 16) return ['A deck has 1 to 16 profiles'];
   const ids = new Set(), profileIds = new Set(profiles.map(p => p.id)), links = [];
+  out.push(...mpLookProblems(model.look, 'The deck look'));
   const uniq = (id, where) => { if (!mpIdOk(id)) out.push(`${where}: the id "${id}" isn't valid`); else if (ids.has(id)) out.push(`${where}: the id "${id}" is used twice`); ids.add(id); };
   for (const p of profiles) {
     const pw = `Profile "${p.name}"`;
-    uniq(p.id, pw);
+    uniq(p.id, pw); out.push(...mpLookProblems(p.look, `${pw} look`));
     if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > 80) out.push(`${pw}: the name is 1 to 80 characters`);
     if (!(Number.isInteger(p.rows) && p.rows >= 2 && p.rows <= 6 && Number.isInteger(p.cols) && p.cols >= 2 && p.cols <= 8)) out.push(`${pw}: use 2 to 6 rows and 2 to 8 columns`);
     if (!Array.isArray(p.pages) || p.pages.length < 1 || p.pages.length > 16) { out.push(`${pw}: it needs 1 to 16 pages`); continue; }
     const pageIds = new Set(p.pages.map(g => g.id));
     for (const g of p.pages) {
       const gw = `${pw}, page "${g.name}"`;
-      uniq(g.id, gw);
+      uniq(g.id, gw); out.push(...mpLookProblems(g.look, `${gw} look`));
       if (typeof g.name !== 'string' || !g.name.trim() || g.name.length > 80) out.push(`${gw}: the name is 1 to 80 characters`);
       const cells = new Set();
       if ((g.buttons || []).length > p.rows * p.cols) out.push(`${gw}: more keys than the grid holds`);
@@ -5033,6 +5041,9 @@ function macroProblems(model) {
         if (b.icon != null && (typeof b.icon !== 'string' || b.icon.length > 40)) out.push(`${bw}: the icon name is up to 40 characters`);
         if (b.emoji != null && (typeof b.emoji !== 'string' || b.emoji.length > 32)) out.push(`${bw}: the emoji is up to 32 characters`);
         for (const k of ['color', 'textColor']) if (b[k] != null && !hex.test(b[k])) out.push(`${bw}: ${k === 'color' ? 'the colour' : 'the text colour'} must look like #285A78`);
+        if (b.textSize != null && !(Number.isInteger(b.textSize) && b.textSize >= 6 && b.textSize <= 40)) out.push(`${bw}: the label size is 6 to 40`);
+        if (b.align != null && !['center', 'start', 'end'].includes(b.align)) out.push(`${bw}: align is center, start or end`);
+        if (b.image != null && !/^a-[a-z0-9]{6,32}$/.test(b.image)) out.push(`${bw}: the image icon isn't an uploaded file`);
         const err = mpActionError(b.action);
         if (err) out.push(`${bw}: ${err}`);
         else links.push([b.action, pageIds, bw]);
@@ -5088,6 +5099,93 @@ function mpSummary(a, model, profile) {
     case 'http': return `${a.method} ${clip((a.url || '').replace(/^https?:\/\//, ''), 30)}`;
     default: return '';
   }
+}
+// MacroPads look (schema 2). Mirrors MacroLookCore.kt: the same themes, limits and cascade (deck, then profile, then page).
+const MP_LOOK_FONTS = [['system', 'System'], ['sans', 'Sans'], ['serif', 'Serif'], ['mono', 'Monospace'], ['rounded', 'Rounded'], ['condensed', 'Condensed'], ['custom', 'My font file']];
+const MP_LOOK_POSITIONS = [['below', 'Below the icon'], ['inside', 'Beside the icon'], ['none', 'Hidden']];
+const MP_LOOK_WEIGHTS = [[300, 'Light'], [400, 'Regular'], [500, 'Medium'], [600, 'Semibold'], [700, 'Bold'], [800, 'Extra bold'], [900, 'Black']];
+const MP_LOOK_FONT_CSS = {system: 'system-ui, sans-serif', sans: '"Helvetica Neue", Arial, sans-serif', serif: 'Georgia, "Times New Roman", serif', mono: 'ui-monospace, Menlo, Consolas, monospace',
+  rounded: 'ui-rounded, "Varela Round", system-ui, sans-serif', condensed: '"Arial Narrow", "Roboto Condensed", sans-serif'};
+const MP_THEMES = [
+  {id: 'studio', name: 'Studio', look: {bg: {type: 'gradient', colors: ['#1B2230', '#0E121A'], angle: 180}, font: {family: 'system', weight: 500}, key: {radius: 20, gap: 6, border: 1, gradient: true, shadow: 30}, icon: {size: 30}}},
+  {id: 'neon', name: 'Neon', look: {bg: {type: 'color', color: '#07040F'}, font: {family: 'mono', weight: 700, color: '#E0FFFF', upper: true, scale: 90}, key: {radius: 14, gap: 8, border: 2, borderColor: '#00F0FF', glow: 70, gradient: false, color: '#120B22'}, icon: {size: 32, tint: '#00F0FF'}}},
+  {id: 'minimal', name: 'Minimal', look: {bg: {type: 'color', color: '#F4F4F2'}, font: {family: 'sans', weight: 400, color: '#222222'}, key: {radius: 12, gap: 10, border: 1, borderColor: '#DDDDDD', gradient: false, shadow: 20, color: '#FFFFFF'}, icon: {size: 28, tint: '#222222'}}},
+  {id: 'paper', name: 'Paper', look: {bg: {type: 'color', color: '#F1E7D0'}, font: {family: 'serif', weight: 500, color: '#4A3B22'}, key: {radius: 8, gap: 8, border: 2, borderColor: '#C9B48A', gradient: false, shadow: 15, color: '#FBF4E4'}, icon: {size: 28, tint: '#6B5330'}}},
+  {id: 'oled', name: 'OLED', look: {bg: {type: 'oled'}, font: {family: 'system', weight: 500, color: '#EDEDED'}, key: {radius: 28, gap: 8, border: 1, borderColor: '#262626', gradient: false, color: '#0B0B0B'}, icon: {size: 30}}},
+  {id: 'sunset', name: 'Sunset', look: {bg: {type: 'gradient', colors: ['#FF7E5F', '#FEB47B', '#6A3093'], angle: 135}, font: {family: 'rounded', weight: 600, color: '#FFFFFF'}, key: {radius: 26, gap: 8, border: 0, gradient: false, shadow: 40, color: '#2B1630'}, icon: {size: 32}}},
+  {id: 'ocean', name: 'Ocean', look: {bg: {type: 'gradient', colors: ['#0F2027', '#203A43', '#2C5364'], angle: 90}, font: {family: 'condensed', weight: 500, color: '#E6F6FF'}, key: {radius: 18, gap: 6, border: 1, borderColor: '#4FA3C7', gradient: true, glow: 20, color: '#16384A'}, icon: {size: 30, tint: '#9BDCF5'}}},
+].map(t => ({...t, look: {theme: t.id, ...t.look}}));
+const MP_LOOK_RULES = {
+  bg: {type: ['color', 'gradient', 'image', 'oled'], color: 'hex', colors: 'stops', angle: [0, 315, 45], image: 'asset', blur: [0, 25], dim: [0, 90]},
+  font: {family: MP_LOOK_FONTS.map(f => f[0]), custom: 'asset', weight: [100, 900, 100], scale: [50, 200], position: MP_LOOK_POSITIONS.map(f => f[0]), color: 'hex', upper: 'bool'},
+  key: {radius: [0, 40], gap: [0, 24], border: [0, 6], borderColor: 'hex', glow: [0, 100], shadow: [0, 100], gradient: 'bool', color: 'hex'},
+  icon: {size: [16, 64], tint: 'hex'},
+};
+/** What the phone would reject in one look object (deck, profile or page), in plain words. */
+function mpLookProblems(look, where) {
+  const out = [], hex = /^#[0-9a-fA-F]{6}$/;
+  if (look == null) return out;
+  if (typeof look !== 'object' || Array.isArray(look)) return [`${where}: the look must be an object`];
+  for (const k of Object.keys(look)) if (k !== 'theme' && !MP_LOOK_RULES[k]) out.push(`${where}: unknown look section "${k}"`);
+  if (look.theme != null && !(typeof look.theme === 'string' && look.theme.length >= 1 && look.theme.length <= 24)) out.push(`${where}: the theme name is 1 to 24 characters`);
+  for (const [g, rules] of Object.entries(MP_LOOK_RULES)) {
+    const o = look[g]; if (o == null) continue;
+    if (typeof o !== 'object' || Array.isArray(o)) { out.push(`${where}: ${g} must be an object`); continue; }
+    for (const [k, v] of Object.entries(o)) {
+      const r = rules[k], w = `${where}, ${g} ${k}`;
+      if (v == null) continue;
+      if (!r) out.push(`${w}: not an option`);
+      else if (Array.isArray(r) && typeof r[0] === 'string') { if (!r.includes(v)) out.push(`${w}: use ${r.join(', ')}`); }
+      else if (Array.isArray(r)) { if (!(Number.isInteger(v) && v >= r[0] && v <= r[1] && (!r[2] || v % r[2] === 0))) out.push(`${w}: use ${r[0]} to ${r[1]}${r[2] ? ' in steps of ' + r[2] : ''}`); }
+      else if (r === 'hex') { if (!hex.test(v)) out.push(`${w}: use a colour like #285A78`); }
+      else if (r === 'bool') { if (typeof v !== 'boolean') out.push(`${w}: use on or off`); }
+      else if (r === 'stops') { if (!(Array.isArray(v) && v.length >= 2 && v.length <= 3 && v.every(c => hex.test(c)))) out.push(`${w}: use 2 or 3 colours like #285A78`); }
+      else if (r === 'asset') { if (!/^a-[a-z0-9]{6,32}$/.test(v)) out.push(`${w}: not an uploaded file`); }
+    }
+  }
+  if (look.bg?.type === 'gradient' && !look.bg.colors) out.push(`${where}: a gradient needs 2 or 3 colours`);
+  if (look.bg?.type === 'image' && !look.bg.image) out.push(`${where}: choose an image for the background`);
+  if (look.font?.family === 'custom' && !look.font.custom) out.push(`${where}: upload a font file to use a custom font`);
+  return out;
+}
+/** Sets (or, for an empty value, clears) one look option; returns the new look, or undefined when nothing is left. A hand edit drops the theme tag. */
+function mpLookWith(look, group, key, value) {
+  const next = JSON.parse(JSON.stringify(look || {})); delete next.theme;
+  if (value === '' || value == null) { if (next[group]) { delete next[group][key]; if (!Object.keys(next[group]).length) delete next[group]; } }
+  else (next[group] ??= {})[key] = value;
+  return Object.keys(next).length ? next : undefined;
+}
+/** Deck, profile and page looks merged option by option (later wins); only options someone set. */
+function mpLookResolve(...layers) {
+  const out = {bg: {}, font: {}, key: {}, icon: {}};
+  for (const l of layers) for (const g of Object.keys(out)) for (const [k, v] of Object.entries(l?.[g] || {})) if (v != null) out[g][k] = v;
+  if (out.bg.type === 'image' && !out.bg.image || out.bg.type === 'gradient' && !out.bg.colors) delete out.bg.type;
+  return out;
+}
+/** CSS for the editor preview: the board, a key and its label, from a resolved look; `url` maps an asset id to a fetchable address. */
+function mpLookCss(r, url = id => id, fontName = id => 'mpfont-' + id) {
+  const {bg, font, key, icon} = r, board = [], keyCss = [], label = [], img = [], glyph = [];
+  if (bg.type === 'color') board.push(`background:${bg.color || '#101418'}`);
+  else if (bg.type === 'oled') board.push('background:#000');
+  else if (bg.type === 'gradient') board.push(`background:linear-gradient(${bg.angle ?? 135}deg,${bg.colors.join(',')})`);
+  else if (bg.type === 'image') {
+    const dim = (bg.dim || 0) / 100;
+    img.push(`background:linear-gradient(rgba(0,0,0,${dim}),rgba(0,0,0,${dim})),url(${JSON.stringify(url(bg.image))}) center/cover`, `filter:blur(${(bg.blur || 0) * 0.5}px)`, 'position:absolute', 'inset:-14px', 'z-index:0');
+  }
+  if (key.gap != null) board.push(`gap:${key.gap}px`);
+  if (key.radius != null) keyCss.push(`border-radius:${key.radius}px`);
+  if (key.border != null || key.borderColor) keyCss.push(`border:${key.border ?? 1}px solid ${key.borderColor || 'rgba(255,255,255,.22)'}`);
+  const shadows = [];
+  if (key.glow) shadows.push(`0 0 ${Math.round(key.glow * 0.3)}px ${Math.round(key.glow * 0.08)}px ${key.borderColor || key.color || '#FFFFFF'}`);
+  if (key.shadow) shadows.push(`0 ${Math.round(key.shadow * 0.08)}px ${Math.round(key.shadow * 0.2)}px rgba(0,0,0,.45)`);
+  if (font.family) label.push(`font-family:${font.family === 'custom' && font.custom ? `"${fontName(font.custom)}", sans-serif` : MP_LOOK_FONT_CSS[font.family] || 'inherit'}`);
+  if (font.weight) label.push(`font-weight:${font.weight}`);
+  if (font.scale) label.push(`font-size:${Math.round(12 * font.scale) / 100}px`);
+  if (font.upper) label.push('text-transform:uppercase');
+  if (font.position === 'none') label.push('display:none');
+  if (icon.size) glyph.push(`width:${icon.size}px;height:${icon.size}px;font-size:${Math.round(icon.size * 0.9)}px`);
+  if (icon.tint) glyph.push(`color:${icon.tint}`);
+  return {board: board.join(';'), image: img.join(';'), key: keyCss.join(';'), shadows, label: label.join(';'), glyph: glyph.join(';'), textColor: font.color || '', inside: font.position === 'inside', gradient: key.gradient === true, keyColor: key.color || ''};
 }
 // ---- End console helpers ------------------------------------------------------------------
 
@@ -5929,9 +6027,10 @@ const MP_ICONS = {
   star: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/>', bolt: '<path d="M13 3L5 13h6l-1 8 8-10h-6z"/>', wifi: '<path d="M3 9a14 14 0 0 1 18 0M6 12.5a9.5 9.5 0 0 1 12 0M9 16a5 5 0 0 1 6 0M12 19.5h.01"/>',
   grid: '<rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/>', close: '<path d="M6 6l12 12M18 6L6 18"/>',
 };
-const mpIcon = name => `<svg class="i" viewBox="0 0 24 24">${MP_ICONS[name] || MP_ICONS.grid}</svg>`;
-const mpFace = b => b.emoji ? `<span class="mpemoji">${esc(b.emoji)}</span>` : mpIcon(b.icon);
-const mp = {model: null, saved: '', computers: [], pi: 0, pg: 0, sel: '', loaded: false, pair: null, timer: 0, rec: null, drag: ''};
+const mpIcon = (name, style = '') => `<svg class="i" viewBox="0 0 24 24"${style ? ` style="${esc(style)}"` : ''}>${MP_ICONS[name] || MP_ICONS.grid}</svg>`;
+const mpAssetUrl = id => apiBase() + 'macropads/assets/' + encodeURIComponent(id);
+const mpFace = (b, style = '') => b.image ? `<img class="mpimg" src="${esc(mpAssetUrl(b.image))}" alt="" style="${esc(style)}">` : b.emoji ? `<span class="mpemoji" style="${esc(style)}">${esc(b.emoji)}</span>` : mpIcon(b.icon, style);
+const mp = {model: null, saved: '', computers: [], pi: 0, pg: 0, sel: '', loaded: false, pair: null, timer: 0, rec: null, drag: '', look: 'deck', fonts: {}};
 const mpProf = () => mp.model.profiles[mp.pi] || mp.model.profiles[0];
 const mpPage = () => mpProf().pages[mp.pg] || mpProf().pages[0];
 const mpBtn = () => mpPage().buttons.find(b => b.id === mp.sel);
@@ -5980,19 +6079,33 @@ function drawMp() {
     <div class="tabs pagetabs" role="tablist" aria-label="Pages">${p.pages.map((x, i) => `<button type="button" role="tab" aria-selected="${i === mp.pg}" data-act="mpPage" data-i="${i}">${esc(x.name)}</button>`).join('')}<button type="button" class="tabadd" data-act="mpAddPage" aria-label="Add a page">${icon('plus')}</button></div>
     <div class="row" style="margin-bottom:12px"><label class="field grow">Page name<input data-input="mpPageName" value="${esc(pg.name)}" maxlength="80"></label>
       <button class="btn ghost danger" style="align-self:flex-end" data-act="mpDelPage" ${p.pages.length < 2 ? 'disabled' : ''}>${icon('trash')}Delete page</button></div>
-    <div class="mpwork"><div><div id="mpGrid"></div><div class="hint" style="margin-top:8px">Click a key to edit it, an empty cell to add one, and drag keys to rearrange. This is the layout the phone shows (${p.rows} × ${p.cols}).</div></div><div id="mpKey" class="card pad"></div></div>`);
-  drawMpGrid(); drawMpKey(); mpSyncState();
+    <div class="mpwork"><div><div id="mpGrid"></div><div class="hint" style="margin-top:8px">Click a key to edit it, an empty cell to add one, and drag keys to rearrange. This is the layout the phone shows (${p.rows} × ${p.cols}).</div></div><div id="mpKey" class="card pad"></div></div>
+    <div id="mpLook" class="card pad stack mplook" style="margin-top:16px"></div>`);
+  drawMpGrid(); drawMpKey(); drawMpLook(); mpSyncState();
+}
+const mpLookNow = () => mpLookResolve(mp.model.look, mpProf().look, mpPage().look);
+function mpKeyStyle(b, css) {
+  const color = css.keyColor || b.color || '#285A78', shadows = [...css.shadows];
+  if (b.id === mp.sel && shadows.length) shadows.push('0 0 0 2px var(--accent)');
+  return `background:${css.gradient ? `linear-gradient(135deg,color-mix(in srgb,${color} 91%,#fff),${color},color-mix(in srgb,${color} 87%,#000))` : color};color:${css.textColor || b.textColor || '#FFFFFF'};${css.key}${shadows.length ? `;box-shadow:${shadows.join(',')}` : ''}${css.inside ? ';flex-direction:row' : ''}`;
+}
+function mpLoadFonts(r) {
+  const id = r.font.family === 'custom' && r.font.custom;
+  if (!id || mp.fonts[id]) return;
+  mp.fonts[id] = 1;
+  const face = new FontFace('mpfont-' + id, `url(${JSON.stringify(mpAssetUrl(id))})`);
+  face.load().then(f => { document.fonts.add(f); drawMpGrid(); }).catch(() => { mp.fonts[id] = 0; });
 }
 function drawMpGrid() {
-  const p = mpProf(), pg = mpPage(), cells = [];
+  const p = mpProf(), pg = mpPage(), cells = [], look = mpLookNow(), css = mpLookCss(look, mpAssetUrl); mpLoadFonts(look);
   for (let r = 0; r < p.rows; r++) for (let c = 0; c < p.cols; c++) {
     const b = pg.buttons.find(x => x.row === r && x.col === c);
     cells.push(b ? `<button type="button" class="mpkey ${b.id === mp.sel ? 'sel' : ''} ${b.disabled ? 'off' : ''}" draggable="true" data-act="mpSelect" data-id="${esc(b.id)}" data-r="${r}" data-c="${c}"
-      style="background:${esc(b.color || '#285A78')};color:${esc(b.textColor || '#FFFFFF')}" aria-label="${esc(b.label)}, ${esc(mpSummary(b.action, mp.model, p))}${b.disabled ? ', disabled' : ''}">${mpFace(b)}<span class="mplabel">${esc(b.label)}</span></button>`
+      style="${esc(mpKeyStyle(b, css))}" aria-label="${esc(b.label)}, ${esc(mpSummary(b.action, mp.model, p))}${b.disabled ? ', disabled' : ''}">${mpFace(b, css.glyph)}<span class="mplabel" style="${esc(css.label)}">${esc(b.label)}</span></button>`
       : `<button type="button" class="mpempty" data-act="mpAddKey" data-r="${r}" data-c="${c}" data-r="${r}" aria-label="Add a key at row ${r + 1}, column ${c + 1}">${icon('plus')}</button>`);
   }
   const g = $('#mpGrid'); g._html = null;
-  g.innerHTML = `<div class="mpgrid" style="--cols:${p.cols};--rows:${p.rows}">${cells.join('')}</div>`;
+  g.innerHTML = `<div class="mpgrid" style="--cols:${p.cols};--rows:${p.rows};${esc(css.board)}">${css.image ? `<div class="mpbg" style="${esc(css.image)}"></div>` : ''}${cells.join('')}</div>`;
 }
 function mpSyncState() {
   const dirty = mpDirty(), probs = macroProblems(mp.model);
@@ -6065,6 +6178,108 @@ function drawMpKey() {
       ${b.toggle ? `<div class="fgrid"><label class="field">Label${mpIn('toggle.label', b.toggle.label, '', 'maxlength="80"')}</label><label class="field">Icon${mpSel('Toggle icon', 'toggle.icon', Object.keys(MP_ICONS).map(n => [n, n]), b.toggle.icon || 'mic')}</label>
         <label class="field">Colour<input type="color" data-input="mpColor" data-f="toggle.color" value="${esc(b.toggle.color || '#A53E54')}" style="width:52px;padding:2px"></label></div>` : ''}</div></details>
     <label class="check"><input type="checkbox" data-change="mpField" data-f="disabled" ${b.disabled ? 'checked' : ''}><span>Disabled<br><span class="hint">The key is shown dimmed and does nothing until you enable it.</span></span></label></div>`;
+}
+// The look panel: deck, profile or page appearance (background, font, keys, icons), previewed live in the grid above
+const mpLookOwner = () => mp.look === 'profile' ? mpProf() : mp.look === 'page' ? mpPage() : mp.model;
+function mpLookStore(next) { const o = mpLookOwner(); if (next) o.look = next; else delete o.look; }
+function drawMpLook() {
+  const el = $('#mpLook'); if (!el) return;
+  const L = mpLookOwner().look || {}, bg = L.bg || {}, ft = L.font || {}, ky = L.key || {}, ic = L.icon || {}, type = bg.type || 'app';
+  const range = (g, k, label, min, max, def, unit = '') => { const v = (L[g] || {})[k];
+    return `<label class="field">${label}<span class="row"><input type="range" min="${min}" max="${max}" value="${v ?? def}" data-input="mpLook" data-g="${g}" data-k="${k}" data-n data-unit="${unit}" aria-label="${esc(label)}"><output id="mpo-${g}-${k}" class="mono">${v ?? 'default'}${v == null ? '' : unit}</output></span></label>`; };
+  const colour = (g, k, label, hint = '') => { const v = (L[g] || {})[k] || '';
+    return `<label class="field">${label}<span class="row"><input type="color" data-input="mpLookColor" data-g="${g}" data-k="${k}" value="${esc((v || '#808080').toLowerCase())}" style="width:52px;padding:2px" aria-label="${esc(label)} picker"><input class="mono" data-input="mpLookColor" data-g="${g}" data-k="${k}" value="${esc(v)}" maxlength="7" placeholder="default" aria-label="${esc(label)} hex"></span>${hint ? `<span class="hint">${hint}</span>` : ''}</label>`; };
+  const sel = (g, k, label, opts, cur) => `<label class="field">${label}<select data-change="mpLook" data-g="${g}" data-k="${k}" ${k === 'weight' ? 'data-n' : ''}>${opts.map(([v, n]) => `<option value="${esc(v)}" ${String(v) === String(cur) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>`;
+  const stops = bg.colors || ['#1B2230', '#0E121A'];
+  const scope = {deck: 'The default look of every profile and page.', profile: `Applies to “${esc(mpProf().name)}” and overrides the deck look.`, page: `Applies to the page “${esc(mpPage().name)}” only.`}[mp.look];
+  el.innerHTML = `<div class="row" style="flex-wrap:wrap"><b class="grow" style="font-size:var(--text-lg)">Look</b><button class="btn ghost sm" data-act="mpLookReset" ${Object.keys(L).length ? '' : 'disabled'}>Reset to default</button></div>
+    <div class="tabs" role="tablist" aria-label="Look scope">${[['deck', 'Whole deck'], ['profile', 'This profile'], ['page', 'This page']].map(([k, n]) => `<button type="button" role="tab" aria-selected="${mp.look === k}" data-act="mpLookScope" data-s="${k}">${n}</button>`).join('')}</div>
+    <div class="hint">${scope} More specific looks override broader ones option by option. Changes preview in the grid above and are saved with the deck.</div>
+    <div class="field"><span>Themes${L.theme ? ` · ${esc((MP_THEMES.find(t => t.id === L.theme) || {name: L.theme}).name)}` : ''}</span><div class="row" style="flex-wrap:wrap;gap:6px">${MP_THEMES.map(t => `<button type="button" class="btn sm ${L.theme === t.id ? 'primary' : ''}" data-act="mpLookTheme" data-id="${t.id}">${esc(t.name)}</button>`).join('')}</div></div>
+    <h4 style="margin:6px 0 0">Background</h4>
+    <div class="fgrid">${sel('bg', 'type', 'Type', [['app', 'App default'], ['color', 'Colour'], ['gradient', 'Gradient'], ['image', 'Image'], ['oled', 'OLED black']], type)}
+      ${type === 'color' ? colour('bg', 'color', 'Colour') : ''}
+      ${type === 'gradient' ? [0, 1, 2].map(i => `<label class="field">${i < 2 ? 'Colour ' + (i + 1) : 'Colour 3 (optional)'}<span class="row"><input type="color" data-input="mpLookStop" data-i="${i}" value="${esc((stops[i] || '#808080').toLowerCase())}" style="width:52px;padding:2px" aria-label="Gradient colour ${i + 1} picker"><input class="mono" data-input="mpLookStop" data-i="${i}" value="${esc(stops[i] || '')}" maxlength="7" aria-label="Gradient colour ${i + 1} hex"></span></label>`).join('') + sel('bg', 'angle', 'Angle', Array.from({length: 8}, (_, i) => [i * 45, i * 45 + '°']), bg.angle ?? 135).replace('data-change="mpLook"', 'data-change="mpLook" data-n') : ''}
+      ${type === 'image' ? `<div class="field"><span>Image</span><div class="lookrow">${bg.image ? `<img class="lookthumb" src="${esc(mpAssetUrl(bg.image))}" alt="Background image preview">` : '<span class="hint">None chosen</span>'}<button type="button" class="btn sm" data-act="mpLookImage">${icon('upload')}${bg.image ? 'Replace' : 'Upload'} image</button></div>
+        <input type="file" id="mpLookFile" class="hidden" accept="image/png,image/jpeg,image/webp"><span class="hint">Scaled to fit on your computer first and stored on the phone (up to 1 MB).</span></div>
+        ${range('bg', 'blur', 'Blur', 0, 25, 0)}${range('bg', 'dim', 'Dim', 0, 90, 0, '%')}` : ''}</div>
+    <h4 style="margin:6px 0 0">Font</h4>
+    <div class="fgrid">${sel('font', 'family', 'Family', MP_LOOK_FONTS, ft.family || 'system')}
+      ${ft.family === 'custom' ? `<div class="field"><span>Font file</span><div class="lookrow"><span class="hint">${ft.custom ? 'Imported font in use' : 'None chosen'}</span><button type="button" class="btn sm" data-act="mpLookFont">${icon('upload')}${ft.custom ? 'Replace' : 'Upload'} .ttf or .otf</button></div><input type="file" id="mpLookFontFile" class="hidden" accept=".ttf,.otf,font/ttf,font/otf"><span class="hint">Up to 1 MB.</span></div>` : ''}
+      ${sel('font', 'weight', 'Weight', MP_LOOK_WEIGHTS, ft.weight || 500)}${range('font', 'scale', 'Text size', 50, 200, 100, '%')}
+      ${sel('font', 'position', 'Label position', MP_LOOK_POSITIONS, ft.position || 'below')}${colour('font', 'color', 'Text colour', 'Empty keeps each key’s own text colour.')}</div>
+    <label class="check"><input type="checkbox" data-change="mpLook" data-g="font" data-k="upper" ${ft.upper ? 'checked' : ''}><span>Uppercase labels</span></label>
+    <h4 style="margin:6px 0 0">Keys</h4>
+    <div class="fgrid">${range('key', 'radius', 'Corner radius', 0, 40, 20)}${range('key', 'gap', 'Gap', 0, 24, 6)}${range('key', 'border', 'Border', 0, 6, 1)}${colour('key', 'borderColor', 'Border colour')}
+      ${range('key', 'glow', 'Glow', 0, 100, 0)}${range('key', 'shadow', 'Shadow', 0, 100, 0)}${colour('key', 'color', 'Key colour', 'Empty keeps each key’s own colour.')}</div>
+    <label class="check"><input type="checkbox" data-change="mpLook" data-g="key" data-k="gradient" data-inv ${ky.gradient === false ? '' : 'checked'}><span>Gradient on keys</span></label>
+    <h4 style="margin:6px 0 0">Icons</h4>
+    <div class="fgrid">${range('icon', 'size', 'Icon size', 16, 64, 30)}${colour('icon', 'tint', 'Icon tint', 'Empty matches the label. Image icons are never tinted.')}</div>
+    <div class="hint">Images and fonts stay on the phone and the deck refers to them by id, so Export here keeps the look but not the files.</div>`;
+  const img = $('#mpLookFile'); if (img) img.onchange = async e => { const f = e.target.files[0]; if (f) mpLookUpload('image', f); };
+  const fnt = $('#mpLookFontFile'); if (fnt) fnt.onchange = async e => { const f = e.target.files[0]; if (f) mpLookUpload('font', f); };
+}
+function mpLookApply(g, k, v, structural) {
+  mpLookStore(mpLookWith(mpLookOwner().look, g, k, v));
+  const o = $(`#mpo-${g}-${k}`); if (o) o.textContent = v === '' || v == null ? 'default' : v + ($(`#mpLook [data-g="${g}"][data-k="${k}"]`).dataset.unit || '');
+  if (structural) drawMpLook();
+  mpTouch();
+}
+INP.mpLook = t => mpLookApply(t.dataset.g, t.dataset.k, 'n' in t.dataset ? Number(t.value) : t.value, false);
+CHG.mpLook = t => {
+  const g = t.dataset.g, k = t.dataset.k;
+  if (g === 'bg' && k === 'type') {
+    mpLookPatch(L => {
+      if (t.value === 'app') delete L.bg;
+      else { const bg = L.bg ||= {}; bg.type = t.value; if (t.value === 'color') bg.color ??= '#101418'; if (t.value === 'gradient') bg.colors ??= ['#1B2230', '#0E121A']; }
+    });
+    drawMpLook(); mpTouch(); return;
+  }
+  const v = t.type === 'checkbox' ? ('inv' in t.dataset ? (t.checked ? '' : false) : (t.checked || '')) : 'n' in t.dataset ? Number(t.value) : t.value;
+  if (g === 'font' && k === 'family' && v !== 'custom') { const L = mpLookOwner().look; if (L?.font) delete L.font.custom; }
+  mpLookApply(g, k, v, g === 'font' && k === 'family');
+};
+/** Edits a copy of the current scope's look (dropping the theme tag) and stores it; an empty look is removed. */
+function mpLookPatch(fn) { const L = JSON.parse(JSON.stringify(mpLookOwner().look || {})); delete L.theme; fn(L); mpLookStore(Object.keys(L).length ? L : undefined); }
+INP.mpLookColor = t => {
+  const g = t.dataset.g, k = t.dataset.k, v = t.value.trim();
+  if (t.type !== 'color' && v !== '' && !/^#[0-9a-fA-F]{6}$/.test(v)) return;
+  const out = v.toUpperCase();
+  $$(`#mpLook [data-input="mpLookColor"][data-g="${g}"][data-k="${k}"]`).forEach(x => { if (x !== t) x.value = x.type === 'color' ? (out || '#808080').toLowerCase() : out; });
+  mpLookApply(g, k, out, false);
+};
+INP.mpLookStop = t => {
+  const i = +t.dataset.i, v = t.value.trim().toUpperCase();
+  if (t.type !== 'color' && v !== '' && !/^#[0-9a-fA-F]{6}$/.test(v)) return;
+  const colors = (mpLookOwner().look?.bg?.colors || ['#1B2230', '#0E121A']).slice();
+  colors[i] = v; $$(`#mpLook [data-input="mpLookStop"][data-i="${i}"]`).forEach(x => { if (x !== t) x.value = x.type === 'color' ? (v || '#808080').toLowerCase() : v; });
+  const kept = colors.filter(Boolean); if (kept.length >= 2) mpLookApply('bg', 'colors', kept, false);
+};
+async function mpUpload(kind, blob, name) {
+  const r = await fetch(apiBase() + `macropads/assets?kind=${kind}&name=${encodeURIComponent(String(name).slice(0, 40))}`, {method: 'POST', body: blob, headers: {'X-Homedroid-Request': '1', 'Content-Type': 'application/octet-stream'}});
+  const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.statusText); return j;
+}
+/** Scales a picked picture down (long side 1600 px) and re-encodes it as JPEG under 900 KB, so the phone accepts it. */
+async function mpShrink(file) {
+  const bmp = await createImageBitmap(file); let scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)), q = .88;
+  for (;;) {
+    const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(bmp.width * scale)); c.height = Math.max(1, Math.round(bmp.height * scale));
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', q));
+    if (blob.size <= 900000) return blob;
+    if (q > .5) q -= .12; else scale *= .75;
+  }
+}
+async function mpLookUpload(kind, file) {
+  try {
+    if (kind === 'font' && file.size > 1048576) throw new Error('Fonts can be up to 1 MB');
+    const a = await mpUpload(kind, kind === 'image' ? await mpShrink(file) : file, file.name);
+    mpLookPatch(L => {
+      if (kind === 'image') L.bg = {...(L.bg || {}), type: 'image', image: a.id};
+      else L.font = {...(L.font || {}), family: 'custom', custom: a.id};
+    });
+    drawMpLook(); mpTouch();
+  } catch (e) { toast(e.message, true); }
 }
 // Editing: every field has a data-f path into the selected key
 function mpPathSet(root, path, value) {
@@ -6160,6 +6375,11 @@ Object.assign(ACT, {
   async mpDelPage() { if (await ask({title: `Delete the page ${mpPage().name}?`, text: 'Its keys are removed.', confirm: 'Delete', danger: true})) { mpProf().pages.splice(mp.pg, 1); mp.pg = 0; mp.sel = ''; drawMp(); } },
   mpSelect(b) { mp.sel = b.dataset.id; mp.rec = null; drawMpGrid(); drawMpKey(); if (narrowScreen.matches) $('#mpKey').scrollIntoView({block: 'start', behavior: 'smooth'}); },
   mpAddKey(b) { const k = mpNewButton(mp.model, mpProf(), mpPage(), +b.dataset.r, +b.dataset.c); mpPage().buttons.push(k); mp.sel = k.id; drawMpGrid(); drawMpKey(); mpSyncState(); },
+  mpLookScope(b) { mp.look = b.dataset.s; drawMpLook(); },
+  mpLookTheme(b) { mpLookStore(JSON.parse(JSON.stringify(MP_THEMES.find(t => t.id === b.dataset.id).look))); drawMpLook(); mpTouch(); },
+  mpLookReset() { mpLookStore(undefined); drawMpLook(); mpTouch(); },
+  mpLookImage: () => $('#mpLookFile').click(),
+  mpLookFont: () => $('#mpLookFontFile').click(),
   mpIconPick(b) { const k = mpBtn(); k.icon = b.dataset.name; delete k.emoji; drawMpKey(); mpTouch(); },
   mpKeyDel(b) { mpPathGet(mpBtn(), b.dataset.path).keys.splice(+b.dataset.i, 1); drawMpKey(); mpTouch(); },
   mpRec(b) { mp.rec = mp.rec === b.dataset.path ? null : b.dataset.path; mp.recCombo = null; drawMpKey(); if (mp.rec) $('#mpRecBox')?.focus(); },

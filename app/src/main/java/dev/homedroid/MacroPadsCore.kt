@@ -83,14 +83,17 @@ object MacroPadsCore {
         }
     }
     private fun errorArgument(message: String): Nothing = throw IllegalArgumentException(message)
-    private fun appearance(o: JSONObject, required: Boolean) {
+    private fun appearance(o: JSONObject, required: Boolean, exists: (String, String) -> Boolean = { _, _ -> true }) {
         if (required || o.has("label")) string(o, "label", 80, true)
         optionalString(o, "icon", 40); optionalString(o, "emoji", 32)
         for (k in listOf("color", "textColor")) if (o.has(k)) require(Regex("#[0-9a-fA-F]{6}").matches(string(o, k, 7))) { "$k must be #RRGGBB" }
+        MacroLookCore.validateKey(o, exists)
     }
-    fun validate(model: JSONObject): JSONObject {
+    /** Migrates a v1 deck to the current schema in place, then validates it. [exists] checks asset ids (id, kind). */
+    fun validate(model: JSONObject, exists: (String, String) -> Boolean = { _, _ -> true }): JSONObject {
         require(model.toString().length <= 524288) { "Deck exceeds 512 KB" }
-        require(integer(model, "version", 1..1) == 1)
+        MacroLookCore.migrate(model)
+        optionalLook(model, exists)
         val profiles = model.getJSONArray("profiles")
         require(profiles.length() in 1..16) { "Use 1–16 profiles" }
         val ids = HashSet<String>(); val profileIds = HashSet<String>()
@@ -98,13 +101,13 @@ object MacroPadsCore {
         for (pi in 0 until profiles.length()) {
             val p = profiles.getJSONObject(pi); val pid = id(p, "id")
             require(ids.add(pid)) { "IDs must be unique" }; profileIds.add(pid)
-            string(p, "name", 80)
+            string(p, "name", 80); optionalLook(p, exists)
             val rows = integer(p, "rows", 2..6); val cols = integer(p, "cols", 2..8)
             val pages = p.getJSONArray("pages"); require(pages.length() in 1..16) { "Use 1–16 pages" }
             val pageIds = HashSet<String>()
             for (pg in 0 until pages.length()) {
                 val page = pages.getJSONObject(pg); val pageId = id(page, "id")
-                require(ids.add(pageId)) { "IDs must be unique" }; pageIds.add(pageId); string(page, "name", 80)
+                require(ids.add(pageId)) { "IDs must be unique" }; pageIds.add(pageId); string(page, "name", 80); optionalLook(page, exists)
                 val buttons = page.getJSONArray("buttons"); require(buttons.length() <= rows * cols)
                 val positions = HashSet<Int>()
                 for (bi in 0 until buttons.length()) {
@@ -112,8 +115,8 @@ object MacroPadsCore {
                     require(ids.add(id(b, "id"))) { "IDs must be unique" }
                     val row = integer(b, "row", 0 until rows); val col = integer(b, "col", 0 until cols)
                     require(positions.add(row * cols + col)) { "Two buttons occupy the same cell" }
-                    appearance(b, true); target(b); bool(b, "disabled")
-                    if (b.has("toggle")) appearance(b.getJSONObject("toggle"), false)
+                    appearance(b, true, exists); target(b); bool(b, "disabled")
+                    if (b.has("toggle")) appearance(b.getJSONObject("toggle"), false, exists)
                     val a = b.getJSONObject("action"); validateAction(a); links.add(Triple(a, pageIds, pid))
                 }
             }
@@ -123,6 +126,10 @@ object MacroPadsCore {
             if (a.optString("kind") == "profile") require(a.getString("profile") in profileIds) { "Unknown profile link" }
         }
         return model
+    }
+    private fun optionalLook(o: JSONObject, exists: (String, String) -> Boolean) {
+        if (!o.has("look") || o.isNull("look")) return
+        MacroLookCore.validate(o.optJSONObject("look") ?: throw IllegalArgumentException("look must be an object"), exists)
     }
     fun starter(): JSONObject {
         val buttons = JSONArray()
@@ -142,7 +149,7 @@ object MacroPadsCore {
         add("Browser", "browser", JSONObject().put("kind", "open").put("target", "https://example.com"))
         add("Copy", "copy", hotkey("ctrl", "c")); add("Paste", "paste", hotkey("ctrl", "v")); add("Undo", "undo", hotkey("ctrl", "z")); add("Redo", "redo", hotkey("ctrl", "shift", "z"))
         add("Home Assistant", "light", JSONObject().put("kind", "http").put("method", "POST").put("url", "http://homeassistant.local:8123/api/webhook/REPLACE_ME").put("body", ""), "#806331", true)
-        return JSONObject().put("version", 1).put("profiles", JSONArray().put(JSONObject().put("id", "p-default").put("name", "Everyday")
+        return JSONObject().put("version", MacroLookCore.VERSION).put("profiles", JSONArray().put(JSONObject().put("id", "p-default").put("name", "Everyday")
             .put("rows", 3).put("cols", 5).put("pages", JSONArray().put(JSONObject().put("id", "pg-1").put("name", "Main").put("buttons", buttons)))))
     }
 }
