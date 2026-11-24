@@ -29,6 +29,7 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.min
+import kotlin.math.max
 
 /**
  * The dock: a clock face, vital tiles, and (when [interactive]) tap-to-show controls and the
@@ -470,6 +471,7 @@ class TileView(ctx: Context, private val colors: DockColors) : View(ctx) {
     private var shownValue = ""; private var shownDetail = ""; private var shownLabel = ""
     private var pad = 0f; private var yLabel = 0f; private var yValue = 0f; private var yDetail = 0f; private var yBar = 0f
     private var radius = 0f; private var dotR = 0f; private var showDetail = true
+    private var valueSize = 0f
 
     init { importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES }
 
@@ -478,7 +480,7 @@ class TileView(ctx: Context, private val colors: DockColors) : View(ctx) {
         val resize = t.value.length != data.value.length || t.detail != data.detail
         data = t
         contentDescription = "${t.label.lowercase()}: ${t.value}, ${t.detail}"
-        if (resize) fitText() else shownValue = ellipsize(t.value, value)
+        if (resize) fitText() else shownValue = fitValue(t.value)
         invalidate()
     }
 
@@ -487,10 +489,11 @@ class TileView(ctx: Context, private val colors: DockColors) : View(ctx) {
         radius = min(h * 0.22f, 26 * density)
         pad = min(16 * density, h * 0.15f)
         label.textSize = (h * 0.1f).coerceIn(10 * density, 13 * density)
-        value.textSize = (h * 0.25f).coerceIn(15 * density, 30 * density)
+        valueSize = (h * 0.25f).coerceIn(15 * density, 30 * density)
+        value.textSize = valueSize
         detail.textSize = (h * 0.11f).coerceIn(11 * density, 14 * density)
         yLabel = pad + label.textSize * 0.8f
-        yValue = yLabel + value.textSize * 1.12f
+        yValue = yLabel + valueSize * 1.12f
         yDetail = yValue + detail.textSize * 1.45f
         yBar = h - pad * 0.7f
         showDetail = yDetail + detail.textSize * 0.3f < yBar - 2 * density
@@ -501,8 +504,18 @@ class TileView(ctx: Context, private val colors: DockColors) : View(ctx) {
 
     private fun ellipsize(s: String, p: TextPaint) = if (width <= 0) s else TextUtils.ellipsize(s, p, width - pad * 2, TextUtils.TruncateAt.END).toString()
 
+    /** Shrinks a long value (down to 60%) before cutting it short: "↓ 103 B/s" beats "↓ 103…". */
+    private fun fitValue(s: String): String {
+        if (width <= 0 || valueSize <= 0f) return s
+        value.textSize = valueSize
+        val room = width - pad * 2
+        val w = value.measureText(s)
+        if (w > room) value.textSize = max(valueSize * 0.6f, valueSize * room / w)
+        return ellipsize(s, value)
+    }
+
     private fun fitText() {
-        shownValue = ellipsize(data.value, value); shownDetail = ellipsize(data.detail, detail)
+        shownValue = fitValue(data.value); shownDetail = ellipsize(data.detail, detail)
         // Leave room for the status dot at the top right.
         shownLabel = if (width <= 0) data.label else TextUtils.ellipsize(data.label, label, width - pad * 2 - dotR * 3, TextUtils.TruncateAt.END).toString()
     }
