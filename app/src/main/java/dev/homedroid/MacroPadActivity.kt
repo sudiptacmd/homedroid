@@ -101,9 +101,17 @@ class MacroPadActivity : MobileActivity() {
         }.also { root.addView(it) }
         val grid = ui.column(); val rows = p.getInt("rows"); val cols = p.getInt("cols")
         val buttons = objects(pg.getJSONArray("buttons"))
-        for (row in 0 until rows) {
+        // A wide grid on a tall screen would stretch keys into slabs: show the same keys, in the
+        // same reading order, with the long side running down the screen instead.
+        val portrait = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+        val shownCols = if (portrait && cols > rows) rows else cols
+        val shownRows = (rows * cols + shownCols - 1) / shownCols
+        for (r in 0 until shownRows) {
             val line = ui.row()
-            for (col in 0 until cols) {
+            for (c in 0 until shownCols) {
+                val index = r * shownCols + c
+                if (index >= rows * cols) { line.addView(android.view.View(this), ui.lp(0, -1, 1f, start = 3, end = 3, top = 3, bottom = 3)); continue }
+                val row = index / cols; val col = index % cols
                 val b = buttons.firstOrNull { it.getInt("row") == row && it.getInt("col") == col }
                 val key = key(b, row, col)
                 line.addView(key, ui.lp(0, -1, 1f, start = 3, end = 3, top = 3, bottom = 3))
