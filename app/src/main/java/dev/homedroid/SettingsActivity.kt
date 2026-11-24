@@ -26,6 +26,8 @@ class SettingsActivity : MobileActivity() {
     private lateinit var web: MobileUi.SwitchRow
     private lateinit var tailscale: MobileUi.SwitchRow
     private lateinit var tunnel: MobileUi.ListRow
+    private lateinit var repeater: MobileUi.SwitchRow
+    private lateinit var repeaterInfo: MobileUi.ListRow
     private lateinit var dns: MobileUi.ListRow
     private lateinit var mcp: MobileUi.SwitchRow
     private lateinit var mcpWrite: MobileUi.SwitchRow
@@ -92,6 +94,10 @@ class SettingsActivity : MobileActivity() {
         tailscale = design.switchRow(Icon.Nodes, "Tailscale", "Private access from your own devices, anywhere", cfg.tailscaleEnabled) { cfg.tailscaleEnabled = it; applyServices() }
         services.item(tailscale.view)
         services.item(design.listRow(Icon.Key, "Tailscale setup", "Device name and optional auth key") { editTailscale() }.view)
+        repeater = design.switchRow(Icon.Wifi, "Wi-Fi repeater", "", cfg.repeaterEnabled) { setRepeater(it) }
+        services.item(repeater.view)
+        repeaterInfo = design.listRow(Icon.Key, "Repeater network", "Name, passphrase and proxy address") { repeaterSheet() }
+        services.item(repeaterInfo.view)
         tunnel = design.listRow(Icon.Cloud, "Cloudflare Tunnel", "Reach this phone from the internet") { editTunnel() }
         services.item(tunnel.view)
         dns = design.listRow(Icon.Server, "App DNS servers", "Fixes app installs that fail with DNS errors") { editDns() }
@@ -191,6 +197,14 @@ class SettingsActivity : MobileActivity() {
         sshPort.setValue(cfg.sshPort.toString())
         web.set(cfg.webEnabled, animate = false)
         tailscale.set(cfg.tailscaleEnabled, animate = false)
+        val rep = WifiRepeater.get(this).json()
+        repeater.set(cfg.repeaterEnabled, animate = false)
+        repeater.row.setSupporting(when (rep.getString("state")) {
+            "running" -> "On · ${rep.getJSONObject("network").getString("name")} · ${rep.getJSONObject("clients").getInt("count")} connected"
+            "off" -> "Share this phone's internet with other devices through a proxy"
+            else -> rep.getString("message").ifEmpty { "Starting…" }
+        })
+        repeaterInfo.setVisible(cfg.repeaterEnabled)
         tunnel.setValue(if (cfg.tunnelToken.isNotEmpty()) "Connected" else "Off")
         dns.setValue(cfg.appsDns.ifEmpty { "Automatic" })
 
@@ -219,6 +233,47 @@ class SettingsActivity : MobileActivity() {
         try { startActivity(intent) } catch (_: android.content.ActivityNotFoundException) {
             startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
         }
+    }
+
+    private var repeaterPending = false
+
+    private fun setRepeater(on: Boolean) {
+        val r = WifiRepeater.get(this)
+        if (on && !r.hasPermission()) {
+            repeaterPending = true
+            requestPermissions(arrayOf(WifiRepeater.permission()), REQUEST_REPEATER)
+            return
+        }
+        applyRepeater(on)
+    }
+
+    private fun applyRepeater(on: Boolean) {
+        val problem = WifiRepeater.get(this).setEnabled(on)
+        if (problem != null) design.snackbar(problem)
+        else if (on) design.snackbar(if (ServerService.active) "Creating the Wi-Fi network…" else "On. It starts with the server.")
+        ui.postDelayed({ bind() }, 1500)
+        bind()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != REQUEST_REPEATER || !repeaterPending) return
+        repeaterPending = false
+        if (grantResults.firstOrNull() == android.content.pm.PackageManager.PERMISSION_GRANTED) applyRepeater(true)
+        else { repeater.set(false); design.snackbar("The repeater needs permission to create a Wi-Fi network") }
+    }
+
+    private fun repeaterSheet() {
+        val j = WifiRepeater.get(this).json()
+        val net = j.getJSONObject("network")
+        val proxy = j.getJSONObject("proxy")
+        val s = design.sheet("Repeater network", "Join this network from another device, then set a proxy there.")
+        val text = "Network: ${net.getString("name")}\nPassphrase: ${net.getString("passphrase")}\nProxy: ${proxy.getString("http")}\nSOCKS5: ${proxy.getString("socks")}\nAuto-config: ${proxy.getString("pac")}\n\nThe web dashboard (Modules, Wi-Fi repeater) has a QR code and step-by-step help for each device."
+        s.body.addView(design.text(text, TypeStyle.BodyMedium, p.onSurface).apply {
+            setTextIsSelectable(true); background = design.shape(p.surfaceHighest, Shape.MD)
+            setPadding(design.dp(Space.MD), design.dp(Space.MD), design.dp(Space.MD), design.dp(Space.MD))
+        }, design.lp(top = Space.SM))
+        s.done(); s.show()
     }
 
     private fun applyServices() { if (ServerService.active) ServerService.restart(this) }
@@ -401,6 +456,7 @@ class SettingsActivity : MobileActivity() {
 
     private companion object {
         const val DEFAULT_SSH = Config.DEFAULT_SSH_PORT
+        const val REQUEST_REPEATER = 77
     }
 
     override fun onDestroy() { ui.removeCallbacksAndMessages(null); super.onDestroy() }
