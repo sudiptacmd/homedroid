@@ -126,9 +126,7 @@ class MainActivity : MobileActivity() {
 
         page.addView(design.header("Tools", "More ways to put this phone to work"))
         design.grid(page, listOf(
-            // TODO(dock): wire Dock mode once DockActivity lands (feature branch): make the tile
-            //  clickable with { DockActivity.open(this) } and drop the "Soon" badge.
-            design.actionTile(Icon.Dock, "Dock", "Standby clock and status while charging", badge = "Soon", tone = Tone.Neutral, action = null),
+            design.actionTile(Icon.Dock, "Dock", "Standby clock and status while charging", tone = Tone.Primary, action = { DockActivity.open(this) }),
             // TODO(macropads): wire MacroPads once MacroPadActivity lands (feature branch): make the
             //  tile clickable with { MacroPadActivity.open(this) } and drop the "Soon" badge.
             design.actionTile(Icon.Keypad, "MacroPads", "Control your PC with custom buttons", badge = "Soon", tone = Tone.Neutral, action = null),
