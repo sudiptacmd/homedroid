@@ -28,6 +28,7 @@ class Dashboard(private val ctx: Context) {
     private val ai = Ai(ctx)
     private val wol = WakeOnLan(ctx, cfg)
     private val routines = Routines(ctx, ai)
+    private val databases = Databases(paths, files, apps, deploys, alpine)
 
     fun start() {
         http.start()
@@ -46,6 +47,7 @@ class Dashboard(private val ctx: Context) {
         routines.stop()
         ai.stop()
         network.stop()
+        databases.close()
         cluster.stop()
         http.stop()
     }
@@ -195,6 +197,8 @@ class Dashboard(private val ctx: Context) {
             r.method == "POST" && seg == listOf("deploys") -> createDeploy(r)
             r.method == "POST" && seg.size == 3 && seg[0] == "deploys" -> deployAction(seg[1], seg[2])
             r.method == "DELETE" && seg.size == 2 && seg[0] == "deploys" -> deleteDeploy(seg[1])
+            seg.firstOrNull() == "db" -> databases.handle(r, seg.drop(1).filter { it.isNotEmpty() })
+            seg.firstOrNull() == "docs" -> databases.handleDocs(r, seg.drop(1).filter { it.isNotEmpty() })
             seg[0] == "files" -> files.handle(r, seg.drop(1).filter { it.isNotEmpty() })
             r.method == "GET" && seg == listOf("terminal") ->
                 if (peer != null) Terminal.open(r, ServerService.running, fromPeer = true) { cluster.state.byFingerprint(r.peer) != null }
