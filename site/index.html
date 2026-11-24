@@ -3,514 +3,897 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Homedroid – Turn your old Android phone into a home server (no root)</title>
-<meta name="description" content="Homedroid turns an old Android phone into a self-hosted home server: Jellyfin with hardware transcoding, a NAS for USB drives and SD cards, Immich, qBittorrent, Home Assistant, AdGuard Home ad blocking, Wake on LAN, network tools, on-phone AI, SSH and a web dashboard. No root, one free APK.">
-<meta name="keywords" content="android home server, old phone server, self-hosted, adguard home android, wake on lan android, android network tools, jellyfin android, android nas, no root, home server app, raspberry pi alternative, immich android, qbittorrent android, llama.cpp android, homelab">
-<meta name="author" content="Sudipta Goswami">
-<link rel="canonical" href="https://sudiptacmd.github.io/homedroid/">
-<meta name="theme-color" content="#07090d">
-<link rel="icon" href="img/homedroid-mark.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="img/homedroid-mark-512.png">
+<title>Homedroid: turn an old Android phone into a home server, no root</title>
+<meta name="description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.">
+<link rel="canonical" href="https://homedroid.seltiv.com/">
+<meta name="theme-color" content="#0a100f">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Homedroid">
-<meta property="og:title" content="Homedroid – your old Android phone, now a home server">
-<meta property="og:description" content="Jellyfin, a NAS, photo backup, torrents, AI and a web dashboard on any Android 10+ phone. No root, one free APK.">
-<meta property="og:url" content="https://sudiptacmd.github.io/homedroid/">
-<meta property="og:image" content="https://sudiptacmd.github.io/homedroid/img/social-preview.png">
+<meta property="og:title" content="Homedroid: turn an old Android phone into a home server, no root">
+<meta property="og:description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.">
+<meta property="og:url" content="https://homedroid.seltiv.com/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="640">
-<meta property="og:image:alt" content="Homedroid: your old phone, now a home server">
+<meta property="og:image:alt" content="Homedroid 0.9.5 beta: an old Android phone running a home server and web dashboard">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Homedroid – your old Android phone, now a home server">
-<meta name="twitter:description" content="Jellyfin, a NAS, photo backup, torrents, AI and a web dashboard on any Android 10+ phone. No root.">
-<meta name="twitter:image" content="https://sudiptacmd.github.io/homedroid/img/social-preview.png">
+<meta name="twitter:title" content="Homedroid: turn an old Android phone into a home server, no root">
+<meta name="twitter:description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" as="image" href="/media/dashboard-overview.webp" fetchpriority="high">
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Homedroid: turn an old Android phone into a home server, no root",
+  "description": "Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.",
+  "url": "https://homedroid.seltiv.com/",
+  "dateModified": "2026-11-25",
+  "isPartOf": {
+    "@id": "https://homedroid.seltiv.com/#website"
+  }
+}
+</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
+  "@id": "https://homedroid.seltiv.com/#app",
   "name": "Homedroid",
-  "description": "Turn an old Android phone into a home server: Jellyfin with hardware transcoding, a NAS for USB drives and SD cards, Immich, qBittorrent, Home Assistant, on-phone AI, SSH and a web dashboard. No root.",
+  "url": "https://homedroid.seltiv.com/",
+  "softwareVersion": "0.9.5-beta",
+  "operatingSystem": "Android 10 or newer",
   "applicationCategory": "UtilitiesApplication",
-  "operatingSystem": "Android 10+",
-  "softwareVersion": "0.9.4-beta",
-  "license": "https://www.gnu.org/licenses/gpl-3.0.html",
-  "author": { "@type": "Person", "name": "Sudipta Goswami", "url": "https://github.com/sudiptacmd" },
-  "url": "https://sudiptacmd.github.io/homedroid/",
-  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases",
-  "codeRepository": "https://github.com/sudiptacmd/homedroid",
-  "image": "https://sudiptacmd.github.io/homedroid/img/social-preview.png",
-  "screenshot": "https://sudiptacmd.github.io/homedroid/media/overview.jpg",
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  "license": "https://github.com/sudiptacmd/homedroid/blob/main/LICENSE",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta",
+  "screenshot": "https://homedroid.seltiv.com/media/dashboard-overview.webp",
+  "author": {
+    "@id": "https://homedroid.seltiv.com/#author"
+  },
+  "featureList": [
+    "No root Android home server",
+    "Jellyfin hardware encoding",
+    "USB and SD storage via browser and SFTP",
+    "Dock mode: five clock faces",
+    "MacroPads",
+    "Six dashboard layouts and 13 themes",
+    "Local AI with OpenAI-compatible API",
+    "MCP server for AI assistants",
+    "SQLite browser, SQL console and JSON document store",
+    "Domains, dynamic DNS, firewall and request logs",
+    "Build pipelines for deployments",
+    "Mail server (Stalwart) with guided setup",
+    "Wi-Fi repeater through a built-in proxy",
+    "Phone clusters"
+  ]
 }
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #07090d; --bg-2: #0c1016; --panel: rgba(18, 24, 33, .72); --line: rgba(126, 231, 135, .14); --line-2: rgba(255, 255, 255, .08);
-  --text: #e8eef6; --text-2: #a9b4c4; --muted: #6f7b8c; --green: #7ee787; --green-2: #3ddc84; --cyan: #39d0ff; --violet: #a78bfa;
-  --r: 18px; --mono: "JetBrains Mono", ui-monospace, monospace; --display: "Space Grotesk", system-ui, sans-serif;
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": "https://homedroid.seltiv.com/desktop/#app",
+  "name": "Homedroid Desktop",
+  "url": "https://homedroid.seltiv.com/desktop/",
+  "softwareVersion": "0.9.5-beta",
+  "operatingSystem": [
+    "Linux",
+    "Windows",
+    "macOS"
+  ],
+  "applicationCategory": "UtilitiesApplication",
+  "license": "https://github.com/sudiptacmd/homedroid/blob/main/LICENSE",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta",
+  "screenshot": "https://homedroid.seltiv.com/media/phone-macropads-oled.webp",
+  "author": {
+    "@id": "https://homedroid.seltiv.com/#author"
+  },
+  "featureList": [
+    "Wireless phone webcam",
+    "Linux v4l2loopback output",
+    "Experimental Windows 11 virtual camera",
+    "Local MJPEG stream for OBS",
+    "MacroPads desktop actions"
+  ]
 }
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-a { color: var(--green); text-decoration: none; }
-a:hover { text-decoration: underline; }
-img, video { max-width: 100%; display: block; }
-.wrap { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
-h1, h2, h3 { font-family: var(--display); letter-spacing: -.02em; line-height: 1.08; margin: 0; }
-h2 { font-size: clamp(30px, 4.4vw, 52px); }
-.eyebrow { font: 500 12.5px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--green); display: inline-flex; gap: 10px; align-items: center; }
-.eyebrow::before { content: ""; width: 26px; height: 1px; background: currentColor; box-shadow: 0 0 10px currentColor; }
-.lead { color: var(--text-2); font-size: clamp(17px, 1.6vw, 19px); max-width: 640px; }
-.grad { background: linear-gradient(92deg, var(--green) 0%, var(--cyan) 60%, var(--violet) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-
-/* Background: grid, glow, scanline */
-.bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
-.bg::before { content: ""; position: absolute; inset: -50% -50% 0; background-image: linear-gradient(var(--line-2) 1px, transparent 1px), linear-gradient(90deg, var(--line-2) 1px, transparent 1px); background-size: 64px 64px; transform: perspective(700px) rotateX(58deg) translateY(-10%); transform-origin: top; mask-image: linear-gradient(to bottom, transparent 0%, #000 35%, transparent 85%); animation: grid 18s linear infinite; opacity: .55; }
-.bg::after { content: ""; position: absolute; inset: 0; background: radial-gradient(900px 520px at 78% -8%, rgba(126, 231, 135, .16), transparent 60%), radial-gradient(700px 480px at 6% 18%, rgba(57, 208, 255, .10), transparent 60%), radial-gradient(800px 600px at 50% 110%, rgba(167, 139, 250, .08), transparent 60%); }
-@keyframes grid { to { background-position: 0 64px, 0 0; } }
-
-/* Nav */
-nav { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px) saturate(140%); background: rgba(7, 9, 13, .62); border-bottom: 1px solid var(--line-2); }
-nav .wrap { display: flex; align-items: center; gap: 22px; height: 64px; }
-.brand { display: flex; align-items: center; gap: 10px; color: var(--text); font: 700 19px var(--display); }
-.brand:hover { text-decoration: none; }
-.brand img { width: 30px; height: 30px; filter: drop-shadow(0 0 10px rgba(126, 231, 135, .55)); }
-nav .links { display: flex; gap: 22px; margin-left: auto; }
-nav .links a { color: var(--text-2); font-size: 14.5px; }
-nav .links a:hover { color: var(--text); text-decoration: none; }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 46px; padding: 0 20px; border-radius: 12px; font: 600 15px Inter, sans-serif; border: 1px solid var(--line-2); color: var(--text); background: rgba(255, 255, 255, .03); transition: transform .15s, box-shadow .2s, border-color .2s, background .2s; cursor: pointer; white-space: nowrap; }
-.btn:hover { text-decoration: none; transform: translateY(-1px); border-color: rgba(255, 255, 255, .22); background: rgba(255, 255, 255, .06); }
-.btn.primary { color: #04130a; background: linear-gradient(180deg, #9af0a2, var(--green-2)); border-color: transparent; box-shadow: 0 0 0 1px rgba(126, 231, 135, .4), 0 10px 40px -10px rgba(61, 220, 132, .7); }
-.btn.primary:hover { box-shadow: 0 0 0 1px rgba(126, 231, 135, .6), 0 14px 50px -8px rgba(61, 220, 132, .9); }
-.btn.sm { height: 38px; padding: 0 14px; font-size: 14px; border-radius: 10px; }
-.btn svg { width: 18px; height: 18px; flex: none; }
-.star-count { font: 500 12.5px var(--mono); color: var(--text-2); padding-left: 8px; border-left: 1px solid var(--line-2); }
-
-/* Hero */
-.hero { overflow-x: clip; padding: clamp(40px, 6vw, 72px) 0 60px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
-.hero h1 { font-size: clamp(42px, 6.6vw, 82px); margin: 18px 0 22px; }
-.hero .cta { display: flex; gap: 12px; flex-wrap: wrap; margin: 30px 0 18px; }
-.hero .meta { font: 13px var(--mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 18px; }
-.hero .meta span::before { content: "▹ "; color: var(--green); }
-.device { position: relative; justify-self: center; width: min(310px, 74vw, calc((100vh - 150px) / 2.3)); filter: drop-shadow(0 40px 60px rgba(0, 0, 0, .7)); }
-.device::before { content: ""; position: absolute; inset: 8% -18% 4%; background: radial-gradient(closest-side, rgba(126, 231, 135, .28), transparent 75%); filter: blur(30px); z-index: -1; }
-/* Galaxy S9, front: curved-edge display, slim top and bottom bezels, side buttons. */
-.s9 { position: relative; border-radius: 15% / 7.2%; padding: 1.1%; background: linear-gradient(90deg, #4a515b, #1a1e23 6%, #101317 50%, #1a1e23 94%, #4a515b); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12), 0 0 0 1px rgba(0, 0, 0, .6); }
-.s9 .key { position: absolute; width: 1.2%; border-radius: 2px; background: linear-gradient(90deg, #3a4048, #15181c); }
-.s9 .vol { left: -1%; top: 17%; height: 10.5%; }
-.s9 .bixby { left: -1%; top: 31%; height: 5.5%; }
-.s9 .power { right: -1%; top: 23%; height: 7%; background: linear-gradient(270deg, #3a4048, #15181c); }
-.s9 .glass { position: relative; border-radius: 14% / 6.9%; background: #040506; padding: 9.4% 0 7.6%; overflow: hidden; }
-.s9 .glass::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(115deg, rgba(255, 255, 255, .10), transparent 28%, transparent 70%, rgba(255, 255, 255, .05)); }
-.s9 .top { position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 100 / 9.4; z-index: 4; }
-.s9 .top span { position: absolute; top: 50%; transform: translateY(-50%); border-radius: 50%; }
-.s9 .ear { left: 50%; width: 20%; height: 0; padding-top: 1.7%; border-radius: 99px !important; transform: translate(-50%, -50%) !important; background: linear-gradient(#0c0e11, #2c323b); box-shadow: 0 1px 0 rgba(255, 255, 255, .10), inset 0 1px 2px rgba(0, 0, 0, .9); }
-.s9 .iris { left: 14%; width: 4.4%; aspect-ratio: 1; background: radial-gradient(circle at 38% 35%, #9a5a6c 0 6%, #4a2432 22%, #241018 60%, #140a0f); box-shadow: 0 0 0 1px #22262d; }
-.s9 .led { left: 21%; width: 2.8%; aspect-ratio: 1; background: radial-gradient(circle at 40% 35%, #6b3a4a, #1f1016 70%); }
-.s9 .prox { right: 29%; width: 2.6%; aspect-ratio: 1; background: radial-gradient(circle at 40% 35%, #3b424d, #15181d 70%); }
-.s9 .cam { right: 18%; width: 6.4%; aspect-ratio: 1; background: radial-gradient(circle at 38% 34%, #b9c8ff 0 5%, #3a55b8 12%, #142048 26%, #05070c 48%, #2a303a 62%, #12151a 74%); box-shadow: 0 0 0 1px #2e343e, 0 0 6px rgba(80, 110, 255, .25); }
-.s9 .screen { position: relative; margin: 0 .9%; border-radius: 7.6% / 3.6%; overflow: hidden; background: #e9f2ec; }
-.s9 video { width: 100%; aspect-ratio: 1080 / 2400; object-fit: cover; }
-/* The display bends round the sides: shade and catch light along both long edges. */
-.s9 .screen::before, .s9 .screen::after { content: ""; position: absolute; top: 0; bottom: 0; width: 8%; pointer-events: none; z-index: 1; }
-.s9 .screen::before { left: 0; background: linear-gradient(90deg, rgba(0, 0, 0, .72), rgba(0, 0, 0, .32) 30%, rgba(0, 0, 0, .08) 65%, transparent); }
-.s9 .screen::after { right: 0; background: linear-gradient(270deg, rgba(0, 0, 0, .72), rgba(0, 0, 0, .32) 30%, rgba(0, 0, 0, .08) 65%, transparent); }
-/* Light running along the bent glass on both sides. */
-.s9 .glass::before { content: ""; position: absolute; inset: 4% 0; pointer-events: none; z-index: 3; background: linear-gradient(90deg, rgba(255, 255, 255, .0) 0, rgba(255, 255, 255, .55) .5%, rgba(255, 255, 255, .0) 1.6%, transparent 98.4%, rgba(255, 255, 255, .4) 99.5%, transparent 100%); -webkit-mask: linear-gradient(transparent, #000 12%, #000 88%, transparent); mask: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
-.s9 .glare { position: absolute; inset: 0; pointer-events: none; z-index: 2; background: linear-gradient(118deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 26%); }
-
-/* Ticker */
-.ticker { border-block: 1px solid var(--line-2); background: rgba(12, 16, 22, .6); overflow: hidden; }
-.ticker .row { display: flex; gap: 46px; padding: 16px 0; width: max-content; animation: tick 38s linear infinite; font: 500 14px var(--mono); color: var(--text-2); }
-.ticker .row span::before { content: "◆"; color: var(--green); margin-right: 12px; font-size: 10px; vertical-align: 2px; }
-@keyframes tick { to { transform: translateX(-50%); } }
-
-section { padding: clamp(70px, 10vw, 120px) 0 0; }
-.head { display: grid; gap: 16px; margin-bottom: 42px; }
-
-/* Feature showcase */
-.show { display: grid; gap: 22px; }
-.feat { display: grid; grid-template-columns: 1fr 1.25fr; gap: 0; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--panel); overflow: hidden; position: relative; }
-.feat::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; background: linear-gradient(130deg, rgba(126, 231, 135, .45), transparent 30%, transparent 70%, rgba(57, 208, 255, .35)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; opacity: .6; }
-.feat:nth-child(even) { grid-template-columns: 1.25fr 1fr; }
-.feat:nth-child(even) .txt { order: 2; }
-.feat .txt { padding: clamp(24px, 3.4vw, 44px); display: flex; flex-direction: column; justify-content: center; gap: 14px; }
-.feat h3 { font-size: clamp(24px, 2.6vw, 32px); }
-.feat p { color: var(--text-2); margin: 0; }
-.feat ul { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; color: var(--text-2); font-size: 15px; }
-.feat li::before { content: "→"; color: var(--green); margin-right: 10px; font-family: var(--mono); }
-.feat .vid { position: relative; background: #05070a; border-left: 1px solid var(--line-2); min-height: 260px; }
-.feat:nth-child(even) .vid { border-left: 0; border-right: 1px solid var(--line-2); }
-.feat .vid video { width: 100%; height: 100%; object-fit: cover; object-position: left top; }
-.feat .tag { position: absolute; left: 14px; top: 14px; font: 500 11.5px var(--mono); letter-spacing: .08em; color: var(--green); background: rgba(5, 7, 10, .75); border: 1px solid var(--line); padding: 5px 9px; border-radius: 8px; backdrop-filter: blur(6px); }
-.kicker { font: 500 12px var(--mono); color: var(--cyan); letter-spacing: .12em; text-transform: uppercase; }
-
-/* Module grid */
-.mods { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
-.mod { border: 1px solid var(--line-2); border-radius: 14px; padding: 20px; background: rgba(14, 19, 26, .6); transition: border-color .2s, transform .2s, background .2s; }
-.mod:hover { border-color: rgba(126, 231, 135, .35); transform: translateY(-2px); background: rgba(18, 26, 34, .8); }
-.mod .ic { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-size: 19px; background: rgba(126, 231, 135, .08); border: 1px solid var(--line); margin-bottom: 14px; }
-.mod b { display: block; font: 600 16.5px var(--display); margin-bottom: 4px; }
-.mod span { color: var(--text-2); font-size: 14.5px; }
-.mod code { font: 12px var(--mono); color: var(--muted); display: block; margin-top: 10px; }
-
-/* Tech */
-.tech { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.card { border: 1px solid var(--line-2); border-radius: var(--r); padding: 28px; background: var(--panel); position: relative; overflow: hidden; }
-.card .n { font: 500 13px var(--mono); color: var(--green); }
-.card h3 { font-size: 22px; margin: 12px 0 12px; }
-.card p { color: var(--text-2); margin: 0 0 12px; font-size: 15.5px; }
-.card pre { margin: 16px 0 0; font: 12.5px/1.65 var(--mono); color: #b8f5bd; background: #05080b; border: 1px solid var(--line); border-radius: 12px; padding: 14px; overflow-x: auto; white-space: pre; }
-.card pre i { color: var(--muted); font-style: normal; }
-.card::after { content: ""; position: absolute; width: 220px; height: 220px; right: -90px; top: -90px; background: radial-gradient(circle, rgba(126, 231, 135, .14), transparent 70%); }
-
-/* Video */
-.player { border-radius: 22px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 0 0 1px rgba(126, 231, 135, .12), 0 0 90px -20px rgba(126, 231, 135, .35); background: #05070a; aspect-ratio: 16 / 9; position: relative; }
-.player video { width: 100%; height: 100%; }
-.player .fallback { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--text-2); padding: 20px; }
-
-/* Get started */
-.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; counter-reset: s; }
-.step { border: 1px solid var(--line-2); border-radius: 14px; padding: 22px; background: rgba(14, 19, 26, .6); counter-increment: s; }
-.step::before { content: "0" counter(s); font: 500 13px var(--mono); color: var(--green); display: block; margin-bottom: 10px; }
-.step b { font: 600 17px var(--display); display: block; margin-bottom: 6px; }
-.step p { margin: 0; color: var(--text-2); font-size: 14.5px; }
-.term { margin-top: 18px; font: 13.5px/1.8 var(--mono); background: #05080b; border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; color: #cfe9d2; overflow-x: auto; white-space: pre; }
-.term .p { color: var(--green); }
-.term .c { color: var(--muted); }
-
-/* Contribute */
-.contrib { border-radius: 24px; padding: clamp(28px, 5vw, 56px); border: 1px solid var(--line); background: radial-gradient(600px 300px at 90% 0%, rgba(126, 231, 135, .16), transparent 70%), radial-gradient(500px 300px at 0% 100%, rgba(57, 208, 255, .12), transparent 70%), var(--bg-2); display: grid; grid-template-columns: 1.1fr .9fr; gap: 36px; align-items: center; }
-.ways { display: grid; gap: 12px; }
-.way { display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line-2); background: rgba(7, 9, 13, .55); color: var(--text); transition: border-color .2s, transform .2s; }
-.way:hover { text-decoration: none; border-color: rgba(126, 231, 135, .4); transform: translateX(3px); }
-.way .e { font-size: 20px; line-height: 1.2; }
-.way b { display: block; font-weight: 600; }
-.way span { color: var(--text-2); font-size: 14px; }
-
-footer { margin-top: 110px; border-top: 1px solid var(--line-2); padding: 34px 0 50px; color: var(--muted); font-size: 14px; }
-footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 30px; justify-content: space-between; }
-footer a { color: var(--text-2); }
-
-.reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
-.reveal.on { opacity: 1; transform: none; }
-
-@media (max-width: 960px) {
-  .hero { grid-template-columns: 1fr; }
-  .feat, .feat:nth-child(even) { grid-template-columns: 1fr; }
-  .feat:nth-child(even) .txt { order: 0; }
-  .feat .vid, .feat:nth-child(even) .vid { border: 0; border-top: 1px solid var(--line-2); aspect-ratio: 16 / 10; min-height: 0; }
-  .tech { grid-template-columns: 1fr; }
-  .steps { grid-template-columns: 1fr 1fr; }
-  .contrib { grid-template-columns: 1fr; }
-  nav .links { display: none; }
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is Homedroid?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Homedroid is a free, open-source Android home server app. Install one APK on an old Android phone to run Jellyfin, file storage, web apps and other services, then manage them from a browser on port 8800."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Homedroid need root or Termux?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Homedroid runs as an ordinary Android app. It bundles its own tools and uses proot for apps that need Alpine Linux. You do not need root, Termux or a replacement Android ROM."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which phones can run Homedroid?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I leave an old phone plugged in as a server?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use a phone with a healthy battery and keep it ventilated. Stop using a swollen or damaged battery. Watch temperature under load, reduce heavy jobs if it gets hot, and use the manufacturer’s charge limit if available. Homedroid does not add charge limiting without root. Dock mode’s OLED care reduces static screen exposure; it cannot guarantee against burn-in."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I access the server away from home?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use Tailscale for private access from your own devices, or Cloudflare Tunnel to publish a service at an HTTPS hostname. Both work behind CGNAT without router port forwarding. The direct LAN dashboard uses plain HTTP, so use it only on a trusted network."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does an old phone compare with a Raspberry Pi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A phone you already own includes a screen, camera, Wi-Fi and battery. A Raspberry Pi is a better fit for GPIO, USB radios and full Linux administration. Homedroid runs inside Android’s app sandbox, with proot overhead for Linux apps and no privileged ports or raw hardware access."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Homedroid free and open source?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Homedroid and Homedroid Desktop are free software under GPL-3.0. There is no Homedroid subscription. Optional cloud services, domains and hardware may have their own costs. Source and release downloads are on GitHub."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I use my phone as a webcam on Linux, Windows or macOS?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pair Homedroid Desktop with the phone and enable Desktop webcam access on the phone. Linux uses v4l2loopback; Windows 11 has an experimental virtual camera. All platforms can send the local MJPEG stream at http://127.0.0.1:8891/stream to OBS. macOS and Windows 10 use OBS for virtual camera output."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do MacroPads work?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "MacroPads is a customizable button grid on the phone. The paired Homedroid Desktop program receives actions and runs hotkeys, media controls, text, apps and URLs on the computer. Shell commands are refused until you enable Allow commands on the computer. Phone-side HTTP buttons can call Home Assistant webhooks."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does my data stay on the phone?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Files and local AI inference stay on your hardware. Cloud AI sends the prompts you choose to the configured provider; tunnels and remote access use the services you enable. The dashboard password, tunnel keys and other stored secrets are encrypted with Android Keystore. LAN HTTP is not encrypted."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Jellyfin use hardware transcoding on Android?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Homedroid connects Jellyfin to Android MediaCodec for H.264 and HEVC encoding where the phone supports them. Decoding, scaling, subtitle burn-in and HDR tone mapping still run in software. Performance depends on the phone and video format."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can AdGuard Home use the normal DNS port?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Android does not let an unrooted app bind port 53, so AdGuard Home listens on 1053. Homedroid’s Tailscale integration forwards tailnet DNS port 53 to it. A router that supports a custom upstream DNS port can also use it."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I run a mail server on an Android phone with Homedroid?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, with caveats. Install Mail server (Stalwart) from the app catalog and follow the guided setup in the dashboard. It lists the DNS records to copy, runs health checks and shows the IMAP and SMTP settings for your mail apps. Many home internet providers block port 25, and some give you no public address, so you may need to send through a relay such as Mailgun or Amazon SES, or receive through a small VPS. Phones with 2 GB of RAM or less may struggle."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can the phone share its internet connection like a Wi-Fi repeater?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Partly. The Wi-Fi repeater creates a Wi-Fi Direct network and runs a built-in proxy: HTTP and HTTPS on port 8282, SOCKS5 on 8284 and a PAC file on 8283. Join by scanning a QR code, then point the device's proxy setting at the phone. It is proxy-based, so browsers and many apps work, but games, calls, VPN clients and apps that ignore proxy settings do not. Speed is a fraction of your line speed."
+      }
+    }
+  ]
 }
-@media (max-width: 560px) {
-  .steps { grid-template-columns: 1fr; }
-  .hero .cta .btn { flex: 1 1 100%; }
-  nav .wrap { gap: 12px; }
-  nav .btn.gh .label { display: none; }
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "Set up Homedroid on an old Android phone",
+  "description": "Install Homedroid and open its home server dashboard.",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "position": 1,
+      "name": "Install the APK",
+      "text": "Download the 0.9.5 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.",
+      "url": "https://homedroid.seltiv.com/#start"
+    },
+    {
+      "@type": "HowToStep",
+      "position": 2,
+      "name": "Start the server",
+      "text": "Tap Start server. Copy the dashboard address and find the password under Dashboard login.",
+      "url": "https://homedroid.seltiv.com/#start"
+    },
+    {
+      "@type": "HowToStep",
+      "position": 3,
+      "name": "Open the dashboard",
+      "text": "On the same trusted network, open http://<phone-ip>:8800 in a browser and sign in. Install only the modules you need.",
+      "url": "https://homedroid.seltiv.com/#start"
+    },
+    {
+      "@type": "HowToStep",
+      "position": 4,
+      "name": "Let Android keep it running",
+      "text": "Allow background battery use. Follow the in-app guidance for vendor battery savers and Android 12+ process limits. Keep the phone cool.",
+      "url": "https://homedroid.seltiv.com/#start"
+    }
+  ]
 }
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-  .reveal { opacity: 1; transform: none; }
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "@id": "https://homedroid.seltiv.com/#author",
+  "name": "Sudipta Goswami",
+  "url": "https://github.com/sudiptacmd"
 }
-</style>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "https://homedroid.seltiv.com/#website",
+  "name": "Homedroid",
+  "url": "https://homedroid.seltiv.com/"
+}
+</script>
 </head>
 <body>
-<div class="bg" aria-hidden="true"></div>
-
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
 <nav aria-label="Main">
-  <div class="wrap">
-    <a class="brand" href="#top" aria-label="Homedroid home"><img src="img/homedroid-mark.svg" alt="" width="30" height="30">Homedroid</a>
-    <div class="links">
-      <a href="#features">Features</a>
-      <a href="#tour">Video tour</a>
-      <a href="#how">How it works</a>
-      <a href="#start">Get started</a>
-      <a href="#contribute">Contribute</a>
-    </div>
-    <a class="btn sm gh" href="https://github.com/sudiptacmd/homedroid" aria-label="Homedroid on GitHub">
-      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-      <span class="label">Star</span><span class="star-count" id="stars" hidden></span>
-    </a>
-  </div>
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
 </nav>
-
-<main id="top">
-  <header class="wrap hero">
-    <div>
-      <span class="eyebrow">Free · open source · no root</span>
-      <h1>Your old Android phone is now a <span class="grad">home server.</span></h1>
-      <p class="lead">Homedroid turns the phone in your drawer into a media server, a NAS, a photo backup, a torrent box, a web host and a private AI, all run from one app and managed from a sleek web dashboard. One APK. No root. No Linux skills needed.</p>
-      <div class="cta">
-        <a class="btn primary" href="https://github.com/sudiptacmd/homedroid/releases">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>Download the APK</a>
-        <a class="btn" href="#tour">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>Watch the 4-minute tour</a>
-      </div>
-      <div class="meta"><span>Android 10+</span><span>~50 MB APK</span><span>arm64 · armv7 · x86_64</span><span>GPL-3.0</span></div>
-    </div>
-    <div class="device">
-      <div class="s9">
-        <span class="key vol"></span><span class="key bixby"></span><span class="key power"></span>
-        <div class="glass">
-          <div class="top" aria-hidden="true"><span class="iris"></span><span class="led"></span><span class="ear"></span><span class="prox"></span><span class="cam"></span></div>
-          <div class="screen">
-            <video src="media/phone.mp4" poster="media/phone.jpg" autoplay muted loop playsinline aria-label="The Homedroid app on a phone: server status, app library and settings"></video>
-            <span class="glare"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <div class="ticker" aria-hidden="true">
-    <div class="row">
-      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>AdGuard Home ad blocking</span><span>Wake on LAN</span><span>Network tools</span><span>Gemma 4 on device</span><span>Phone clusters</span>
-      <span>Jellyfin with hardware transcoding</span><span>USB drives &amp; microSD as a NAS</span><span>Immich photo backup</span><span>qBittorrent</span><span>Home Assistant</span><span>On-phone AI · llama.cpp</span><span>OpenAI-compatible API</span><span>SSH &amp; SFTP</span><span>Caddy web hosting</span><span>Deploy from GitHub</span><span>Cloudflare Tunnel</span><span>Tailscale</span><span>IPCam</span><span>AdGuard Home ad blocking</span><span>Wake on LAN</span><span>Network tools</span><span>Gemma 4 on device</span><span>Phone clusters</span>
-    </div>
-  </div>
-
-  <section id="features" class="wrap">
-    <div class="head reveal">
-      <span class="eyebrow">What it does</span>
-      <h2>A full homelab, <span class="grad">in your pocket.</span></h2>
-      <p class="lead">That phone has an 8-core CPU, a hardware video encoder, gigabytes of RAM, Wi-Fi and a built-in battery backup. It deserves better than a drawer. Everything below is a real recording of Homedroid running.</p>
-    </div>
-
-    <div class="show">
-      <article class="feat reveal">
-        <div class="txt">
-          <span class="kicker">Dashboard</span>
-          <h3>Everything at a glance, from any browser</h3>
-          <p>Live CPU, temperature, network, battery, memory and storage, plus every service with its logs and a restart button. It works offline and on your phone too.</p>
-          <ul><li>Install apps with one click</li><li>Start on boot, auto-restart on crash</li><li>Updates itself from GitHub releases</li></ul>
-        </div>
-        <div class="vid"><span class="tag">LIVE · DASHBOARD</span><video data-src="media/overview.mp4" poster="media/overview.jpg" muted loop playsinline preload="none" aria-label="Homedroid dashboard overview"></video></div>
-      </article>
-
-      <article class="feat reveal">
-        <div class="txt">
-          <span class="kicker">Files &amp; NAS</span>
-          <h3>Plug in a USB drive. It's a NAS now.</h3>
-          <p>MicroSD cards and USB drives show up next to the phone's own storage. Stream videos in the browser, drag in whole folders, download folders as zip, or mount it all over SFTP.</p>
-          <ul><li>Apps can keep their libraries on the card</li><li>Pull the card: apps wait, nothing gets lost</li><li><code>sshfs</code>, rclone, WinSCP, Finder</li></ul>
-        </div>
-        <div class="vid"><span class="tag">LIVE · FILES</span><video data-src="media/files.mp4" poster="media/files.jpg" muted loop playsinline preload="none" aria-label="Browsing the media library and an SD card, playing a video and uploading photos"></video></div>
-      </article>
-
-      <article class="feat reveal">
-        <div class="txt">
-          <span class="kicker">Media</span>
-          <h3>Jellyfin, transcoded by the phone's video chip</h3>
-          <p>Your movies and shows on every TV, laptop and phone. Homedroid routes Jellyfin's hardware encoding to Android's MediaCodec, so the dedicated video hardware does the heavy lifting while the CPU stays cool.</p>
-          <ul><li>qBittorrent downloads straight into the library</li><li>Watch while it's still downloading</li><li>Immich for Google Photos-style backup</li></ul>
-          <p style="font-size:12.5px;color:var(--muted)">Shown: <i>Sintel</i> © Blender Foundation, <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
-        </div>
-        <div class="vid"><span class="tag">LIVE · JELLYFIN</span><video data-src="media/jellyfin.mp4" poster="media/jellyfin.jpg" muted loop playsinline preload="none" aria-label="Signing in to Jellyfin on the phone and playing Sintel"></video></div>
-      </article>
-
-      <article class="feat reveal">
-        <div class="txt">
-          <span class="kicker">Linux</span>
-          <h3>A real Linux shell, without root</h3>
-          <p>Alpine Linux runs inside the app. Open a terminal in the browser or SSH in, install packages with <code>apk</code>, and grab a torrent with one command.</p>
-          <ul><li>SSH &amp; SFTP with public keys</li><li>Every session logged, rejected logins too</li><li><code>torrent 'magnet:?…'</code> from anywhere</li></ul>
-        </div>
-        <div class="vid"><span class="tag">LIVE · TERMINAL</span><video data-src="media/terminal.mp4" poster="media/terminal.jpg" muted loop playsinline preload="none" aria-label="Alpine Linux in the browser terminal, adding a torrent"></video></div>
-      </article>
-
-      <article class="feat reveal">
-        <div class="txt">
-          <span class="kicker">AI</span>
-          <h3>A private AI that never leaves the phone</h3>
-          <p>llama.cpp, built for Android, runs Qwen, Llama and Gemma models on the phone's GPU or CPU, whichever its own benchmark finds faster. Your other apps can use it through an OpenAI-compatible API.</p>
-          <ul><li>Picks the best model your phone can handle</li><li>Optional cloud fallback when it's hot</li><li>Routines that brief you every morning</li></ul>
-        </div>
-        <div class="vid"><span class="tag">LIVE · AI ON DEVICE</span><video data-src="media/ai.mp4" poster="media/ai.jpg" muted loop playsinline preload="none" aria-label="Chatting with a model running on the phone"></video></div>
-      </article>
-
-      <article class="feat reveal">
-        <div class="txt">
-          <span class="kicker">Deploy</span>
-          <h3>Push to GitHub, it's live on your phone</h3>
-          <p>Point it at a repository and Homedroid detects Node.js, Python or a static site, builds it and serves it. It checks the branch every 5 minutes and keeps the old version running if a build fails.</p>
-          <ul><li>Cloudflare Tunnel puts it on the internet</li><li>Works behind CGNAT, no port forwarding</li><li>Private repos with a read-only token</li></ul>
-        </div>
-        <div class="vid"><span class="tag">LIVE · DEPLOYMENTS</span><video data-src="media/deploys.mp4" poster="media/deploys.jpg" muted loop playsinline preload="none" aria-label="Deploying a static site from GitHub and opening it"></video></div>
-      </article>
-
-      <article class="feat reveal">
-        <div class="txt">
-          <span class="kicker">Cluster</span>
-          <h3>Two old phones? Make them one server.</h3>
-          <p>Pair phones with a 6-digit code over mutual TLS. Manage any of them from one dashboard, see every camera on one page, and move apps, with their data, to whichever phone has room.</p>
-          <ul><li>Live health of every phone</li><li>Copy and move files between phones</li><li>Mix Android versions freely</li></ul>
-        </div>
-        <div class="vid"><span class="tag">LIVE · CLUSTER</span><video data-src="media/cluster.mp4" poster="media/cluster.jpg" muted loop playsinline preload="none" aria-label="A two-phone cluster: switching to the other phone and browsing its movies"></video></div>
-      </article>
-    </div>
-  </section>
-
-  <section class="wrap">
-    <div class="head reveal">
-      <span class="eyebrow">Modules</span>
-      <h2>Turn on what you need. <span class="grad">Nothing else runs.</span></h2>
-    </div>
-    <div class="mods reveal">
-      <div class="mod"><div class="ic">🎬</div><b>Jellyfin</b><span>Media server with hardware transcoding.</span><code>:8096</code></div>
-      <div class="mod"><div class="ic">🖼️</div><b>Immich</b><span>Photo &amp; video backup from its official images.</span><code>:2283</code></div>
-      <div class="mod"><div class="ic">🧲</div><b>qBittorrent</b><span>Sequential downloads into your library.</span><code>:8081</code></div>
-      <div class="mod"><div class="ic">🏠</div><b>Home Assistant</b><span>Automations with network and cloud integrations.</span><code>:8123</code></div>
-      <div class="mod"><div class="ic">🧠</div><b>AI</b><span>llama.cpp on device + an OpenAI-compatible API.</span><code>:8090/v1</code></div>
-      <div class="mod"><div class="ic">📷</div><b>IPCam</b><span>Live view, motion clips, mic and announcements.</span><code>dashboard</code></div>
-      <div class="mod"><div class="ic">🔐</div><b>SSH &amp; SFTP</b><span>Key-only shell and file transfer, port forwarding.</span><code>:8022</code></div>
-      <div class="mod"><div class="ic">🌐</div><b>Web hosting</b><span>Caddy serving your site and deployments.</span><code>:8080</code></div>
-      <div class="mod"><div class="ic">☁️</div><b>Cloudflare Tunnel</b><span>Public HTTPS without opening a port.</span><code>tunnel</code></div>
-      <div class="mod"><div class="ic">🛰️</div><b>Tailscale</b><span>Private access from anywhere, no VPN slot.</span><code>tailnet</code></div>
-      <div class="mod"><div class="ic">📱</div><b>Cluster</b><span>Several phones, one dashboard.</span><code>:8801 mTLS</code></div>
-      <div class="mod"><div class="ic">🛡️</div><b>AdGuard Home</b><span>Ad blocking for your whole tailnet, even on mobile data.</span><code>DNS :1053</code></div>
-      <div class="mod"><div class="ic">🔎</div><b>Network tools</b><span>Discovery, port scans, DNS, ping and speed tests.</span><code>dashboard</code></div>
-      <div class="mod"><div class="ic">⚡</div><b>Wake on LAN</b><span>Turn on your PC at home from anywhere.</span><code>/api/wol</code></div>
-      <div class="mod"><div class="ic">🧩</div><b>Your app?</b><span>Apps are just JSON. <a href="https://github.com/sudiptacmd/homedroid/blob/main/CONTRIBUTING.md">Add one.</a></span><code>apps.json</code></div>
-    </div>
-  </section>
-
-  <section id="tour" class="wrap">
-    <div class="head reveal">
-      <span class="eyebrow">Video tour</span>
-      <h2>See the whole thing in <span class="grad">4½ minutes.</span></h2>
-      <p class="lead">The phone app, the dashboard, an SD card, Linux in the browser, Jellyfin, on-phone AI, a GitHub deployment and two phones working as one. No cuts and no mock-ups, just the app running.</p>
-    </div>
-    <div class="player reveal">
-      <video id="walkthrough" controls preload="none" poster="media/overview.jpg" playsinline>
-        <source src="media/homedroid-walkthrough.mp4" type="video/mp4">
-      </video>
-    </div>
-    <p style="color:var(--muted);font-size:14px;margin-top:12px">Can't play it here? <a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4">Download the MP4 (13 MB)</a>. Made by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.</p>
-  </section>
-
-  <section id="how" class="wrap">
-    <div class="head reveal">
-      <span class="eyebrow">How it works</span>
-      <h2>Android said no. <span class="grad">We found a way.</span></h2>
-      <p class="lead">Android apps can't run servers the usual way: no root, no Docker, no access to the video hardware from Linux. Here's how Homedroid gets around all three.</p>
-    </div>
-    <div class="tech">
-      <div class="card reveal">
-        <span class="n">01 / LINUX WITHOUT ROOT</span>
-        <h3>Servers disguised as libraries</h3>
-        <p>Since Android 10, an app may only run programs that shipped inside its APK. So SSH, Caddy, Tailscale and FFmpeg are compiled for Android and packed in as <code>lib*.so</code> files, which Android happily unpacks and runs.</p>
-        <p>Everything else lives in Alpine Linux under <b>proot</b>, which translates system calls so Linux software believes it has a normal machine, while it's really inside the app's private folder.</p>
-        <pre><i># what Android sees</i>
-lib/arm64/libsshd.so
-lib/arm64/libcaddy.so
-<i># what you see</i>
-$ alpine
-localhost:~# apk add htop</pre>
-      </div>
-      <div class="card reveal">
-        <span class="n">02 / DOCKER WITHOUT DOCKER</span>
-        <h3>Container images, unpacked by hand</h3>
-        <p>Docker needs kernel features no app can touch. But an image is just layers of tarballs. Homedroid pulls them from Docker Hub or ghcr.io itself, checks every layer's checksum and stacks them the way Docker would.</p>
-        <p>Hard links (forbidden in app storage) become copies; absolute symlinks get rewritten. That's how <b>Immich and PostgreSQL</b> run from their official images, on a phone.</p>
-        <pre><i># ghcr.io/immich-app/immich-server</i>
-manifest → linux/arm64
-layers   → sha256 checked
-rootfs   → runs under proot</pre>
-      </div>
-      <div class="card reveal">
-        <span class="n">03 / A VIDEO CHIP FOR JELLYFIN</span>
-        <h3>A little shim with a big job</h3>
-        <p>The phone's encoder is only reachable through Android's MediaCodec, which a Linux FFmpeg can't use. So Homedroid builds an <b>Android FFmpeg</b> with MediaCodec and quietly swaps it in.</p>
-        <p>Jellyfin asks for V4L2 hardware encoding; a tiny shim hands that job to MediaCodec and everything else to Jellyfin's own FFmpeg. Jellyfin never knows it's on a phone.</p>
-        <pre>jellyfin → h264_v4l2m2m
-   shim  → h264_mediacodec
-<i># encoded by the phone's video chip</i></pre>
-      </div>
-    </div>
-    <p class="reveal" style="color:var(--text-2);margin-top:22px">And a handful of small, documented patches to proot and FFmpeg make the rest of Linux feel at home on Android. <a href="https://github.com/sudiptacmd/homedroid#how-it-works-the-clever-bits">Read the details →</a></p>
-  </section>
-
-  <section id="start" class="wrap">
-    <div class="head reveal">
-      <span class="eyebrow">Get started</span>
-      <h2>Up and running in <span class="grad">five minutes.</span></h2>
-    </div>
-    <div class="steps reveal">
-      <div class="step"><b>Install the APK</b><p>Grab it from <a href="https://github.com/sudiptacmd/homedroid/releases">GitHub Releases</a> (arm64 fits almost every phone) and open it.</p></div>
-      <div class="step"><b>Start the server</b><p>One tap. The app shows the dashboard address and its password.</p></div>
-      <div class="step"><b>Let it run</b><p>Allow background running in Battery settings; the app shows you how.</p></div>
-      <div class="step"><b>Add apps</b><p>Open the dashboard from your laptop and install Jellyfin, Immich and more.</p></div>
-    </div>
-<div class="term reveal"><span class="c"># from your computer</span>
-<span class="p">$</span> open http://&lt;phone-ip&gt;:8800                <span class="c"># the dashboard</span>
-<span class="p">$</span> ssh -p 8022 &lt;phone-ip&gt;                      <span class="c"># a shell; `alpine` for Linux</span>
-<span class="p">$</span> ssh -p 8022 &lt;phone-ip&gt; torrent 'magnet:?…'   <span class="c"># straight into Jellyfin</span></div>
-  </section>
-
-  <section id="contribute" class="wrap">
-    <div class="contrib reveal">
-      <div>
-        <span class="eyebrow">Built in the open</span>
-        <h2 style="margin:16px 0 16px">Help give old phones a <span class="grad">second life.</span></h2>
-        <p class="lead">Homedroid is free, GPL-licensed and young. The best thing you can do is try it on your phone and tell us how it went. Every phone report, bug and idea makes it better for the next person.</p>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:26px">
-          <a class="btn primary" href="https://github.com/sudiptacmd/homedroid">⭐ Star on GitHub</a>
-          <a class="btn" href="https://github.com/sudiptacmd/homedroid/issues/new/choose">Send feedback</a>
-        </div>
-      </div>
-      <div class="ways">
-        <a class="way" href="https://github.com/sudiptacmd/homedroid/issues/new?template=phone_report.yml"><span class="e">📱</span><div><b>Report your phone</b><span>"Works on my Pixel 4a" helps everyone pick a phone.</span></div></a>
-        <a class="way" href="https://github.com/sudiptacmd/homedroid/issues/new?template=bug_report.yml"><span class="e">🐛</span><div><b>Report a bug</b><span>Phone model, Android version and the service's log.</span></div></a>
-        <a class="way" href="https://github.com/sudiptacmd/homedroid/issues/new?template=feature_request.yml"><span class="e">💡</span><div><b>Request an app or feature</b><span>Vaultwarden? Syncthing? Pi-hole? Tell us.</span></div></a>
-        <a class="way" href="https://github.com/sudiptacmd/homedroid/blob/main/CONTRIBUTING.md"><span class="e">🛠️</span><div><b>Open a pull request</b><span>Apps are JSON, the dashboard is one HTML file. Dive in.</span></div></a>
-      </div>
-    </div>
-  </section>
+</div>
+</header>
+<main id="main">
+<section class="hero wrap">
+<div class="hero-copy">
+<a class="release-pill" href="#new">
+<span class="status-dot">
+</span> 0.9.5 beta is here <span aria-hidden="true">↗</span>
+</a>
+<h1>Turn your old<br>Android phone<br>into a <em>home server.</em>
+</h1>
+<p class="lead">Homedroid runs Jellyfin, your files, web apps and local AI on the phone you already own. One APK, a web dashboard, no root.</p>
+<div class="actions">
+<a class="button primary" href="#download">Download for Android <span aria-hidden="true">↓</span>
+</a>
+<a class="button" href="#tour">Explore the dashboard <span aria-hidden="true">↗</span>
+</a>
+</div>
+<p class="fine">Android 10+ · Free &amp; open source · No Termux needed</p>
+</div>
+<div class="hero-visual">
+<div class="browser-frame">
+<div class="browser-bar">
+<span>● ● ●</span>
+<span>homedroid.local:8800</span>
+<span>↗</span>
+</div>
+<img src="/media/dashboard-overview.webp" alt="Homedroid web dashboard managing an old Android phone as a home server" width="1440" height="900" class="" fetchpriority="high">
+</div>
+<div class="phone-frame">
+<img src="/media/phone-overview-oled.webp" alt="Homedroid 0.9.5 Android app with OLED black theme and server vitals" width="540" height="1200" class="" fetchpriority="high">
+</div>
+<div class="visual-note">
+<span class="status-dot">
+</span> The phone is the server.</div>
+</div>
+</section>
+<div class="app-strip">
+<div class="wrap">
+<span>RUNS ON YOUR PHONE</span>
+<b>Jellyfin</b>
+<b>Immich</b>
+<b>qBittorrent</b>
+<b>Home Assistant</b>
+<b>AdGuard Home</b>
+<b>llama.cpp</b>
+<b>Caddy</b>
+</div>
+</div>
+<section class="wrap new-band" id="new">
+<div>
+<span class="eyebrow">WHAT’S NEW / 0.9.5 BETA</span>
+<h2>More useful on the desk.<br>More capable under it.</h2>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.5-beta.md">Read the release notes <span aria-hidden="true">↗</span>
+</a>
+</div>
+<div class="new-items">
+<p>
+<strong>A new app and dashboard.</strong> Material 3, wallpaper colours on Android 12+, OLED black and burn-in protection. Six dashboard layouts and 13 themes.</p>
+<p>
+<strong>Dock, MacroPads, Desktop.</strong> A standby clock, a custom button deck and a wireless webcam. Your server phone has a day job now.</p>
+<p>
+<strong>More hosting and control.</strong> Add your own domain, keep dynamic DNS updated, set firewall rules, read request logs, run build pipelines and browse SQLite databases. AI assistants can manage the server over MCP. PIN/biometric app lock and Keystore-encrypted secrets.</p>
+<p>
+<strong>Your own mail server.</strong> Install Stalwart, follow the guided setup, copy the DNS records and check the result. Home providers often block port 25, so a relay may be needed.</p>
+<p>
+<strong>A Wi-Fi repeater.</strong> The phone hosts a Wi-Fi Direct network and devices connect through its built-in HTTP, SOCKS5 or PAC proxy. Join with a QR code. Apps that ignore proxy settings will not work.</p>
+<p class="fine">Also fixed: DNS-related app install failures, configurable SSH ports, and app updates from the dashboard. Camera controls for the PC webcam and a custom look for MacroPads are in development and not part of this beta.</p>
+</div>
+</section>
+<section class="wrap section" id="features">
+<div class="section-head">
+<div>
+<span class="eyebrow">THE SERVER PART</span>
+<h2>A self-hosted server,<br>built from an old phone.</h2>
+</div>
+<p>Start with a file server. Add a movie library or a small website. Modules you turn off don’t keep running in the background.</p>
+</div>
+<div class="feature-grid">
+<article class="feature">
+<span class="eyebrow">01 / MEDIA & STORAGE</span>
+<h3>Jellyfin on your Android phone</h3>
+<p>Stream your library with MediaCodec hardware encoding. Add qBittorrent to download into the same Media folder. Immich backs up photos, with machine learning disabled.</p>
+<span class="feature-meta">Jellyfin · Immich · qBittorrent</span>
+</article>
+<article class="feature">
+<span class="eyebrow">02 / YOUR FILES</span>
+<h3>A NAS for USB drives and SD cards</h3>
+<p>Browse, upload and stream files in the dashboard, or mount storage over SFTP. Choose storage per app; databases stay on internal storage.</p>
+<span class="feature-meta">USB OTG · microSD · SFTP</span>
+</article>
+<article class="feature">
+<span class="eyebrow">03 / HOME & NETWORK</span>
+<h3>Keep an eye on the house</h3>
+<p>Run Home Assistant, use IPCam for live video and motion recordings, send Wake on LAN packets, and diagnose connections with DNS, ping and port scans.</p>
+<span class="feature-meta">Home Assistant · IPCam · Wake on LAN</span>
+</article>
+<article class="feature">
+<span class="eyebrow">04 / REMOTE ACCESS</span>
+<h3>Reach home from anywhere</h3>
+<p>Tailscale for private access. Cloudflare Tunnel for public services. AdGuard Home filters DNS on port 1053, bridged to port 53 on the tailnet.</p>
+<span class="feature-meta">Tailscale · Cloudflare Tunnel · AdGuard</span>
+</article>
+<article class="feature">
+<span class="eyebrow">05 / HOSTING</span>
+<h3>Deploy a real project</h3>
+<p>Pull from GitHub or upload an archive. Run Node.js, Python, Go, PHP, Bun, Deno or static sites. Add your own domain, keep DDNS updated, set firewall rules, read request logs and run build pipelines.</p>
+<span class="feature-meta">GitHub · deploy hooks · rolling deploys</span>
+</article>
+<article class="feature">
+<span class="eyebrow">06 / COMPUTE & CONTROL</span>
+<h3>Local AI, data and phone clusters</h3>
+<p>Run llama.cpp with an OpenAI-compatible API on :8090/v1. Pair phones, move apps, or load-balance deployments. Browse SQLite databases with a schema diagram and SQL console, and let AI assistants manage the server over MCP.</p>
+<span class="feature-meta">llama.cpp · SQLite · MCP · clusters</span>
+</article>
+<article class="feature">
+<span class="eyebrow">07 / MAIL</span>
+<h3>Your own mail server</h3>
+<p>Install Stalwart and follow the guided setup. The dashboard lists the DNS records to copy, runs health checks and shows the settings for your mail apps. Port 25 is often blocked at home, so plan for a relay.</p>
+<span class="feature-meta">Stalwart · SMTP · IMAP · <a href="/mail/">Mail guide</a></span>
+</article>
+<article class="feature">
+<span class="eyebrow">08 / SHARING</span>
+<h3>A Wi-Fi repeater through a proxy</h3>
+<p>The phone hosts a Wi-Fi Direct network. Join with a QR code, then set the device to use the phone's HTTP, SOCKS5 or PAC proxy. Not every app honours proxy settings.</p>
+<span class="feature-meta">Wi-Fi Direct · ports 8282–8284</span>
+</article>
+<article class="feature">
+<span class="eyebrow">09 / THE DESK</span>
+<h3>Dock, MacroPads and PC webcam</h3>
+<p>A standby clock, a button deck for your computer and a wireless webcam. Camera controls for the webcam and a custom MacroPads look are coming.</p>
+<span class="feature-meta">Dock · MacroPads · Homedroid Desktop</span>
+</article>
+</div>
+<p class="fine">Guides: <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/deploy-hooks.md">deploy hooks and pipelines</a>, <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mcp.md">MCP setup</a>, <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md">mail server</a> and <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md">Wi-Fi repeater</a>.</p>
+</section>
+<section class="section tour-section" id="tour">
+<div class="wrap">
+<div class="section-head">
+<div>
+<span class="eyebrow">A LOOK INSIDE</span>
+<h2>Your server, in a browser.</h2>
+</div>
+<p>Use a laptop, phone or wall tablet. The dashboard ships inside the APK and works on your LAN without an internet connection.</p>
+</div>
+<div class="gallery" data-gallery>
+<div class="tablist" aria-label="Dashboard screenshots" hidden>
+<button type="button" data-tab="overview" aria-controls="panel-overview">Overview</button>
+<button type="button" data-tab="layouts" aria-controls="panel-layouts">Layouts & themes</button>
+<button type="button" data-tab="apps" aria-controls="panel-apps">Apps</button>
+<button type="button" data-tab="hosting" aria-controls="panel-hosting">Deployments</button>
+<button type="button" data-tab="databases" aria-controls="panel-databases">Databases</button>
+<button type="button" data-tab="domains" aria-controls="panel-domains">Domains</button>
+<button type="button" data-tab="mcp" aria-controls="panel-mcp">MCP</button>
+<button type="button" data-tab="mail" aria-controls="panel-mail">Mail</button>
+<button type="button" data-tab="desktop" aria-controls="panel-desktop">Desktop & MacroPads</button>
+<button type="button" data-tab="files" aria-controls="panel-files">Files & terminal</button>
+<button type="button" data-tab="customize" aria-controls="panel-customize">Customize</button>
+</div>
+<figure id="panel-overview" data-panel="overview">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-overview-mobile.webp">
+<img src="/media/dashboard-overview.webp" alt="Overview: Live server health, files and services in one browser." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Overview</strong> Live server health, files and services in one browser.</figcaption>
+</figure>
+<figure id="panel-layouts" data-panel="layouts">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-overview-light-mobile.webp">
+<img src="/media/dashboard-overview-light.webp" alt="Layouts & themes: Six layouts, 13 themes, font choices and a customizable overview. Ctrl/Cmd+K opens the command palette." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Layouts & themes</strong> Six layouts, 13 themes, font choices and a customizable overview. Ctrl/Cmd+K opens the command palette.</figcaption>
+</figure>
+<figure id="panel-apps" data-panel="apps">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-modules-mobile.webp">
+<img src="/media/dashboard-modules.webp" alt="Apps: Install only what you need. Update apps from the phone or dashboard." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Apps</strong> Install only what you need. Update apps from the phone or dashboard.</figcaption>
+</figure>
+<figure id="panel-hosting" data-panel="hosting">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-deploys-mobile.webp">
+<img src="/media/dashboard-deploys.webp" alt="Deployments: a build pipeline with install, test and lint steps and its recent runs." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Deployments</strong> Git repositories, build commands, environment variables, logs and a Pipelines tab with run history.</figcaption>
+</figure>
+<figure id="panel-databases" data-panel="databases">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-databases-mobile.webp">
+<img src="/media/dashboard-databases.webp" alt="Databases: SQLite schema diagram showing tables and foreign keys." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Databases</strong> Browse the SQLite files your apps keep, with a schema diagram, rows and a SQL console.</figcaption>
+</figure>
+<figure id="panel-domains" data-panel="domains">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-domains-mobile.webp">
+<img src="/media/dashboard-domains.webp" alt="Domains: custom domains with verification status." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Domains</strong> Add your own domain and verify it. Dynamic DNS, firewall and request logs sit beside it.</figcaption>
+</figure>
+<figure id="panel-mcp" data-panel="mcp">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-mcp-mobile.webp">
+<img src="/media/dashboard-mcp.webp" alt="MCP: server addresses, token and the allow-changes switch." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>MCP</strong> Let Claude, Cursor or VS Code manage the server. Write tools stay off until you allow them.</figcaption>
+</figure>
+<figure id="panel-mail" data-panel="mail">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-mail-mobile.webp">
+<img src="/media/dashboard-mail.webp" alt="Mail: DNS records for a Stalwart mail server with copy buttons." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Mail</strong> Guided setup for Stalwart, the DNS records to copy, health checks and mail app settings.</figcaption>
+</figure>
+<figure id="panel-desktop" data-panel="desktop">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-desktop-mobile.webp">
+<img src="/media/dashboard-desktop.webp" alt="Desktop and MacroPads: the deck editor with media keys and shortcuts." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Desktop & MacroPads</strong> Pair computers, edit the MacroPads deck and start the phone webcam.</figcaption>
+</figure>
+<figure id="panel-files" data-panel="files">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-files-mobile.webp">
+<img src="/media/dashboard-files.webp" alt="Files & terminal: Browse the phone’s storage. The web terminal works even with SSH switched off." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Files & terminal</strong> Browse the phone’s storage. The web terminal works even with SSH switched off.</figcaption>
+</figure>
+<figure id="panel-customize" data-panel="customize">
+<picture>
+<source media="(max-width: 600px)" srcset="/media/dashboard-customize-mobile.webp">
+<img src="/media/dashboard-customize.webp" alt="Customize: Choose the shell, colours, type and overview widgets. Preferences are stored on the phone." width="1440" height="900" class="" loading="lazy" decoding="async">
+</picture>
+<figcaption>
+<strong>Customize</strong> Choose the shell, colours, type and overview widgets. Preferences are stored on the phone.</figcaption>
+</figure>
+</div>
+<div class="clip-grid">
+<figure>
+<video controls playsinline preload="none" poster="/media/dashboard-overview.webp" width="1280" height="800" aria-label="Dashboard walkthrough: overview, apps, deployments, files and terminal">
+<source src="/media/dashboard-tour.webm" type="video/webm">
+</video>
+<figcaption>Dashboard tour · demo data · silent screen recording</figcaption>
+</figure>
+<figure>
+<video controls playsinline preload="none" poster="/media/dashboard-overview-light.webp" width="1280" height="800" aria-label="Dashboard layout and theme walkthrough">
+<source src="/media/dashboard-layouts.webm" type="video/webm">
+</video>
+<figcaption>Switch layouts and themes · silent screen recording</figcaption>
+</figure>
+</div>
+<p class="fine">More screenshots: <a href="/media/dashboard-overview-rail.webp">Midnight / rail layout</a> · <a href="/media/dashboard-terminal.webp">web terminal</a> · <a href="/media/dashboard-ai.webp">local AI</a> · <a href="/media/dashboard-cluster.webp">phone cluster</a> · <a href="/media/dashboard-overview-mobile.webp">mobile dashboard</a>
+</p>
+</div>
+</section>
+<section class="wrap section">
+<div class="section-head">
+<div>
+<span class="eyebrow">ON THE PHONE</span>
+<h2>A home server that feels<br>at home on Android.</h2>
+</div>
+<p>The redesigned phone app follows your wallpaper colours, or goes OLED black. Check vitals, install apps and change settings without finding a laptop.</p>
+</div>
+<div class="phone-gallery">
+<figure>
+<img src="/media/phone-overview-light.webp" alt="Material 3 Homedroid Android home server overview" width="540" height="1200" class="" loading="lazy" decoding="async">
+<figcaption>Overview / wallpaper colours</figcaption>
+</figure>
+<figure>
+<img src="/media/phone-apps-light.webp" alt="Homedroid app library with Jellyfin and Immich" width="540" height="1200" class="" loading="lazy" decoding="async">
+<figcaption>Apps / install and update</figcaption>
+</figure>
+<figure>
+<img src="/media/phone-settings-oled.webp" alt="Homedroid phone settings in OLED black" width="540" height="1200" class="" loading="lazy" decoding="async">
+<figcaption>Settings / OLED black</figcaption>
+</figure>
+<figure>
+<video controls playsinline preload="none" poster="/media/phone-overview-light.webp" width="1080" height="2400" aria-label="Redesigned Android app walkthrough">
+<source src="/media/new/phone-tour.mp4" type="video/mp4">
+</video>
+<figcaption>Watch the phone tour</figcaption>
+</figure>
+</div>
+</section>
+<section class="wrap section dock-show" id="dock">
+<div class="section-head">
+<div>
+<span class="eyebrow">NEW / DOCK MODE</span>
+<h2>An Android standby clock.<br>With a server behind it.</h2>
+</div>
+<div>
+<p>Five clock faces, live server tiles and a red night mode. Open Dock mode while charging, or choose it as Android’s screen saver.</p>
+<a href="/dock/">Explore Dock mode and OLED care <span aria-hidden="true">↗</span>
+</a>
+</div>
+</div>
+<div class="dock-frame">
+<video controls playsinline preload="none" poster="/media/phone-dock.webp" width="2400" height="1080" aria-label="Dock mode clock with live server, battery and memory tiles">
+<source src="/media/new/phone-dock.mp4" type="video/mp4">
+</video>
+</div>
+<div class="inline-facts">
+<span>5 clock faces</span>
+<span>Pixel shift &amp; layout swaps</span>
+<span>Status &amp; clock widgets</span>
+<span>Screen-off hours</span>
+</div>
+</section>
+<section class="wrap section macro-show" id="macropads">
+<div class="macro-visual">
+<img src="/media/phone-macropads-oled.webp" alt="MacroPads: an Android stream deck alternative with custom hotkeys and media buttons" width="540" height="1200" class="" loading="lazy" decoding="async">
+</div>
+<div>
+<span class="eyebrow">NEW / MACROPADS</span>
+<h2>An Android stream deck<br>for the shortcuts you use.</h2>
+<p class="lead">Mute a call. Paste the text you keep typing. Start a script. MacroPads puts custom buttons on the phone and sends the actions to your computer.</p>
+<p>Build profiles and pages, choose icons and colours, or chain actions into a sequence. Homedroid Desktop runs the keys, text, apps and URLs. Commands need a separate opt-in on the computer.</p>
+<a class="button" href="/macropads/">See how MacroPads works <span aria-hidden="true">↗</span>
+</a>
+<p class="fine">Also supports phone-side HTTP requests for Home Assistant webhooks.</p>
+</div>
+</section>
+<section class="desktop-section" id="desktop">
+<div class="wrap section">
+<div class="section-head">
+<div>
+<span class="eyebrow">NEW / HOMEDROID DESKTOP</span>
+<h2>Use your phone as a webcam<br>on Linux, Windows or macOS.</h2>
+</div>
+<p>A small Rust companion, about 1 MB on Linux. Pair with a six-digit code to run MacroPads and bring the phone’s camera to your computer.</p>
+</div>
+<div class="desktop-flow">
+<span>Android camera<br>
+<strong>Homedroid</strong>
+</span>
+<span aria-hidden="true">→</span>
+<span>Your computer<br>
+<strong>Homedroid Desktop</strong>
+</span>
+<span aria-hidden="true">→</span>
+<span>Calls &amp; recording<br>
+<strong>Virtual camera / OBS</strong>
+</span>
+</div>
+<p>Linux uses v4l2loopback. Windows 11 virtual camera support is experimental. On macOS and Windows 10, use the local stream in OBS and start OBS Virtual Camera. macOS input is experimental and has not been tested on hardware.</p>
+<div class="downloads">
+<a class="download" data-os="linux" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-linux-x86_64.tar.gz">
+<span>Linux</span>
+<strong>x86_64 <span aria-hidden="true">↗</span>
+</strong>
+<small>tar.gz · <span class="os-hint">0.9.5 beta</span>
+</small>
+</a>
+<a class="download" data-os="linux" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-linux-aarch64.tar.gz">
+<span>Linux</span>
+<strong>ARM64 <span aria-hidden="true">↗</span>
+</strong>
+<small>tar.gz · <span class="os-hint">0.9.5 beta</span>
+</small>
+</a>
+<a class="download" data-os="windows" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-windows-x86_64.zip">
+<span>Windows</span>
+<strong>x86_64 <span aria-hidden="true">↗</span>
+</strong>
+<small>zip · <span class="os-hint">0.9.5 beta</span>
+</small>
+</a>
+<a class="download" data-os="macos" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-macos-universal.tar.gz">
+<span>macOS</span>
+<strong>Universal <span aria-hidden="true">↗</span>
+</strong>
+<small>tar.gz · <span class="os-hint">0.9.5 beta</span>
+</small>
+</a>
+</div>
+<p class="fine" id="os-note">Choose your operating system and CPU. All four downloads stay available.</p>
+<div class="actions">
+<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">Get Homedroid Desktop <span aria-hidden="true">↓</span>
+</a>
+<a href="/desktop/">Webcam setup and platform notes <span aria-hidden="true">↗</span>
+</a>
+</div>
+</div>
+</section>
+<section class="wrap section" id="compare">
+<div class="section-head">
+<div>
+<span class="eyebrow">USE WHAT YOU HAVE</span>
+<h2>Old phone or Raspberry Pi?</h2>
+</div>
+<p>If you already have a healthy spare phone, try it. If your project needs GPIO, USB radios or unrestricted Linux, a Pi makes more sense.</p>
+</div>
+<div class="table-scroll">
+<table>
+<caption>Old Android phone with Homedroid vs Raspberry Pi 5</caption>
+<thead>
+<tr>
+<th scope="col">What matters</th>
+<th scope="col">Old phone + Homedroid</th>
+<th scope="col">Raspberry Pi 5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Starting point</th>
+<td>Reuse an Android 10+ phone; install an APK</td>
+<td>A board, power supply, storage and an OS</td>
+</tr>
+<tr>
+<th scope="row">Screen, camera, battery</th>
+<td>Already in the phone, if still healthy</td>
+<td>Separate accessories</td>
+</tr>
+<tr>
+<th scope="row">Storage &amp; networking</th>
+<td>USB OTG / microSD where supported; usually Wi-Fi</td>
+<td>USB 3, microSD, Gigabit Ethernet, PCIe via adapter</td>
+</tr>
+<tr>
+<th scope="row">Hardware access</th>
+<td>Android sandbox; no GPIO or USB radios for Home Assistant</td>
+<td>40-pin header and full Linux hardware access</td>
+</tr>
+<tr>
+<th scope="row">Linux apps</th>
+<td>proot adds overhead to system calls</td>
+<td>Native Linux; more control over the OS</td>
+</tr>
+<tr>
+<th scope="row">Best fit</th>
+<td>Media, files, small web apps, webcam, desk clock</td>
+<td>Hardware projects and a general-purpose Linux server</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="fine">Hardware varies by phone. No blanket speed or power claim here. Raspberry Pi details: <a href="https://www.raspberrypi.com/products/raspberry-pi-5/">official Raspberry Pi 5 specifications</a>.</p>
+<a href="/compare/">Read the home server comparison <span aria-hidden="true">↗</span>
+</a>
+</section>
+<section class="wrap section" id="start">
+<span class="eyebrow">GETTING STARTED</span>
+<h2>From drawer to dashboard.</h2>
+<ol class="steps">
+<li>
+<span>01</span>
+<h3>Install the APK</h3>
+<p>Download the 0.9.5 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.</p>
+</li>
+<li>
+<span>02</span>
+<h3>Start the server</h3>
+<p>Tap Start server. Copy the dashboard address and find the password under Dashboard login.</p>
+</li>
+<li>
+<span>03</span>
+<h3>Open the dashboard</h3>
+<p>On the same trusted network, open http://&lt;phone-ip&gt;:8800 in a browser and sign in. Install only the modules you need.</p>
+</li>
+<li>
+<span>04</span>
+<h3>Let Android keep it running</h3>
+<p>Allow background battery use. Follow the in-app guidance for vendor battery savers and Android 12+ process limits. Keep the phone cool.</p>
+</li>
+</ol>
+<div class="command">
+<span>Dashboard</span>
+<code>http://&lt;phone-ip&gt;:8800</code>
+<span>SSH / SFTP</span>
+<code>ssh -p 8022 &lt;phone-ip&gt;</code>
+</div>
+</section>
+<section class="wrap section download-section" id="download">
+<span class="eyebrow">HOMEDROID 0.9.5 BETA</span>
+<h2>Give the old phone<br>something to do.</h2>
+<p>Android 10+, no root. Per-ABI APKs are about 50 to 60 MB and the universal APK is larger. Apps and AI models download separately.</p>
+<div class="actions">
+<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-arm64-v8a.apk">Download APK · ARM64 <span aria-hidden="true">↓</span>
+</a>
+<a class="button" href="https://github.com/sudiptacmd/homedroid">View source on GitHub <span aria-hidden="true">↗</span>
+</a>
+</div>
+<div class="apk-alternatives">
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-armeabi-v7a.apk">32-bit ARM</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-x86_64.apk">x86_64 / emulators</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-universal.apk">Universal APK</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/SHA256SUMS">SHA256SUMS</a>
+</div>
+<p class="fine">Already installed? Use Settings → App updates in the dashboard. Check <a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">the beta release</a> for availability and release notes.</p>
+</section>
+<section class="wrap section faq-section" id="faq">
+<div>
+<span class="eyebrow">BEFORE YOU INSTALL</span>
+<h2>Good to know.</h2>
+<p>Real phones have quirks.<br>Here are the useful ones.</p>
+<a href="/faq/">Read the full Homedroid FAQ <span aria-hidden="true">↗</span>
+</a>
+</div>
+<div>
+<details>
+<summary>What is Homedroid?</summary>
+<p>Homedroid is a free, open-source Android home server app. Install one APK on an old Android phone to run Jellyfin, file storage, web apps and other services, then manage them from a browser on port 8800.</p>
+</details>
+<details>
+<summary>Does Homedroid need root or Termux?</summary>
+<p>No. Homedroid runs as an ordinary Android app. It bundles its own tools and uses proot for apps that need Alpine Linux. You do not need root, Termux or a replacement Android ROM.</p>
+</details>
+<details>
+<summary>Which phones can run Homedroid?</summary>
+<p>Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install.</p>
+</details>
+<details>
+<summary>Can I leave an old phone plugged in as a server?</summary>
+<p>Use a phone with a healthy battery and keep it ventilated. Stop using a swollen or damaged battery. Watch temperature under load, reduce heavy jobs if it gets hot, and use the manufacturer’s charge limit if available. Homedroid does not add charge limiting without root. Dock mode’s OLED care reduces static screen exposure; it cannot guarantee against burn-in.</p>
+</details>
+<details>
+<summary>How do I access the server away from home?</summary>
+<p>Use Tailscale for private access from your own devices, or Cloudflare Tunnel to publish a service at an HTTPS hostname. Both work behind CGNAT without router port forwarding. The direct LAN dashboard uses plain HTTP, so use it only on a trusted network.</p>
+</details>
+<details>
+<summary>How does an old phone compare with a Raspberry Pi?</summary>
+<p>A phone you already own includes a screen, camera, Wi-Fi and battery. A Raspberry Pi is a better fit for GPIO, USB radios and full Linux administration. Homedroid runs inside Android’s app sandbox, with proot overhead for Linux apps and no privileged ports or raw hardware access.</p>
+</details>
+<details>
+<summary>Is Homedroid free and open source?</summary>
+<p>Yes. Homedroid and Homedroid Desktop are free software under GPL-3.0. There is no Homedroid subscription. Optional cloud services, domains and hardware may have their own costs. Source and release downloads are on GitHub.</p>
+</details>
+<details>
+<summary>How do I use my phone as a webcam on Linux, Windows or macOS?</summary>
+<p>Pair Homedroid Desktop with the phone and enable Desktop webcam access on the phone. Linux uses v4l2loopback; Windows 11 has an experimental virtual camera. All platforms can send the local MJPEG stream at http://127.0.0.1:8891/stream to OBS. macOS and Windows 10 use OBS for virtual camera output.</p>
+</details>
+<details>
+<summary>How do MacroPads work?</summary>
+<p>MacroPads is a customizable button grid on the phone. The paired Homedroid Desktop program receives actions and runs hotkeys, media controls, text, apps and URLs on the computer. Shell commands are refused until you enable Allow commands on the computer. Phone-side HTTP buttons can call Home Assistant webhooks.</p>
+</details>
+<details>
+<summary>Does my data stay on the phone?</summary>
+<p>Files and local AI inference stay on your hardware. Cloud AI sends the prompts you choose to the configured provider; tunnels and remote access use the services you enable. The dashboard password, tunnel keys and other stored secrets are encrypted with Android Keystore. LAN HTTP is not encrypted.</p>
+</details>
+<details>
+<summary>Does Jellyfin use hardware transcoding on Android?</summary>
+<p>Homedroid connects Jellyfin to Android MediaCodec for H.264 and HEVC encoding where the phone supports them. Decoding, scaling, subtitle burn-in and HDR tone mapping still run in software. Performance depends on the phone and video format.</p>
+</details>
+<details>
+<summary>Can AdGuard Home use the normal DNS port?</summary>
+<p>Android does not let an unrooted app bind port 53, so AdGuard Home listens on 1053. Homedroid’s Tailscale integration forwards tailnet DNS port 53 to it. A router that supports a custom upstream DNS port can also use it.</p>
+</details>
+<details>
+<summary>Can I run a mail server on an Android phone with Homedroid?</summary>
+<p>Yes, with caveats. Install Mail server (Stalwart) from the app catalog and follow the guided setup in the dashboard. It lists the DNS records to copy, runs health checks and shows the IMAP and SMTP settings for your mail apps. Many home internet providers block port 25, and some give you no public address, so you may need to send through a relay such as Mailgun or Amazon SES, or receive through a small VPS. Phones with 2 GB of RAM or less may struggle.</p>
+</details>
+<details>
+<summary>Can the phone share its internet connection like a Wi-Fi repeater?</summary>
+<p>Partly. The Wi-Fi repeater creates a Wi-Fi Direct network and runs a built-in proxy: HTTP and HTTPS on port 8282, SOCKS5 on 8284 and a PAC file on 8283. Join by scanning a QR code, then point the device's proxy setting at the phone. It is proxy-based, so browsers and many apps work, but games, calls, VPN clients and apps that ignore proxy settings do not. Speed is a fraction of your line speed.</p>
+</details>
+</div>
+</section>
 </main>
-
-<footer>
-  <div class="wrap">
-    <span>Made by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a> · <a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0</a></span>
-    <span><a href="https://github.com/sudiptacmd/homedroid">GitHub</a> · <a href="https://github.com/sudiptacmd/homedroid/releases">Releases</a> · <a href="https://github.com/sudiptacmd/homedroid#readme">Documentation</a> · <a href="https://github.com/sudiptacmd/homedroid/issues">Issues</a></span>
-  </div>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">0.9.5 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-25">25 November 2026</time> · 0.9.5-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
 </footer>
-
-<script>
-// Feature clips load and play only while on screen.
-const vids = document.querySelectorAll('video[data-src]');
-const seen = new IntersectionObserver(entries => {
-  for (const e of entries) {
-    const v = e.target;
-    if (e.isIntersecting) {
-      if (!v.src) v.src = v.dataset.src;
-      v.play().catch(() => {});
-    } else v.pause();
-  }
-}, { threshold: .35 });
-vids.forEach(v => seen.observe(v));
-
-const reveal = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); reveal.unobserve(e.target); } }), { threshold: .12 });
-document.querySelectorAll('.reveal').forEach(el => reveal.observe(el));
-
-// The full walkthrough is fetched from the release at deploy time; fall back to the release link.
-const wt = document.getElementById('walkthrough');
-wt.querySelector('source').addEventListener('error', () => {
-  wt.querySelector('source').src = 'https://github.com/sudiptacmd/homedroid/releases/download/v0.9.4-beta/homedroid-walkthrough.mp4';
-  wt.load();
-});
-
-fetch('https://api.github.com/repos/sudiptacmd/homedroid').then(r => r.ok ? r.json() : null).then(r => {
-  if (!r || typeof r.stargazers_count !== 'number') return;
-  const s = document.getElementById('stars');
-  s.textContent = r.stargazers_count.toLocaleString();
-  s.hidden = false;
-}).catch(() => {});
-</script>
 </body>
 </html>
