@@ -603,7 +603,7 @@ class Dashboard(private val ctx: Context) {
             val port = body.optInt("sshPort", -1)
             if (!Config.validPort(port)) return Response.error(400, "Choose a port between 1024 and 65535 that Homedroid doesn't use")
             if (port != cfg.sshPort) {
-                if (!portFree(port)) return Response.error(409, "Another app on the phone is already using port $port")
+                if (!portFree(port) || deploys.usesPort(port)) return Response.error(409, "Another app on the phone is already using port $port")
                 cfg.sshPort = port
                 if (cfg.sshEnabled) ServerService.restart(ctx)
             }

@@ -99,6 +99,9 @@ class Deploys(private val ctx: Context, private val paths: Paths) {
 
     fun get(id: String) = all().firstOrNull { it.id == id }
 
+    /** Whether a deployment (or its load balancer) listens on [port]. */
+    fun usesPort(port: Int) = all().any { it.port == port || it.balance?.port == port }
+
     /**
      * Adds a deployment from the dashboard's settings, or with [imported] from another phone's
      * stored config (keeping its hook secrets, so CI keeps working after a move).
@@ -145,7 +148,8 @@ class Deploys(private val ctx: Context, private val paths: Paths) {
         if (source == "git") require(repo.startsWith("https://") || repo.startsWith("git@")) { "repo must be an https:// or git@ URL" }
         val port = o.optInt("port", 0)
         require(port in 1024..65535) { "port must be between 1024 and 65535" }
-        val taken = all().filter { it.id != id }.flatMap { listOfNotNull(it.port, it.balance?.port) }.toSet() + RESERVED_PORTS
+        // sshd's port is the user's choice (see Config.sshPort), so the fixed 8022 above isn't the whole story.
+        val taken = all().filter { it.id != id }.flatMap { listOfNotNull(it.port, it.balance?.port) }.toSet() + RESERVED_PORTS + Config(ctx).sshPort
         require(port !in taken) { "port $port is already used" }
         val runtime = o.optString("runtime", "auto").ifEmpty { "auto" }
         require(runtime in Runtimes.CHOICES) { "unknown runtime $runtime" }

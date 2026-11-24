@@ -242,7 +242,7 @@ class SettingsActivity : MobileActivity() {
             val value = port.value.trim().toIntOrNull()
             if (value == null || !Config.validPort(value)) { port.error("Choose a port between 1024 and 65535 that Homedroid doesn't use"); return@save false }
             if (value != cfg.sshPort) {
-                if (!portFree(value)) { port.error("Another app on the phone is already using port $value"); return@save false }
+                if (!portFree(value) || Deploys(this, Paths(this)).usesPort(value)) { port.error("Another app on the phone is already using port $value"); return@save false }
                 cfg.sshPort = value
                 if (cfg.sshEnabled && ServerService.active) ServerService.restart(this)
                 design.snackbar("SSH now uses port $value" + if (cfg.sshEnabled && ServerService.active) ". Restarting services." else ".")
