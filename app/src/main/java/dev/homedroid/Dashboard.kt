@@ -17,6 +17,7 @@ class Dashboard(private val ctx: Context) {
     private val paths = Paths(ctx)
     private val apps = Apps(ctx, paths)
     private val deploys = Deploys(ctx, paths)
+    private val deployApi = DeployApi(ctx, paths)
     private val alpine = Alpine(ctx, paths)
     private val files = FileBrowser(ctx, paths)
     private val ssh = SshAdmin(paths, alpine)
@@ -71,6 +72,8 @@ class Dashboard(private val ctx: Context) {
         if (r.method == "GET" && r.path.startsWith("/guides/")) return guideImage(r.path.removePrefix("/guides/"))
         // MCP clients use their own token, not a dashboard session.
         if (r.path == "/mcp" || r.path.startsWith("/mcp/")) return mcp.handle(r)
+        // Deploy hooks for CI: authenticated by their own token or signature, not a session.
+        if (r.path.startsWith("/hooks/")) return deployApi.hook(r)
         if (!r.path.startsWith("/api/")) return Response.error(404, "not found")
         val terminal = r.path == "/api/terminal" || r.path.startsWith("/api/nodes/") && r.path.endsWith("/terminal")
         if (!AuthSecurity.browserAllowed(r.method, r.headers, terminal)) {
@@ -194,6 +197,7 @@ class Dashboard(private val ctx: Context) {
             r.method == "GET" && seg == listOf("modules") -> Response.json(modules())
             r.method == "GET" && seg.size == 3 && seg[0] == "modules" && seg[2] == "export" -> exportApp(seg[1], r, peer)
             r.method == "POST" && seg.size == 3 && seg[0] in setOf("modules", "deploys") && seg[2] == "move" -> startMove(seg[0], seg[1], r)
+            seg[0] == "deploys" && seg.size >= 3 && seg[2] in DeployApi.ACTIONS -> deployApi.handle(r, seg[1], seg[2], seg.drop(3), peer)
             r.method == "GET" && seg.size == 3 && seg[0] == "deploys" && seg[2] == "config" -> {
                 // The full config includes secrets (env, repo token): only for a phone taking it over.
                 if (peer == null) return Response.error(403, "Only other phones in the cluster can read this")
@@ -688,8 +692,10 @@ class Dashboard(private val ctx: Context) {
         } catch (e: IllegalArgumentException) {
             return Response.error(400, e.message ?: "invalid deployment")
         }
-        ServerService.deploy(ctx, d.id)
-        return Response.json(d.toJson(null))
+        // An uploaded project deploys once its archive arrives.
+        if (d.source == "git") ServerService.deploy(ctx, d.id)
+        // The hook secrets are shown this once; only the token's hash is kept.
+        return Response.json(d.toJson(null).put("token", deploys.issueToken(d.id)).put("webhookSecret", d.webhookSecret))
     }
 
     private fun deployAction(id: String, action: String): Response {

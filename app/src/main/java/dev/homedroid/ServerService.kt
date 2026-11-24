@@ -89,6 +89,17 @@ class ServerService : Service() {
             )
         }
 
+        @Volatile private var current: ServerService? = null
+
+        /** Runs [block] on the job queue, after any install or deploy already queued; null if the service is off. */
+        fun submitJob(block: () -> Unit): java.util.concurrent.Future<*>? =
+            current?.installer?.let { try { it.submit(block) } catch (_: java.util.concurrent.RejectedExecutionException) { null } }
+
+        /** Queues a deploy of [id] whose error (or null) can be waited for; null if the service is off. */
+        fun deployJob(id: String): java.util.concurrent.Future<String?>? = current?.let { s ->
+            try { s.installer.submit<String?> { s.runDeployJob(id, true) } } catch (_: java.util.concurrent.RejectedExecutionException) { null }
+        }
+
         fun deploy(ctx: Context, id: String) = startDeployJob(ctx, ACTION_DEPLOY, id)
 
         fun undeploy(ctx: Context, id: String) = startDeployJob(ctx, ACTION_UNDEPLOY, id)
@@ -135,7 +146,10 @@ class ServerService : Service() {
                 Jobs.line("dashboard could not start: ${e.message}")
             }
         }
+        current = this
         scheduler.scheduleWithFixedDelay(::checkAutoDeploys, AUTO_DEPLOY_MINUTES, AUTO_DEPLOY_MINUTES, TimeUnit.MINUTES)
+        // Phones joining or leaving change the balancer's upstreams.
+        scheduler.scheduleWithFixedDelay({ runCatching { DeployOps(this, Paths(this)).refreshBalancer() } }, 1, AUTO_DEPLOY_MINUTES, TimeUnit.MINUTES)
         // Home-screen widgets, if any are placed. A failure must not cancel the schedule.
         scheduler.scheduleWithFixedDelay({ runCatching { StatusWidget.refresh(this) } }, 5, 60, TimeUnit.SECONDS)
     }
@@ -170,6 +184,7 @@ class ServerService : Service() {
 
     override fun onDestroy() {
         active = false
+        if (current === this) current = null
         try {
             worker.submit(::shutdown).get(10, TimeUnit.SECONDS)
         } catch (_: Exception) {
@@ -204,17 +219,20 @@ class ServerService : Service() {
         if (cfg.tailscaleEnabled) Thread({ Tailscale(paths, cfg).apply() }, "tailscale-up").apply { isDaemon = true; start() }
     }
 
-    private fun runDeployJob(id: String?, deploy: Boolean) {
+    /** Builds (and pipelines, and rolls out) or deletes deployment [id]; returns the error, or null. */
+    private fun runDeployJob(id: String?, deploy: Boolean): String? {
         val paths = Paths(this)
         val deploys = Deploys(this, paths)
-        val d = deploys.all().firstOrNull { it.id == id } ?: return
+        val d = deploys.all().firstOrNull { it.id == id } ?: return "no deployment $id"
         val alpine = Alpine(this, paths)
+        val ops = DeployOps(this, paths)
         Jobs.begin((if (deploy) "Deploying " else "Deleting ") + d.name)
-        val error = try {
+        var error = try {
             if (deploy) {
                 alpine.ensure(Jobs::line)
-                val rc = alpine.run(deploys.buildScript(d), Jobs::line, deploys.buildEnv(d))
-                if (rc == 0) null else "build exited with $rc"
+                val rev = if (d.source == "upload") ops.stageUpload(d) else ""
+                val rc = alpine.run(deploys.buildScript(d), Jobs::line, deploys.buildEnv(d, rev))
+                if (rc == 0) ops.runPipeline(d, "deploy") else "build exited with $rc"
             } else {
                 deploys.remove(d.id)
                 worker.submit { shutdown(); launch() }.get()
@@ -224,12 +242,15 @@ class ServerService : Service() {
         } catch (e: Exception) {
             e.message ?: e.toString()
         }
-        Jobs.finish(error)
-        // A failed build keeps the previous version running.
+        // A failed build or pipeline keeps the previous version running.
         if (deploy && error == null) {
             val running = supervisor?.daemons?.firstOrNull { it.spec.name == d.service }
             if (running != null) running.restart() else worker.execute { shutdown(); launch() }
+            if (d.replicated) error = ops.rollout(d)
         }
+        Jobs.finish(error)
+        if (!deploy || d.balance != null) runCatching { ops.refreshBalancer() }
+        return error
     }
 
     /** Redeploys auto-deploy apps whose branch has new commits. */
@@ -423,7 +444,8 @@ class ServerService : Service() {
             if (cluster == null || src == null) throw java.io.IOException("That phone left the cluster")
             val (status, o) = cluster.peerJson(src, "GET", "/api/deploys/$id/config")
             if (status != 200) throw java.io.IOException(o.optString("error", "${src.name} answered $status"))
-            Deploys(this, paths).create(o)
+            if (o.optString("source") == "upload") throw java.io.IOException("Uploaded deployments can't be moved yet: create it here and upload the project")
+            Deploys(this, paths).create(o, imported = true)
         } catch (e: Exception) {
             Jobs.begin("Moving deployment $id")
             Jobs.finish(e.message ?: e.toString())
