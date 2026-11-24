@@ -314,7 +314,7 @@ class DeployApi(private val ctx: Context, private val paths: Paths) {
             seg[0] == "deploy" && (seg.size == 2 || seg.size == 3 && seg[2] == "artifact") -> {
                 val d = deploys.get(id)
                 val given = AuthSecurity.bearer(r.headers)
-                val result = hookAuth.password(r.remote) { d != null && !d.replica && DeployHooksCore.tokenMatches(given, d.tokenHash) }
+                val result = hookAuth.password(r.client) { d != null && !d.replica && DeployHooksCore.tokenMatches(given, d.tokenHash) }
                 if (!result.accepted || d == null) return rejected(result)
                 if (seg.size == 2) return start(d, r.query["wait"] == "1")
                 if (d.source != "upload") return Response.error(409, "${d.name} deploys from Git: use /hooks/deploy/$id")
@@ -324,7 +324,7 @@ class DeployApi(private val ctx: Context, private val paths: Paths) {
                 if (r.length !in 0..(1L shl 20)) return Response.error(413, "payload too large")
                 val d = deploys.get(id)
                 val body = r.body
-                val result = hookAuth.password(r.remote) {
+                val result = hookAuth.password(r.client) {
                     d != null && !d.replica && DeployHooksCore.githubSignatureValid(d.webhookSecret, body, r.headers["x-hub-signature-256"])
                 }
                 if (!result.accepted || d == null) return rejected(result)

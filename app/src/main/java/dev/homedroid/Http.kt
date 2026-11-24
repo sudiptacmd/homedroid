@@ -30,6 +30,17 @@ class Request(
     /** On the cluster port: the SHA-256 fingerprint of the certificate the other phone presented. */
     val peer: String? = null,
 ) {
+    /**
+     * Who to rate-limit and log: the socket's address, unless that is loopback and the request
+     * came through the Cloudflare tunnel, which names the real visitor in Cf-Connecting-Ip.
+     * Otherwise everyone arriving through the tunnel would share one lockout.
+     */
+    val client: String by lazy {
+        val local = remote == "127.0.0.1" || remote == "::1" || remote == "0:0:0:0:0:0:0:1" || remote.startsWith("::ffff:127.")
+        val forwarded = headers["cf-connecting-ip"]?.trim().orEmpty()
+        if (local && forwarded.length in 2..45 && forwarded.all { it.isLetterOrDigit() || it == '.' || it == ':' }) forwarded else remote
+    }
+
     private var consumed = false
 
     val body: ByteArray by lazy {

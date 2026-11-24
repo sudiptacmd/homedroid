@@ -238,7 +238,7 @@ class Dashboard(private val ctx: Context) {
 
     private fun login(r: Request): Response = synchronized(auth) {
         val password = r.json().optString("password")
-        val result = auth.password(r.remote) { passwordMatches(password) }
+        val result = auth.password(r.client) { passwordMatches(password) }
         if (result.accepted) newSession(r) else authError(result)
     }
 
@@ -254,7 +254,7 @@ class Dashboard(private val ctx: Context) {
     private fun authorized(r: Request): Response? = synchronized(auth) {
         if (auth.session(r.cookie(COOKIE))) return null
         val bearer = AuthSecurity.bearer(r.headers) ?: return Response.error(401, "log in first")
-        val result = auth.password(r.remote) { passwordMatches(bearer) }
+        val result = auth.password(r.client) { passwordMatches(bearer) }
         if (result.accepted) null else authError(result)
     }
 
@@ -583,7 +583,7 @@ class Dashboard(private val ctx: Context) {
         val body = r.json()
         val password = body.optString("password")
         if (password.isNotEmpty()) {
-            val result = auth.password(r.remote) { passwordMatches(body.optString("currentPassword")) }
+            val result = auth.password(r.client) { passwordMatches(body.optString("currentPassword")) }
             if (!result.accepted) return authError(result, 403)
             if (password.length !in 12..128 || password.any { it.isISOControl() }) {
                 return Response.error(400, "Use 12–128 characters without control characters")

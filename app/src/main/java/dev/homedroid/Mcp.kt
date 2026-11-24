@@ -59,7 +59,7 @@ class Mcp(
         // The origin checks alone (GET needs no custom header): stops DNS rebinding and other sites.
         if (!AuthSecurity.browserAllowed("GET", r.headers)) return Response.error(403, "Cross-origin requests are not allowed")
         val given = AuthSecurity.bearer(r.headers) ?: return unauthorized("Send the MCP token as: Authorization: Bearer <token>")
-        val result = guard.password(r.remote) { McpCore.tokenMatches(given, cfg.mcpToken) }
+        val result = guard.password(r.client) { McpCore.tokenMatches(given, cfg.mcpToken) }
         if (!result.accepted) {
             return if (result.retrySeconds > 0) Response.json(JSONObject().put("error", "Too many wrong tokens; try again in ${result.retrySeconds} seconds"),
                 429, mapOf("Retry-After" to result.retrySeconds.toString()))
@@ -67,13 +67,13 @@ class Mcp(
         }
         r.headers["mcp-protocol-version"]?.let { if (it !in McpCore.VERSIONS) return Response.error(400, "Unsupported MCP protocol version $it") }
         return when {
-            r.path == "/mcp" && r.method == "POST" -> reply(server(r.remote).handle(String(r.body, Charsets.UTF_8)))
+            r.path == "/mcp" && r.method == "POST" -> reply(server(r.client).handle(String(r.body, Charsets.UTF_8)))
             r.path == "/mcp" -> Response(405, ByteArray(0), headers = mapOf("Allow" to "POST"))
             r.path == "/mcp/sse" && r.method == "GET" -> openStream(given)
             r.path == "/mcp/messages" && r.method == "POST" -> {
                 val s = sessions[r.query["sessionId"].orEmpty()]?.takeIf { McpCore.tokenMatches(given, it.token) }
                     ?: return Response.error(404, "No such session; open /mcp/sse again")
-                server(r.remote).handle(String(r.body, Charsets.UTF_8))?.let {
+                server(r.client).handle(String(r.body, Charsets.UTF_8))?.let {
                     if (!s.queue.offer(it, 5, TimeUnit.SECONDS)) return Response.error(503, "The event stream isn't being read")
                 }
                 Response(202, ByteArray(0), "text/plain")
@@ -137,21 +137,21 @@ class Mcp(
             }
             seg == listOf("audit") && r.method == "GET" ->
                 Response.json(JSONObject().put("entries", auditTail((r.query["limit"]?.toIntOrNull() ?: 100).coerceIn(1, 1000))))
-            seg == listOf("agent") && r.method == "POST" -> agent(body, r.remote)
+            seg == listOf("agent") && r.method == "POST" -> agent(body, r.client)
             seg == listOf("agent", "pending") && r.method == "GET" ->
                 Response.json(JSONObject().put("pending", JSONArray().apply { pendingList().forEach { put(it.json()) } }))
             seg == listOf("agent", "approve") && r.method == "POST" -> {
                 val p = takePending(body.optString("id")) ?: return Response.error(404, "That action is gone; ask the agent again")
                 try {
                     Response.json(JSONObject().put("ok", true).put("id", p.id).put("name", p.tool.name)
-                        .put("result", runTool(p.tool, p.args, r.remote, "agent (approved)")))
+                        .put("result", runTool(p.tool, p.args, r.client, "agent (approved)")))
                 } catch (e: Exception) {
                     Response.json(JSONObject().put("ok", false).put("id", p.id).put("name", p.tool.name).put("error", e.message ?: "Failed"))
                 }
             }
             seg == listOf("agent", "reject") && r.method == "POST" -> {
                 val p = takePending(body.optString("id")) ?: return Response.error(404, "That action is gone")
-                record(r.remote, "agent", p.tool.name, p.args, "rejected by the user")
+                record(r.client, "agent", p.tool.name, p.args, "rejected by the user")
                 Response.ok()
             }
             else -> Response.error(404, "No such MCP endpoint")
