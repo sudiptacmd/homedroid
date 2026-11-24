@@ -28,6 +28,8 @@ class Dashboard(private val ctx: Context) {
     private val network = NetworkTools(ctx, paths)
     private val ai = Ai(ctx)
     private val wol = WakeOnLan(ctx, cfg)
+    private val mail = Mail(cfg, apps, alpine)
+    private val repeater = WifiRepeater.get(ctx)
     private val routines = Routines(ctx, ai)
     private val databases = Databases(paths, files, apps, deploys, alpine)
     private val mcp = Mcp(ctx, cfg, files, ai) { route(it) }
@@ -43,6 +45,7 @@ class Dashboard(private val ctx: Context) {
         routines.start()
         domains.start()
         ddns.start()
+        repeater.resume()
         try {
             cluster.start()
         } catch (e: java.io.IOException) {
@@ -53,6 +56,7 @@ class Dashboard(private val ctx: Context) {
     fun stop() {
         if (phoneInstance === this) phoneInstance = null
         routines.stop()
+        repeater.suspend()
         ddns.stop()
         ai.stop()
         network.stop()
@@ -187,6 +191,8 @@ class Dashboard(private val ctx: Context) {
             seg.firstOrNull() == "ai" && seg.getOrNull(1) in setOf("routines", "briefs", "speak") -> routines.handle(r, seg.drop(1))
             seg.firstOrNull() == "ai" -> ai.handle(r, seg.drop(1))
             seg.firstOrNull() == "wol" -> wol.handle(r, seg.drop(1))
+            seg.firstOrNull() == "mail" -> mail.handle(r, seg.drop(1))
+            seg.firstOrNull() == "repeater" -> repeater.handle(r, seg.drop(1))
             seg.firstOrNull() == "mcp" -> mcp.api(r, seg.drop(1), peer != null)
             seg.firstOrNull() == "network" -> network.handle(r, seg.drop(1))
             seg.firstOrNull() == "ddns" -> ddns.handle(r, seg.drop(1))
@@ -371,6 +377,10 @@ class Dashboard(private val ctx: Context) {
             .put("description", "Wake computers at home from anywhere: the phone sends the magic packet on your network.")
             .put("port", 0).put("kind", "core").put("installed", true).put("enabled", cfg.wolEnabled)
             .put("state", if (cfg.wolEnabled) "ready" else "stopped"))
+        core.put(JSONObject().put("id", "repeater").put("name", "Wi-Fi repeater")
+            .put("description", "Share this phone's internet over its own Wi-Fi network (Wi-Fi Direct) through built-in HTTP and SOCKS5 proxies. No root; devices set a proxy.")
+            .put("port", RepeaterCore.HTTP_PORT).put("kind", "core").put("installed", true).put("enabled", cfg.repeaterEnabled)
+            .put("state", repeater.json().getString("state")))
         core.put(network.module())
         return JSONObject().put("core", core).put("apps", catalog).put("job", job())
     }
@@ -409,6 +419,10 @@ class Dashboard(private val ctx: Context) {
             if (action !in setOf("enable", "disable")) return Response.error(400, "Wake on LAN can only be turned on or off")
             cfg.wolEnabled = action == "enable"
             return Response.ok()
+        }
+        if (id == "repeater") {
+            if (action !in setOf("enable", "disable")) return Response.error(400, "The Wi-Fi repeater can only be turned on or off")
+            return repeater.setEnabled(action == "enable")?.let { Response.error(409, it) } ?: Response.ok()
         }
         if (id == "ai") {
             if (action !in setOf("enable", "disable")) return Response.error(400, "AI can only be turned on or off")

@@ -41,6 +41,31 @@ class Config(ctx: Context) {
         get() = prefs.getBoolean("wol", false)
         set(v) = prefs.edit().putBoolean("wol", v).apply()
 
+    /** The Wi-Fi repeater (see [WifiRepeater]); it starts and stops with the server while this is on. */
+    var repeaterEnabled: Boolean
+        get() = prefs.getBoolean("repeater", false)
+        set(v) = prefs.edit().putBoolean("repeater", v).apply()
+
+    var repeaterName: String
+        get() = RepeaterCore.networkName(prefs.getString("repeater_name", "").orEmpty())
+        set(v) = prefs.edit().putString("repeater_name", RepeaterCore.networkName(v)).apply()
+
+    /** The group's WPA2 passphrase, made on first use. */
+    var repeaterPassphrase: String
+        get() = secrets.get("repeater_passphrase")?.takeIf(RepeaterCore::validPassphrase)
+            ?: RepeaterCore.newPassphrase().also { secrets.put("repeater_passphrase", it) }
+        set(v) = secrets.put("repeater_passphrase", v)
+
+    /** "auto", "2.4" or "5". */
+    var repeaterBand: String
+        get() = prefs.getString("repeater_band", "auto")!!.let { RepeaterCore.bandName(RepeaterCore.bandCode(it) ?: 0) }
+        set(v) = prefs.edit().putString("repeater_band", RepeaterCore.bandName(RepeaterCore.bandCode(v) ?: 0)).apply()
+
+    /** Whether repeater clients may also reach devices on the home network (they only reach the internet otherwise). */
+    var repeaterAllowLan: Boolean
+        get() = prefs.getBoolean("repeater_lan", false)
+        set(v) = prefs.edit().putBoolean("repeater_lan", v).apply()
+
     /** Set while an update from the dashboard installs, so the server comes back afterwards. */
     var resumeAfterUpdate: Boolean
         get() = prefs.getBoolean("resume_after_update", false)
