@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:id="@+id/widget_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="@drawable/widget_icon_bg"
+            android:contentDescription="@null"
+            android:padding="6dp"
+            android:src="@drawable/ic_stat"
+            android:tint="@color/widget_on_accent_container" />
+
+        <TextView
+            android:id="@+id/widget_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Pixel 6"
+            android:textSize="15sp"
+            android:textColor="@color/widget_on_surface"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end" />
+
+        <LinearLayout
+            android:id="@+id/status_pill"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_pill"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="10dp"
+            android:paddingTop="5dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="5dp">
+
+            <ImageView
+                android:id="@+id/status_dot"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:contentDescription="@null"
+                android:src="@drawable/widget_dot" />
+
+            <TextView
+                android:id="@+id/status_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Online"
+                android:textSize="12sp"
+                android:textColor="@color/widget_on_surface"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:layout_marginStart="5dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:baselineAligned="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/m_battery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="84%"
+                android:textSize="26sp"
+                android:textColor="@color/widget_on_surface"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/m_battery_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Charging"
+                android:textSize="11sp"
+                android:textColor="@color/widget_on_surface_variant"
+                android:maxLines="1"
+                android:layout_marginTop="2dp"
+                android:letterSpacing="0.06" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/m_temp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="31°"
+                android:textSize="26sp"
+                android:textColor="@color/widget_on_surface"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/m_temp_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Temp"
+                android:textSize="11sp"
+                android:textColor="@color/widget_on_surface_variant"
+                android:maxLines="1"
+                android:layout_marginTop="2dp"
+                android:letterSpacing="0.06" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/m_cpu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12%"
+                android:textSize="26sp"
+                android:textColor="@color/widget_on_surface"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/m_cpu_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CPU"
+                android:textSize="11sp"
+                android:textColor="@color/widget_on_surface_variant"
+                android:maxLines="1"
+                android:layout_marginTop="2dp"
+                android:letterSpacing="0.06" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_summary"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="5 of 5 services running"
+            android:textSize="12sp"
+            android:textColor="@color/widget_on_surface_variant"
+            android:maxLines="1"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_action"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@drawable/widget_button"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:minWidth="64dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="Dashboard"
+            android:textColor="@color/widget_on_accent"
+            android:textSize="13sp" />
+    </LinearLayout>
+</LinearLayout>

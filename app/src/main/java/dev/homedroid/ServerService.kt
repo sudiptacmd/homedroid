@@ -131,6 +131,8 @@ class ServerService : Service() {
         super.onCreate()
         active = true
         startInForeground()
+        // Dock mode's "open when charging" listens for the charger while the server runs.
+        DockLauncher.register(this)
         wakeLock = getSystemService(PowerManager::class.java)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "homedroid:server")
             .apply { setReferenceCounted(false); acquire() }
@@ -183,6 +185,7 @@ class ServerService : Service() {
     }
 
     override fun onDestroy() {
+        DockLauncher.unregister(this)
         active = false
         if (current === this) current = null
         try {

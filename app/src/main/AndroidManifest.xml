@@ -21,6 +21,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Dock mode: opening over the lock screen when the phone is plugged in (see DockLauncher). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- Updating the app from the web dashboard. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -73,6 +75,30 @@
             android:excludeFromRecents="true" android:windowSoftInputMode="adjustResize"
             android:enableOnBackInvokedCallback="true" />
 
+        <!-- Dock mode: a full-screen bedside clock. Handles rotation itself so the clock never flickers. -->
+        <activity android:name=".DockActivity" android:exported="false"
+            android:label="Dock"
+            android:theme="@style/DockTheme"
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:enableOnBackInvokedCallback="true" />
+        <!-- The screen saver's settings gear opens the dock's customisation sheet. -->
+        <activity-alias android:name=".DockSettings" android:exported="true"
+            android:label="@string/dock_dream_label"
+            android:targetActivity=".DockActivity" />
+
+        <service
+            android:name=".DockDream"
+            android:exported="true"
+            android:label="@string/dock_dream_label"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data android:name="android.service.dream" android:resource="@xml/dock_dream" />
+        </service>
+
         <service
             android:name=".ServerService"
             android:exported="false"
@@ -97,11 +123,18 @@
         <receiver android:name=".Updater$UpdateReceiver" android:exported="false" />
         <receiver android:name=".ClusterReceiver" android:exported="false" />
 
-        <receiver android:name=".StatusWidget" android:exported="true" android:label="Homedroid status">
+        <receiver android:name=".StatusWidget" android:exported="true" android:label="@string/widget_status_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/status_widget_info" />
+        </receiver>
+
+        <receiver android:name=".DockClockWidget" android:exported="true" android:label="@string/widget_clock_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/dock_clock_widget_info" />
         </receiver>
     </application>
 </manifest>
