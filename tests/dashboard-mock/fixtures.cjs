@@ -132,9 +132,10 @@ function createPhone({id, name, model, ips, variant = 'self', online = true, and
     job: {title: null, running: false, error: null, log: []},
     deploys: self ? [
       {id: 'my-blog', name: 'my-blog', repo: 'https://github.com/example/my-blog', branch: 'main', port: 3000, runtime: 'auto',
-        build: 'npm run build', start: 'npm start', env: {NODE_ENV: '***'}, autoDeploy: true, commit: '9f3c2a1d4b5e6f708192a3b4c5d6e7f809102b3c', detected: 'node', error: null},
+        build: 'npm run build', start: 'npm start', env: {NODE_ENV: '***'}, autoDeploy: true, replicated: true, token: 'hd_demo', webhookSecret: 'whsec_demo', pipeline: [{name: 'Install', run: 'npm ci'}, {name: 'Test', run: 'npm test'}, {name: 'Lint', run: 'npm run lint'}], commit: '9f3c2a1d4b5e6f708192a3b4c5d6e7f809102b3c', detected: 'node', error: null},
       {id: 'status-page', name: 'status-page', repo: 'https://github.com/example/status-page', branch: 'main', port: 3100, runtime: 'static',
-        build: '', start: '', env: {}, autoDeploy: false, commit: 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678', detected: 'static', error: null},
+        build: '', start: '', env: {}, autoDeploy: false, balanced: {port: 9000, policy: 'round_robin', healthUri: '/', interval: 10}, commit: 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678', detected: 'static', error: null},
+      {id: 'docs-site', name: 'docs-site', source: 'upload', repo: '', branch: 'main', port: 3200, runtime: 'static', build: '', start: '', env: {}, autoDeploy: false, token: 'hd_demo2', commit: 'upload-3fa91c27d0b4', detected: 'static', error: null},
       {id: 'api-server', name: 'api-server', repo: 'https://***@github.com/example/api-server', branch: 'develop', port: 5000, runtime: 'python',
         build: 'pip install -r requirements.txt', start: 'python app.py', env: {DATABASE_URL: '***', SECRET_KEY: '***'}, autoDeploy: false,
         commit: null, detected: 'python', error: 'build failed'},
@@ -334,8 +335,11 @@ const job = p => ({title: p.job.title, running: p.job.running, error: p.job.erro
 
 function deployJson(p, x, withState = true) {
   const dmn = daemon(p, 'deploy-' + x.id);
-  const o = {id: x.id, name: x.name, repo: x.repo.replace(/:\/\/[^@/]+@/, '://***@'), branch: x.branch, port: x.port, runtime: x.runtime, build: x.build,
+  const o = {id: x.id, name: x.name, repo: (x.repo || '').replace(/:\/\/[^@/]+@/, '://***@'), branch: x.branch, port: x.port, runtime: x.runtime, build: x.build,
     start: x.start, env: Object.fromEntries(Object.keys(x.env).map(k => [k, '***'])), autoDeploy: x.autoDeploy,
+    source: x.source || 'git', replicated: !!x.replicated, replica: !!x.replica, balanced: x.balanced || null, pipeline: x.pipeline || [],
+    hasToken: !!x.token, hasWebhookSecret: !!x.webhookSecret,
+    hooks: {deploy: `/hooks/deploy/${x.id}`, artifact: `/hooks/deploy/${x.id}/artifact`, github: `/hooks/github/${x.id}`},
     state: dmn?.state || 'stopped', restarts: dmn?.restarts || 0};
   return withState ? {...o, commit: x.commit, detected: x.detected, error: x.error} : o;
 }

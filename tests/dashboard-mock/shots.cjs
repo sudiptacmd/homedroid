@@ -37,6 +37,17 @@ for (const s of ['homedroid-dark', 'homedroid-light', 'oled', 'midnight', 'fores
   jobs.push({name: 'theme-' + s, ...D, height: 720, hash: 'overview', prefs: {theme: {mode: 'fixed', skin: s}}});
 }
 for (const f of ['humanist', 'geometric', 'rounded', 'serif', 'mono']) jobs.push({name: 'font-' + f, ...D, height: 720, hash: 'overview', prefs: {font: {ui: f}}});
+// Console pages: every page at desktop and mobile, dark and light. `steps` run in the page after it loads (clicks, tab choices).
+const DB = 'databases/alpine/srv/my-blog/data/app.sqlite';
+const consolePages = [
+  {n: 'databases', hash: 'databases'}, {n: 'databases-schema', hash: DB}, {n: 'databases-data', hash: DB, steps: [`ACT.dbTab({dataset:{t:'data'}})`], wait: 900}, {n: 'databases-sql', hash: DB, steps: [`ACT.dbTab({dataset:{t:'sql'}})`, `ACT.dbQuick({dataset:{sql:'SELECT * FROM posts LIMIT 20;'}})`, `ACT.dbRun()`], wait: 900},
+  {n: 'documents', hash: 'documents/notes'}, {n: 'domains', hash: 'domains'}, {n: 'request-logs', hash: 'request-logs'}, {n: 'ddns', hash: 'ddns'}, {n: 'firewall', hash: 'firewall'},
+  {n: 'mcp', hash: 'mcp', steps: [`mcpAsk('Restart sshd')`], wait: 900}, {n: 'deploys', hash: 'deploys'}, {n: 'deploy-overview', hash: 'deploys/my-blog'}, {n: 'deploy-settings', hash: 'deploys/my-blog/settings'},
+  {n: 'deploy-hooks', hash: 'deploys/my-blog/hooks', steps: [`dep.secrets['my-blog'] = {token: 'hd_demo_token_shown_once'}; dep.force = true; refresh()`], wait: 600}, {n: 'deploy-upload', hash: 'deploys/docs-site/upload'},
+  {n: 'deploy-pipelines', hash: 'deploys/my-blog/pipelines'}, {n: 'deploy-run', hash: 'deploys/my-blog/pipelines/__RUN__'}, {n: 'desktop', hash: 'desktop', steps: [`ACT.dkPair()`, `ACT.mpSelect({dataset:{id:'b-4'}})`], wait: 900},
+];
+for (const pg of consolePages) for (const [vp, w, h] of [['desktop', 1440, 900], ['mobile', 390, 844]]) for (const [tn, skin] of [['dark', 'homedroid-dark'], ['light', 'homedroid-light']])
+  jobs.push({name: `console-${pg.n}-${vp}-${tn}`, width: w, height: h, hash: pg.hash, prefs: {theme: {mode: 'fixed', skin}}, steps: pg.steps, wait: pg.wait, full: true});
 (async () => {
   fs.mkdirSync(out, {recursive: true});
   const only = process.argv[2] ? process.argv[2].split(',') : null;
@@ -53,15 +64,18 @@ for (const f of ['humanist', 'geometric', 'rounded', 'serif', 'mono']) jobs.push
       const merged = {v: 1, updated: 1, ...job.prefs, theme: job.prefs.theme, font: job.prefs.font, layout: job.prefs.layout, oled: job.prefs.oled, dash: job.prefs.dash};
       await page.addInitScript(p => { try { if (!localStorage.getItem('hd.seeded')) { localStorage.setItem('hd.prefs', JSON.stringify(p)); localStorage.setItem('hd.seeded', '1'); } } catch (e) {} }, merged);
       await page.route('**/api/ui/prefs', r => r.request().method() === 'GET' ? r.fulfill({status: 200, contentType: 'application/json', body: '{}'}) : r.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify({updated: 2})}));
-      await page.goto(base + '/#' + job.hash);
+      let hash = job.hash;
+      if (hash.includes('__RUN__')) hash = hash.replace('__RUN__', (await (await context.request.get(base + '/api/deploys/my-blog/runs')).json()).runs[1].id);
+      await page.goto(base + '/#' + hash);
       await page.locator('#appView:not(.hidden)').waitFor({timeout: 8000});
-      await page.waitForTimeout(job.hash === 'overview' ? 1400 : 700);
+      await page.waitForTimeout(job.hash === 'overview' ? 1400 : 900);
+      for (const step of job.steps || []) { await page.evaluate(step).catch(e => issues.push(`${job.name}: step ${step}: ${e.message}`)); await page.waitForTimeout(job.wait || 400); }
       if (job.edit) { await page.evaluate(() => ACT.wEdit()); await page.waitForTimeout(500); }
       if (job.open) { await page.evaluate(t => openCustomize(t), job.open); await page.waitForTimeout(400); }
       if (job.saver) { await page.evaluate(() => { lastInput = Date.now() - 3600000; setStage('saver'); }); await page.waitForTimeout(300); }
       const m = await page.evaluate(() => ({sw: document.documentElement.scrollWidth, w: innerWidth}));
       if (m.sw > m.w + 1) issues.push(`${job.name}: horizontal overflow ${m.sw} > ${m.w}`);
-      await page.screenshot({path: path.join(out, job.name + '.png')});
+      await page.screenshot({path: path.join(out, job.name + '.png'), fullPage: !!job.full});
       await context.close();
     }
   } finally { await browser.close(); }
