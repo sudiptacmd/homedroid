@@ -58,6 +58,7 @@ class Dashboard(private val ctx: Context) {
         network.stop()
         databases.close()
         cluster.stop()
+        DesktopLink.closeIfInitialized()
         http.stop()
     }
 
@@ -71,6 +72,7 @@ class Dashboard(private val ctx: Context) {
         }
         if (r.method == "GET" && r.path.startsWith("/vendor/")) return vendor(r)
         if (r.method == "GET" && r.path.startsWith("/guides/")) return guideImage(r.path.removePrefix("/guides/"))
+        if (r.path.startsWith("/desktop/v1/")) return DesktopLink.get(ctx).handle(r)
         // MCP clients use their own token, not a dashboard session.
         if (r.path == "/mcp" || r.path.startsWith("/mcp/")) return mcp.handle(r)
         // Deploy hooks for CI: authenticated by their own token or signature, not a session.
@@ -173,6 +175,8 @@ class Dashboard(private val ctx: Context) {
 
     /** The API itself; [peer] is set when another phone in the cluster sent the request. */
     private fun route(r: Request, peer: Peer? = null): Response {
+        if (r.path.startsWith("/api/desktop/")) return DesktopLink.get(ctx).api(r)
+        if (r.path == "/api/macropads" || r.path.startsWith("/api/macropads/")) return MacroPads.get(ctx).api(r)
         val seg = r.path.removePrefix("/api/").split('/')
         return when {
             r.method == "POST" && seg == listOf("logout") -> {

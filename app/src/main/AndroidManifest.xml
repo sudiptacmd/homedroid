@@ -63,6 +63,11 @@
             android:label="Apps"
             android:parentActivityName=".MainActivity" />
 
+        <activity android:name=".MacroPadActivity" android:exported="false"
+            android:label="MacroPads" android:windowSoftInputMode="adjustResize" />
+        <service android:name=".DesktopWebcamService" android:exported="false"
+            android:foregroundServiceType="camera" />
+
         <activity android:name=".SettingsActivity" android:exported="false"
             android:label="Settings" android:parentActivityName=".MainActivity" />
         <activity android:name=".DashboardActivity" android:exported="false"

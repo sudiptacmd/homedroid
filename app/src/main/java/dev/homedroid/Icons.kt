@@ -21,7 +21,8 @@ enum class Icon {
     Wifi, Globe, Copy, Share, OpenExternal, ChevronRight, ChevronDown, Check, Plus, Close, Download,
     Refresh, Trash, Lock, Fingerprint, Key, Terminal, Shield, Cloud, Camera, Logs, Folder, Sparkle,
     Layers, Phone, Contrast, Clock, Dock, Keypad, Info, Warning, Alert, Server, Plug, Stop, Play,
-    Eye, Bell, Nodes, Swatch;
+    Eye, Bell, Nodes, Swatch, Mic, MicOff, VolumeUp, VolumeDown, VolumeMute, Pause, Next, Previous,
+    Screenshot, Paste, Undo, Redo, Light, Mouse, Keyboard, Music, Heart, Search, Minus;
 
     private val parts: Pair<Path, Path?> by lazy { build(this) }
     val stroke: Path get() = parts.first
@@ -44,6 +45,30 @@ enum class Icon {
                 (f ?: Path().also { f = it }).addCircle(x, y, rad, Path.Direction.CW)
             }
             when (icon) {
+                Mic, MicOff -> {
+                    rr(9f, 3f, 15f, 14f, 3f); p.addArc(oval(6f, 8f, 18f, 18f), 0f, 180f)
+                    line(12f, 18f, 12f, 21f); line(9f, 21f, 15f, 21f)
+                    if (icon == MicOff) line(3f, 3f, 21f, 21f)
+                }
+                VolumeUp, VolumeDown, VolumeMute -> {
+                    line(3f, 9f, 7f, 9f, 12f, 5f, 12f, 19f, 7f, 15f, 3f, 15f); p.close()
+                    if (icon == VolumeMute) { line(16f, 9f, 21f, 15f); line(21f, 9f, 16f, 15f) }
+                    else { p.addArc(oval(10f, 8f, 18f, 16f), -65f, 130f); if (icon == VolumeUp) p.addArc(oval(8f, 4f, 22f, 20f), -65f, 130f) }
+                }
+                Pause -> { line(8f, 5f, 8f, 19f); line(16f, 5f, 16f, 19f) }
+                Next -> { line(5f, 5f, 16f, 12f, 5f, 19f); p.close(); line(19f, 5f, 19f, 19f) }
+                Previous -> { line(19f, 5f, 8f, 12f, 19f, 19f); p.close(); line(5f, 5f, 5f, 19f) }
+                Screenshot -> { line(3f, 8f, 3f, 3f, 8f, 3f); line(16f, 3f, 21f, 3f, 21f, 8f); line(3f, 16f, 3f, 21f, 8f, 21f); line(16f, 21f, 21f, 21f, 21f, 16f); rr(7f, 7f, 17f, 17f, 2f) }
+                Paste -> { rr(5f, 5f, 19f, 21f, 2f); rr(9f, 3f, 15f, 7f, 1f); line(9f, 12f, 15f, 12f); line(9f, 16f, 15f, 16f) }
+                Undo -> { line(8f, 4f, 3f, 9f, 8f, 14f); p.moveTo(3f, 9f); p.lineTo(14f, 9f); p.cubicTo(23f, 9f, 23f, 20f, 14f, 20f) }
+                Redo -> { line(16f, 4f, 21f, 9f, 16f, 14f); p.moveTo(21f, 9f); p.lineTo(10f, 9f); p.cubicTo(1f, 9f, 1f, 20f, 10f, 20f) }
+                Light -> { p.addArc(oval(6f, 2f, 18f, 15f), 145f, 250f); line(7f, 12f, 9f, 17f, 15f, 17f, 17f, 12f); line(9f, 20f, 15f, 20f); line(11f, 22f, 13f, 22f) }
+                Mouse -> { rr(6f, 2f, 18f, 22f, 6f); line(12f, 3f, 12f, 10f); line(6f, 10f, 18f, 10f) }
+                Keyboard -> { rr(2f, 5f, 22f, 19f, 2f); for (x in listOf(6f, 10f, 14f, 18f)) { dot(x, 9f, 0.5f); dot(x, 12f, 0.5f) }; line(7f, 16f, 17f, 16f) }
+                Music -> { line(10f, 18f, 10f, 5f, 20f, 3f, 20f, 16f); p.addOval(oval(4f, 16f, 10f, 21f), Path.Direction.CW); p.addOval(oval(14f, 14f, 20f, 19f), Path.Direction.CW) }
+                Heart -> { p.moveTo(12f, 21f); p.cubicTo(-5f, 9f, 6f, -2f, 12f, 7f); p.cubicTo(18f, -2f, 29f, 9f, 12f, 21f) }
+                Search -> { circle(10f, 10f, 7f); line(15f, 15f, 21f, 21f) }
+                Minus -> line(5f, 12f, 19f, 12f)
                 Home -> { line(3f, 11f, 12f, 3.5f, 21f, 11f); line(5.5f, 9.5f, 5.5f, 20.5f, 18.5f, 20.5f, 18.5f, 9.5f); line(10f, 20.5f, 10f, 14.5f, 14f, 14.5f, 14f, 20.5f) }
                 Apps -> for (x in listOf(3.5f, 13.5f)) for (y in listOf(3.5f, 13.5f)) rr(x, y, x + 7f, y + 7f, 2f)
                 Tune -> {

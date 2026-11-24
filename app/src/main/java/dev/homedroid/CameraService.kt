@@ -234,11 +234,14 @@ class CameraService : Service() {
                             liveTorch = body.getBoolean("enabled")
                             startLive(id)
                         } else {
+                            check(!liveActive) { "Stop the other camera's live view before changing its torch" }
                             torchId?.let { manager.setTorchMode(it, false) }
                             torchId = null
+                            CameraOwnership.release(this)
                             if (body.getBoolean("enabled")) {
-                                manager.setTorchMode(id, true)
-                                torchId = id
+                                check(CameraOwnership.acquire(this)) { "Desktop webcam is using the camera" }
+                                try { manager.setTorchMode(id, true); torchId = id }
+                                catch (e: Exception) { CameraOwnership.release(this); throw e }
                             }
                             notifyState(if (torchId == null) "Camera ready for remote controls" else "Camera $id torch on")
                         }
@@ -276,6 +279,7 @@ class CameraService : Service() {
         check(directory(this).usableSpace > 128L * 1024 * 1024) { "At least 128 MB free storage is required" }
         check(store.reserve(if (video) 4L * 1024 * 1024 else 16L * 1024 * 1024)) { "Capture storage is full" }
         cleanup()
+        check(CameraOwnership.acquire(this)) { "Desktop webcam is using the camera; stop its stream first" }
         error = null
         selected = id
         busy = true
@@ -488,6 +492,7 @@ class CameraService : Service() {
         runCatching { reader?.close() }; reader = null
         runCatching { previewReader?.close() }; previewReader = null
         torchId?.let { runCatching { manager.setTorchMode(it, false) } }; torchId = null
+        CameraOwnership.release(this)
         output?.delete(); output = null
         selected = null
         recording = false
@@ -538,6 +543,19 @@ class CameraService : Service() {
     @Suppress("MissingPermission", "DEPRECATION")
     private fun startLive(id: String) {
         cleanup()
+        try {
+            check(CameraOwnership.acquire(this)) { "Desktop webcam is using the camera; stop its stream first" }
+            openLive(id)
+        } catch (e: Exception) {
+            // cleanup may have queued resumeLive; clear intent so a reservation conflict cannot loop.
+            liveWanted = null
+            fail(e.message ?: "Live view failed")
+            throw e
+        }
+    }
+
+    @Suppress("MissingPermission", "DEPRECATION")
+    private fun openLive(id: String) {
         val characteristics = manager.getCameraCharacteristics(id)
         val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: error("No supported camera outputs")
         val size = liveSize(map)
