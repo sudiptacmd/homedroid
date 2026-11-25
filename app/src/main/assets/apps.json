@@ -191,6 +191,44 @@
     }
   },
   {
+    "id": "jellyseerr",
+    "name": "Jellyseerr",
+    "description": "Media request manager with a streaming-style interface. Search for movies and TV shows from your phone browser, click Request, and Radarr and Sonarr handle the rest automatically. Requires Radarr and Sonarr to be installed first.",
+    "port": 5055,
+    "size": "≈ 400 MB",
+    "arches": [
+      "arm64",
+      "amd64"
+    ],
+    "images": {
+      "jellyseerr": "fallenbagel/jellyseerr:2.7.2"
+    },
+    "install": "true",
+    "uninstall": "true",
+    "data": [],
+    "run": [],
+    "services": [
+      {
+        "name": "jellyseerr",
+        "image": "jellyseerr",
+        "env": {
+          "LOG_LEVEL": "info",
+          "PORT": "5055"
+        },
+        "binds": [
+          [
+            "@data/config",
+            "/app/config"
+          ]
+        ],
+        "run": [
+          "node",
+          "dist/index.js"
+        ]
+      }
+    ]
+  },
+  {
     "id": "prowlarr",
     "name": "Prowlarr",
     "description": "Indexer manager for Radarr and Sonarr. Connect your torrent tracker accounts here once; Prowlarr feeds them to Radarr and Sonarr automatically. Set up after installing Radarr and Sonarr.",
