@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -12,13 +13,23 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- Wi-Fi repeater: hosting a Wi-Fi Direct group. Nearby devices on Android 13+, location before. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" android:usesPermissionFlags="neverForLocation" tools:targetApi="33" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="32" />
+    <uses-feature android:name="android.hardware.wifi.direct" android:required="false" />
     <!-- Finding other Homedroid phones on the network (mDNS) for a cluster. -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Optional fingerprint or face unlock for the app lock. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Dock mode: opening over the lock screen when the phone is plugged in (see DockLauncher). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- Updating the app from the web dashboard. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -59,12 +70,46 @@
             android:label="Apps"
             android:parentActivityName=".MainActivity" />
 
+        <activity android:name=".MacroPadActivity" android:exported="false"
+            android:label="MacroPads" android:windowSoftInputMode="adjustResize" />
+        <service android:name=".DesktopWebcamService" android:exported="false"
+            android:foregroundServiceType="camera" />
+
         <activity android:name=".SettingsActivity" android:exported="false"
             android:label="Settings" android:parentActivityName=".MainActivity" />
         <activity android:name=".DashboardActivity" android:exported="false"
             android:label="Control panel" android:windowSoftInputMode="adjustResize"
             android:enableOnBackInvokedCallback="true"
             android:parentActivityName=".MainActivity" />
+
+        <activity android:name=".LockActivity" android:exported="false"
+            android:label="Homedroid" android:launchMode="singleTop"
+            android:excludeFromRecents="true" android:windowSoftInputMode="adjustResize"
+            android:enableOnBackInvokedCallback="true" />
+
+        <!-- Dock mode: a full-screen bedside clock. Handles rotation itself so the clock never flickers. -->
+        <activity android:name=".DockActivity" android:exported="false"
+            android:label="Dock"
+            android:theme="@style/DockTheme"
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:enableOnBackInvokedCallback="true" />
+        <!-- The screen saver's settings gear opens the dock's customisation sheet. -->
+        <activity-alias android:name=".DockSettings" android:exported="true"
+            android:label="@string/dock_dream_label"
+            android:targetActivity=".DockActivity" />
+
+        <service
+            android:name=".DockDream"
+            android:exported="true"
+            android:label="@string/dock_dream_label"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data android:name="android.service.dream" android:resource="@xml/dock_dream" />
+        </service>
 
         <service
             android:name=".ServerService"
@@ -90,11 +135,18 @@
         <receiver android:name=".Updater$UpdateReceiver" android:exported="false" />
         <receiver android:name=".ClusterReceiver" android:exported="false" />
 
-        <receiver android:name=".StatusWidget" android:exported="true" android:label="Homedroid status">
+        <receiver android:name=".StatusWidget" android:exported="true" android:label="@string/widget_status_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/status_widget_info" />
+        </receiver>
+
+        <receiver android:name=".DockClockWidget" android:exported="true" android:label="@string/widget_clock_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/dock_clock_widget_info" />
         </receiver>
     </application>
 </manifest>

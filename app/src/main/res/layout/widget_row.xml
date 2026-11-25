@@ -1,33 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- One service or phone: a status dot, its name, and a short detail on the right. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="22dp"
+    android:layout_height="26dp"
     android:gravity="center_vertical"
     android:orientation="horizontal">
 
-    <TextView
+    <ImageView
         android:id="@+id/row_dot"
-        android:layout_width="14dp"
-        android:layout_height="wrap_content"
-        android:text="●"
-        android:textSize="10sp" />
+        android:layout_width="7dp"
+        android:layout_height="7dp"
+        android:contentDescription="@null"
+        android:src="@drawable/widget_dot" />
 
     <TextView
         android:id="@+id/row_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:ellipsize="end"
+        android:text=""
+        android:textSize="13sp"
+        android:textColor="@color/widget_on_surface"
+        android:fontFamily="sans-serif-medium"
         android:maxLines="1"
-        android:textColor="#FFE8EAEF"
-        android:textSize="13sp" />
+        android:layout_marginStart="10dp"
+        android:layout_weight="1"
+        android:ellipsize="end" />
 
     <TextView
         android:id="@+id/row_detail"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:text=""
+        android:textSize="12sp"
+        android:textColor="@color/widget_on_surface_variant"
         android:maxLines="1"
-        android:textColor="#FF8A92A3"
-        android:textSize="12sp" />
+        android:layout_marginStart="8dp" />
 </LinearLayout>

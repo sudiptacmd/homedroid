@@ -40,7 +40,7 @@ class Device(ctx: Context) {
     val hot get() = batteryTempC >= 45f
 
     companion object {
-        private fun localIps(): List<String> = try {
+        fun localIps(): List<String> = try {
             NetworkInterface.getNetworkInterfaces().toList()
                 .filter { it.isUp && !it.isLoopback }
                 .flatMap { it.inetAddresses.toList() }

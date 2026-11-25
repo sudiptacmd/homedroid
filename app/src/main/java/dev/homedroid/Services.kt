@@ -49,16 +49,18 @@ object Services {
     }
 
     fun enabled(ctx: Context, p: Paths, c: Config): List<Spec> = buildList {
-        if (c.sshEnabled) add(
+        // sshd also serves the dashboard's terminal, so it runs even with SSH off: then it only
+        // listens on loopback, on a port picked by the system.
+        add(
             Spec(
                 "sshd", listOf(
                     p.exe("sshd"),
-                    "-listen", ":${c.sshPort}",
+                    "-listen", if (c.sshEnabled) ":${c.sshPort}" else "127.0.0.1:0",
                     "-hostkey", p.hostKey.path,
                     "-authorized-keys", p.authorizedKeys.path,
                     "-home", p.home.path,
                     "-session-log", p.sessionLog.path,
-                    "-terminal-listen", "127.0.0.1:${Terminal.PORT}",
+                    "-terminal-listen", "127.0.0.1:${Terminal.port}",
                 ),
                 mapOf("HOMEDROID_TERMINAL_TOKEN" to Terminal.token),
             )

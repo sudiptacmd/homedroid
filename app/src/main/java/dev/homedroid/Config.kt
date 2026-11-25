@@ -5,11 +5,33 @@ import android.content.Context
 /** User settings, persisted in private SharedPreferences. */
 class Config(ctx: Context) {
     private val prefs = ctx.getSharedPreferences("config", Context.MODE_PRIVATE)
+    /** Tokens and passwords, encrypted with a keystore key (older plaintext values move over on read). */
+    private val secrets = SecretStore(prefs)
 
-    /** Native phone interface only: system, light or dark. */
+    /** Native phone interface only: system, light, dark or oled (true black for OLED screens). */
     var appearance: String
         get() = prefs.getString("appearance", "system")!!
         set(v) = prefs.edit().putString("appearance", v).apply()
+
+    /** Native phone interface only: colours from the wallpaper on Android 12+. */
+    var dynamicColor: Boolean
+        get() = prefs.getBoolean("dynamic_color", true)
+        set(v) = prefs.edit().putBoolean("dynamic_color", v).apply()
+
+    /** Overview only: hold the screen on, for a phone used as a status display. Off lets it time out. */
+    var keepScreenOn: Boolean
+        get() = prefs.getBoolean("keep_screen_on", false)
+        set(v) = prefs.edit().putBoolean("keep_screen_on", v).apply()
+
+    /** Switch an untouched Overview to a dim, drifting standby view (see [BurnIn]). */
+    var burnInProtection: Boolean
+        get() = prefs.getBoolean("burn_in", true)
+        set(v) = prefs.edit().putBoolean("burn_in", v).apply()
+
+    /** Minutes without a touch before the standby view. */
+    var standbyMinutes: Int
+        get() = prefs.getInt("standby_minutes", BurnIn.DEFAULT_MINUTES).coerceIn(1, 60)
+        set(v) = prefs.edit().putInt("standby_minutes", v.coerceIn(1, 60)).apply()
 
     var cameraEnabled: Boolean
         get() = prefs.getBoolean("camera", false)
@@ -18,6 +40,31 @@ class Config(ctx: Context) {
     var wolEnabled: Boolean
         get() = prefs.getBoolean("wol", false)
         set(v) = prefs.edit().putBoolean("wol", v).apply()
+
+    /** The Wi-Fi repeater (see [WifiRepeater]); it starts and stops with the server while this is on. */
+    var repeaterEnabled: Boolean
+        get() = prefs.getBoolean("repeater", false)
+        set(v) = prefs.edit().putBoolean("repeater", v).apply()
+
+    var repeaterName: String
+        get() = RepeaterCore.networkName(prefs.getString("repeater_name", "").orEmpty())
+        set(v) = prefs.edit().putString("repeater_name", RepeaterCore.networkName(v)).apply()
+
+    /** The group's WPA2 passphrase, made on first use. */
+    var repeaterPassphrase: String
+        get() = secrets.get("repeater_passphrase")?.takeIf(RepeaterCore::validPassphrase)
+            ?: RepeaterCore.newPassphrase().also { secrets.put("repeater_passphrase", it) }
+        set(v) = secrets.put("repeater_passphrase", v)
+
+    /** "auto", "2.4" or "5". */
+    var repeaterBand: String
+        get() = prefs.getString("repeater_band", "auto")!!.let { RepeaterCore.bandName(RepeaterCore.bandCode(it) ?: 0) }
+        set(v) = prefs.edit().putString("repeater_band", RepeaterCore.bandName(RepeaterCore.bandCode(v) ?: 0)).apply()
+
+    /** Whether repeater clients may also reach devices on the home network (they only reach the internet otherwise). */
+    var repeaterAllowLan: Boolean
+        get() = prefs.getBoolean("repeater_lan", false)
+        set(v) = prefs.edit().putBoolean("repeater_lan", v).apply()
 
     /** Set while an update from the dashboard installs, so the server comes back afterwards. */
     var resumeAfterUpdate: Boolean
@@ -38,8 +85,8 @@ class Config(ctx: Context) {
         set(v) = prefs.edit().putBoolean("web", v).apply()
 
     var tunnelToken: String
-        get() = prefs.getString("tunnel_token", "")!!
-        set(v) = prefs.edit().putString("tunnel_token", v).apply()
+        get() = secrets.get("tunnel_token").orEmpty()
+        set(v) = secrets.put("tunnel_token", v)
 
     var tailscaleEnabled: Boolean
         get() = prefs.getBoolean("tailscale", false)
@@ -47,8 +94,8 @@ class Config(ctx: Context) {
 
     /** Optional; without one, the dashboard shows a login link instead. */
     var tailscaleAuthKey: String
-        get() = prefs.getString("tailscale_authkey", "")!!
-        set(v) = prefs.edit().putString("tailscale_authkey", v).apply()
+        get() = secrets.get("tailscale_authkey").orEmpty()
+        set(v) = secrets.put("tailscale_authkey", v)
 
     var tailscaleHostname: String
         get() = prefs.getString("tailscale_hostname", null) ?: "homedroid"
@@ -92,10 +139,11 @@ class Config(ctx: Context) {
 
     /** Password for the web dashboard, generated on first use. */
     var dashboardPassword: String
-        get() = prefs.getString("dashboard_password", null) ?: randomPassword().also {
-            prefs.edit().putString("dashboard_password", it).apply()
-        }
-        set(value) = prefs.edit().putString("dashboard_password", value).apply()
+        // An unreadable one is not replaced: no password matches "" until the keystore recovers
+        // or the user sets a new password on the phone.
+        get() = secrets.get("dashboard_password")
+            ?: if (secrets.unreadable("dashboard_password")) "" else randomPassword().also { secrets.put("dashboard_password", it) }
+        set(value) = secrets.put("dashboard_password", value)
 
     private fun randomPassword(): String {
         val alphabet = "abcdefghijkmnpqrstuvwxyz23456789"
@@ -114,8 +162,42 @@ class Config(ctx: Context) {
             }
         }
 
+    /** The built-in MCP server (see [Mcp]); off until the user turns it on. */
+    var mcpEnabled: Boolean
+        get() = prefs.getBoolean("mcp", false)
+        set(v) = prefs.edit().putBoolean("mcp", v).apply()
+
+    /** Lets MCP clients use tools that change things (restarts, redeploys, wake on LAN). */
+    var mcpAllowWrite: Boolean
+        get() = prefs.getBoolean("mcp_write", false)
+        set(v) = prefs.edit().putBoolean("mcp_write", v).apply()
+
+    /** The MCP clients' bearer token, made on first use. */
+    var mcpToken: String
+        get() = secrets.get("mcp_token")
+            ?: if (secrets.unreadable("mcp_token")) "" else McpCore.newToken().also { secrets.put("mcp_token", it) }
+        set(v) = secrets.put("mcp_token", v)
+
     val dashboardPort: Int get() = 8800
 
-    val sshPort: Int get() = 8022
+    /** DNS servers for Alpine and apps, comma-separated; empty uses the network's (see [DnsConfig]). */
+    var appsDns: String
+        get() = prefs.getString("apps_dns", "")!!
+        set(v) = prefs.edit().putString("apps_dns", v).apply()
+
+    /** Another SSH server on the phone (Termux's, for one) may already hold 8022. */
+    var sshPort: Int
+        get() = prefs.getInt("ssh_port", DEFAULT_SSH_PORT).takeIf { validPort(it) } ?: DEFAULT_SSH_PORT
+        set(v) {
+            require(validPort(v)) { "port must be between 1024 and 65535" }
+            prefs.edit().putInt("ssh_port", v).apply()
+        }
     val webPort: Int get() = 8080
+
+    companion object {
+        const val DEFAULT_SSH_PORT = 8022
+
+        /** Ports an app may listen on, minus the ones Homedroid itself uses. */
+        fun validPort(port: Int) = port in 1024..65535 && port != 8800 && port != 8801 && port != 8080
+    }
 }

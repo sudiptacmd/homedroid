@@ -152,7 +152,7 @@ class Alpine(private val ctx: Context, private val paths: Paths) {
         val etc = File(dir, "etc").also { it.mkdirs() }
         File(etc, "resolv.conf").let {
             it.delete() // images often ship it as a symlink into /run
-            it.writeText(dnsServers().joinToString("") { s -> "nameserver $s\n" })
+            it.writeText(DnsConfig.resolvConf(dnsServers()))
         }
         File(etc, "hosts").let {
             if (!it.exists() || it.length() == 0L) it.writeText("127.0.0.1 localhost\n::1 localhost\n")
@@ -203,10 +203,14 @@ class Alpine(private val ctx: Context, private val paths: Paths) {
     }
 
     private fun dnsServers(): List<String> {
+        val custom = DnsConfig.parseCustom(Config(ctx).appsDns).orEmpty()
         val cm = ctx.getSystemService(ConnectivityManager::class.java)
-        val found = cm.activeNetwork?.let { cm.getLinkProperties(it) }?.dnsServers.orEmpty()
-            .mapNotNull { it.hostAddress?.substringBefore('%') }
-        return found.ifEmpty { listOf("1.1.1.1", "8.8.8.8") }
+        val link = cm.activeNetwork?.let { cm.getLinkProperties(it) }
+        val found = link?.dnsServers.orEmpty().mapNotNull { it.hostAddress?.substringBefore('%') }
+        // IPv6-only mobile networks reach IPv4 servers only through 464XLAT, which may be missing.
+        val ipv4 = link == null || link.linkAddresses.any { it.address is java.net.Inet4Address } ||
+            link.routes.any { it.destination.address is java.net.Inet4Address }
+        return DnsConfig.servers(found, custom, ipv4)
     }
 
     /**

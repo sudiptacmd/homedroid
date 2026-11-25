@@ -26,6 +26,7 @@ class ServerService : Service() {
         private const val ACTION_INSTALL = "dev.homedroid.INSTALL"
         private const val ACTION_UNINSTALL = "dev.homedroid.UNINSTALL"
         private const val ACTION_CLEAR = "dev.homedroid.CLEAR"
+        private const val ACTION_UPDATE = "dev.homedroid.UPDATE"
         private const val ACTION_DEPLOY = "dev.homedroid.DEPLOY"
         private const val ACTION_UNDEPLOY = "dev.homedroid.UNDEPLOY"
         private const val EXTRA_APP = "app"
@@ -59,6 +60,9 @@ class ServerService : Service() {
 
         fun install(ctx: Context, app: AppDef) = startJob(ctx, ACTION_INSTALL, app)
 
+        /** Brings [app] to the newest version: its Alpine packages, images and install script. Data is kept. */
+        fun update(ctx: Context, app: AppDef) = startJob(ctx, ACTION_UPDATE, app)
+
         /** Removes [app]; with [deleteData] also its settings and database, with [deleteLibrary] its library. */
         fun uninstall(ctx: Context, app: AppDef, deleteData: Boolean = false, deleteLibrary: Boolean = false) =
             startJob(ctx, ACTION_UNINSTALL, app, deleteData, deleteLibrary)
@@ -83,6 +87,17 @@ class ServerService : Service() {
                     .putExtra(EXTRA_APP, id).putExtra(EXTRA_FROM, from)
                     .putExtra(EXTRA_DELETE_LIBRARY, library).putExtra(EXTRA_DELETE_DATA, removeSource)
             )
+        }
+
+        @Volatile private var current: ServerService? = null
+
+        /** Runs [block] on the job queue, after any install or deploy already queued; null if the service is off. */
+        fun submitJob(block: () -> Unit): java.util.concurrent.Future<*>? =
+            current?.installer?.let { try { it.submit(block) } catch (_: java.util.concurrent.RejectedExecutionException) { null } }
+
+        /** Queues a deploy of [id] whose error (or null) can be waited for; null if the service is off. */
+        fun deployJob(id: String): java.util.concurrent.Future<String?>? = current?.let { s ->
+            try { s.installer.submit<String?> { s.runDeployJob(id, true) } } catch (_: java.util.concurrent.RejectedExecutionException) { null }
         }
 
         fun deploy(ctx: Context, id: String) = startDeployJob(ctx, ACTION_DEPLOY, id)
@@ -116,6 +131,8 @@ class ServerService : Service() {
         super.onCreate()
         active = true
         startInForeground()
+        // Dock mode's "open when charging" listens for the charger while the server runs.
+        DockLauncher.register(this)
         wakeLock = getSystemService(PowerManager::class.java)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "homedroid:server")
             .apply { setReferenceCounted(false); acquire() }
@@ -131,7 +148,10 @@ class ServerService : Service() {
                 Jobs.line("dashboard could not start: ${e.message}")
             }
         }
+        current = this
         scheduler.scheduleWithFixedDelay(::checkAutoDeploys, AUTO_DEPLOY_MINUTES, AUTO_DEPLOY_MINUTES, TimeUnit.MINUTES)
+        // Phones joining or leaving change the balancer's upstreams.
+        scheduler.scheduleWithFixedDelay({ runCatching { DeployOps(this, Paths(this)).refreshBalancer() } }, 1, AUTO_DEPLOY_MINUTES, TimeUnit.MINUTES)
         // Home-screen widgets, if any are placed. A failure must not cancel the schedule.
         scheduler.scheduleWithFixedDelay({ runCatching { StatusWidget.refresh(this) } }, 5, 60, TimeUnit.SECONDS)
     }
@@ -139,7 +159,7 @@ class ServerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_RESTART -> worker.execute { shutdown(); launch() }
-            ACTION_INSTALL, ACTION_UNINSTALL, ACTION_CLEAR -> {
+            ACTION_INSTALL, ACTION_UNINSTALL, ACTION_CLEAR, ACTION_UPDATE -> {
                 val id = intent.getStringExtra(EXTRA_APP)
                 val action = intent.action!!
                 val deleteData = intent.getBooleanExtra(EXTRA_DELETE_DATA, false)
@@ -165,7 +185,9 @@ class ServerService : Service() {
     }
 
     override fun onDestroy() {
+        DockLauncher.unregister(this)
         active = false
+        if (current === this) current = null
         try {
             worker.submit(::shutdown).get(10, TimeUnit.SECONDS)
         } catch (_: Exception) {
@@ -200,17 +222,20 @@ class ServerService : Service() {
         if (cfg.tailscaleEnabled) Thread({ Tailscale(paths, cfg).apply() }, "tailscale-up").apply { isDaemon = true; start() }
     }
 
-    private fun runDeployJob(id: String?, deploy: Boolean) {
+    /** Builds (and pipelines, and rolls out) or deletes deployment [id]; returns the error, or null. */
+    private fun runDeployJob(id: String?, deploy: Boolean): String? {
         val paths = Paths(this)
         val deploys = Deploys(this, paths)
-        val d = deploys.all().firstOrNull { it.id == id } ?: return
+        val d = deploys.all().firstOrNull { it.id == id } ?: return "no deployment $id"
         val alpine = Alpine(this, paths)
+        val ops = DeployOps(this, paths)
         Jobs.begin((if (deploy) "Deploying " else "Deleting ") + d.name)
-        val error = try {
+        var error = try {
             if (deploy) {
                 alpine.ensure(Jobs::line)
-                val rc = alpine.run(deploys.buildScript(d), Jobs::line, deploys.buildEnv(d))
-                if (rc == 0) null else "build exited with $rc"
+                val rev = if (d.source == "upload") ops.stageUpload(d) else ""
+                val rc = alpine.run(deploys.buildScript(d), Jobs::line, deploys.buildEnv(d, rev))
+                if (rc == 0) ops.runPipeline(d, "deploy") else "build exited with $rc"
             } else {
                 deploys.remove(d.id)
                 worker.submit { shutdown(); launch() }.get()
@@ -220,12 +245,15 @@ class ServerService : Service() {
         } catch (e: Exception) {
             e.message ?: e.toString()
         }
-        Jobs.finish(error)
-        // A failed build keeps the previous version running.
+        // A failed build or pipeline keeps the previous version running.
         if (deploy && error == null) {
             val running = supervisor?.daemons?.firstOrNull { it.spec.name == d.service }
             if (running != null) running.restart() else worker.execute { shutdown(); launch() }
+            if (d.replicated) error = ops.rollout(d)
         }
+        Jobs.finish(error)
+        if (!deploy || d.balance != null) runCatching { ops.refreshBalancer() }
+        return error
     }
 
     /** Redeploys auto-deploy apps whose branch has new commits. */
@@ -259,6 +287,7 @@ class ServerService : Service() {
             when (action) {
                 ACTION_INSTALL -> "Installing "
                 ACTION_CLEAR -> "Clearing data of "
+                ACTION_UPDATE -> "Updating "
                 else -> "Removing "
             } + app.name
         )
@@ -272,6 +301,20 @@ class ServerService : Service() {
                 val rc = alpine.run(app.install, Jobs::line)
                 apps.markInstalled(app, true)
                 if (rc == 0) null else "install script exited with $rc"
+            } else if (action == ACTION_UPDATE) {
+                if (!apps.isInstalled(app)) throw java.io.IOException("${app.name} isn't installed")
+                // Stop it first: packages and images are replaced under it.
+                apps.markInstalled(app, false)
+                worker.submit { shutdown(); launch() }.get()
+                try {
+                    Jobs.line("Upgrading Alpine packages")
+                    val rc = alpine.run("apk update && apk upgrade --no-cache", Jobs::line)
+                    if (rc != 0) throw java.io.IOException("apk upgrade exited with $rc")
+                    installApp(app, apps, alpine, paths)
+                } finally {
+                    // An app that was installed stays installed, even if the update failed half way.
+                    apps.markInstalled(app, true)
+                }
             } else if (install) {
                 installApp(app, apps, alpine, paths)
             } else {
@@ -288,7 +331,7 @@ class ServerService : Service() {
             e.message ?: e.toString()
         }
         Jobs.finish(error)
-        if ((install || action == ACTION_CLEAR) && apps.isInstalled(app)) worker.execute { shutdown(); launch() }
+        if ((install || action == ACTION_CLEAR || action == ACTION_UPDATE) && apps.isInstalled(app)) worker.execute { shutdown(); launch() }
     }
 
     /** Pulls [app]'s images and runs its install script; returns an error, or null. */
@@ -406,7 +449,8 @@ class ServerService : Service() {
             if (cluster == null || src == null) throw java.io.IOException("That phone left the cluster")
             val (status, o) = cluster.peerJson(src, "GET", "/api/deploys/$id/config")
             if (status != 200) throw java.io.IOException(o.optString("error", "${src.name} answered $status"))
-            Deploys(this, paths).create(o)
+            if (o.optString("source") == "upload") throw java.io.IOException("Uploaded deployments can't be moved yet: create it here and upload the project")
+            Deploys(this, paths).create(o, imported = true)
         } catch (e: Exception) {
             Jobs.begin("Moving deployment $id")
             Jobs.finish(e.message ?: e.toString())

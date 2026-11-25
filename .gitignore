@@ -17,3 +17,6 @@ keystore.properties
 native/out/
 app/src/main/assets/llama-runtime.json
 site/media/homedroid-walkthrough.mp4
+
+# Local agent worktrees and settings
+.claude/

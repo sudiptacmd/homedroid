@@ -1,0 +1,30 @@
+# Homedroid
+
+> Homedroid turns an old Android phone into a home server: one APK, no root, a web dashboard. Free software by Sudipta Goswami, GPL-3.0. Current documented release: 0.9.5-beta. Last updated: 2026-11-25.
+
+Requires Android 10+. 64-bit recommended; Immich and local llama.cpp need 64-bit. Dashboard: port 8800. Homedroid Desktop is a separate Rust companion for webcam and MacroPads actions on Linux, Windows and macOS.
+
+## Website
+- [Home](https://homedroid.seltiv.com/): features, download links and setup.
+- [Desktop webcam](https://homedroid.seltiv.com/desktop/): Linux v4l2loopback, experimental Windows 11 camera, OBS on all platforms.
+- [MacroPads](https://homedroid.seltiv.com/macropads/): Android stream deck alternative and pairing.
+- [Dock mode](https://homedroid.seltiv.com/dock/): five-face standby clock and server tiles.
+- [Mail server](https://homedroid.seltiv.com/mail/): Stalwart on the phone, DNS records, and the port 25 caveat.
+- [FAQ](https://homedroid.seltiv.com/faq/): requirements, ports, privacy and limitations.
+- [Phone vs Raspberry Pi](https://homedroid.seltiv.com/compare/): hardware trade-offs.
+- [Full project facts](https://homedroid.seltiv.com/llms-full.txt): features, setup and FAQ in plain text.
+
+## Authoritative project sources
+- [Source and README](https://github.com/sudiptacmd/homedroid): code and build instructions.
+- [0.9.5 beta release](https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta): APKs and Desktop downloads.
+- [Release notes](https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.5-beta.md): changes and verification limits.
+- [MacroPads guide](https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/macropads.md): actions and permissions.
+- [Deploy hooks](https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/deploy-hooks.md): CI and pipelines.
+- [MCP guide](https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mcp.md): assistant connection and client setup.
+- [Mail server guide](https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md): setup, relays and troubleshooting.
+- [Wi-Fi repeater guide](https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md): Wi-Fi Direct and the built-in proxy.
+- [Desktop documentation](https://github.com/sudiptacmd/homedroid/blob/main/desktop/README.md): platform-specific instructions.
+- [License](https://github.com/sudiptacmd/homedroid/blob/main/LICENSE): GPL-3.0.
+
+## Scope notes
+Dashboard images contain demo data, not device benchmarks. New in 0.9.5: a mail server (Stalwart) with guided setup, a Wi-Fi repeater that works through a built-in proxy, domains, databases, MCP and build pipelines in the dashboard. Home providers often block port 25, so mail may need a relay. The repeater does not carry apps that ignore proxy settings. The PC webcam has camera controls (zoom, torch, focus, exposure, white balance) and MacroPads decks can be restyled with backgrounds, fonts and icons. Windows virtual camera and macOS input remain experimental. APKs: per-ABI about 50 to 60 MB, universal larger. AI cloud providers receive prompts only when configured and used; local inference stays on the phone.

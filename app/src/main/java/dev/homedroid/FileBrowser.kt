@@ -124,7 +124,7 @@ class FileBrowser(private val ctx: Context, private val paths: Paths) {
      * [rel] inside [root], or null if it leads outside, through ".." or a symlink. Without
      * [follow], a symlink named by [rel] is returned as is (only its folder is resolved).
      */
-    private fun resolve(root: FileRoot, rel: String, follow: Boolean): File? {
+    fun resolve(root: FileRoot, rel: String, follow: Boolean): File? {
         val base = root.dir.canonicalFile
         fun inside(f: File) = f == base || f.path.startsWith(base.path + "/")
         val path = File(base, rel.trimStart('/')).toPath().normalize().toFile()

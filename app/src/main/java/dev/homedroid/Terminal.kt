@@ -20,7 +20,13 @@ import java.util.Base64
  * resizes. Phone to browser: binary messages with terminal output.
  */
 object Terminal {
-    const val PORT = 8023
+    /**
+     * Loopback port sshd serves the web terminal on: a free one picked once per process, so it
+     * never collides with an SSH port the user chose (or another app's server).
+     */
+    val port: Int by lazy {
+        java.net.ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress()).use { it.localPort }
+    }
 
     /** Proves to sshd that a terminal connection comes from this app, not another one on the phone. */
     val token: String = ByteArray(32).also(SecureRandom()::nextBytes).joinToString("") { "%02x".format(it) }
@@ -29,7 +35,7 @@ object Terminal {
 
     /** Upgrades [r] to a WebSocket running a shell, or explains why not. */
     /** [fromPeer]: forwarded by another phone in the cluster, which checked the browser's origin itself. */
-    fun open(r: Request, sshEnabled: Boolean, fromPeer: Boolean = false, authorized: () -> Boolean = { false }): Response {
+    fun open(r: Request, running: Boolean, fromPeer: Boolean = false, authorized: () -> Boolean = { false }): Response {
         val key = r.headers["sec-websocket-key"]
         if (r.headers["upgrade"]?.lowercase() != "websocket" || key == null) return Response.error(400, "expected a WebSocket")
         // Cookies ride along on cross-site WebSockets too, so insist on this origin.
@@ -37,7 +43,7 @@ object Terminal {
         if (r.headers["sec-websocket-version"] != "13" || runCatching { Base64.getDecoder().decode(key).size }.getOrNull() != 16) {
             return Response.error(400, "invalid WebSocket handshake")
         }
-        if (!sshEnabled) return Response.error(409, "turn on SSH & SFTP to use the terminal")
+        if (!running) return Response.error(409, "start the server to use the terminal")
         val cols = r.query["cols"]?.toIntOrNull() ?: 80
         val rows = r.query["rows"]?.toIntOrNull() ?: 24
         val alpine = r.query["alpine"] == "1"
@@ -53,9 +59,9 @@ object Terminal {
     private fun relay(input: InputStream, output: OutputStream, cols: Int, rows: Int, alpine: Boolean, ip: String) {
         val ws = WebSocket(input, output)
         val shell = try {
-            Socket().apply { connect(InetSocketAddress("127.0.0.1", PORT), 3000) }
+            Socket().apply { connect(InetSocketAddress("127.0.0.1", port), 3000) }
         } catch (e: IOException) {
-            ws.send("SSH & SFTP isn't running, so the terminal can't start.\r\n".toByteArray())
+            ws.send("The shell service isn't running yet, so the terminal can't start. Try again in a moment.\r\n".toByteArray())
             ws.close()
             return
         }

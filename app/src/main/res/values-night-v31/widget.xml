@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: Material You colours from the wallpaper (dark theme). -->
+<resources>
+    <color name="widget_surface">@android:color/system_neutral1_900</color>
+    <color name="widget_surface_variant">@android:color/system_neutral2_800</color>
+    <color name="widget_on_surface">@android:color/system_neutral1_50</color>
+    <color name="widget_on_surface_variant">@android:color/system_neutral2_200</color>
+    <color name="widget_accent">@android:color/system_accent1_200</color>
+    <color name="widget_on_accent">@android:color/system_accent1_800</color>
+    <color name="widget_accent_container">@android:color/system_accent1_700</color>
+    <color name="widget_on_accent_container">@android:color/system_accent1_100</color>
+</resources>

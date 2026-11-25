@@ -1,0 +1,25 @@
+{
+  "captured": "2026-11-25",
+  "source": "Local dashboard mock; demo data, not hardware measurements",
+  "sizes": [
+    "1440x900",
+    "390x844"
+  ],
+  "missingDashboardPages": [],
+  "videos": "Actual CDP screencast frames encoded by Chrome MediaRecorder at 1280x800, 30 fps",
+  "videoFiles": [
+    {
+      "file": "dashboard-tour.webm",
+      "durationSeconds": 6.902,
+      "bytes": 595177
+    },
+    {
+      "file": "dashboard-layouts.webm",
+      "durationSeconds": 5.982,
+      "bytes": 666309
+    }
+  ],
+  "stillImages": 20,
+  "phoneOriginals": "Seven supplied PNGs and three supplied MP4s preserved in new/; seven optimized WebP copies",
+  "refreshed": "2026-11-25: databases, domains, mcp, deploys (pipelines), mail, desktop"
+}

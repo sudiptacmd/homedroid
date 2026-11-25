@@ -17,6 +17,7 @@ class Dashboard(private val ctx: Context) {
     private val paths = Paths(ctx)
     private val apps = Apps(ctx, paths)
     private val deploys = Deploys(ctx, paths)
+    private val deployApi = DeployApi(ctx, paths)
     private val alpine = Alpine(ctx, paths)
     private val files = FileBrowser(ctx, paths)
     private val ssh = SshAdmin(paths, alpine)
@@ -27,13 +28,24 @@ class Dashboard(private val ctx: Context) {
     private val network = NetworkTools(ctx, paths)
     private val ai = Ai(ctx)
     private val wol = WakeOnLan(ctx, cfg)
+    private val mail = Mail(cfg, apps, alpine)
+    private val repeater = WifiRepeater.get(ctx)
     private val routines = Routines(ctx, ai)
+    private val databases = Databases(paths, files, apps, deploys, alpine)
+    private val mcp = Mcp(ctx, cfg, files, ai) { route(it) }
+    private val firewall: Firewall = Firewall(ctx) { domains.apply() }
+    private val domains: Domains = Domains(ctx, paths, deploys, apps) { firewall.rules }
+    private val ddns = Ddns(ctx)
+    private val uiPrefs = UiPrefs(java.io.File(paths.root, "ui-prefs.json"))
 
     fun start() {
         http.start()
         phoneInstance = this
         ai.start()
         routines.start()
+        domains.start()
+        ddns.start()
+        repeater.resume()
         try {
             cluster.start()
         } catch (e: java.io.IOException) {
@@ -44,13 +56,19 @@ class Dashboard(private val ctx: Context) {
     fun stop() {
         if (phoneInstance === this) phoneInstance = null
         routines.stop()
+        repeater.suspend()
+        ddns.stop()
         ai.stop()
         network.stop()
+        databases.close()
         cluster.stop()
+        DesktopLink.closeIfInitialized()
         http.stop()
     }
 
     private fun handle(r: Request): Response {
+        // Loopback (the phone itself) is never blocked; see FirewallCore.allows.
+        if (!firewall.allows(r)) return Response.error(403, "This address is blocked by the dashboard firewall")
         if (r.method == "GET" && (r.path == "/" || r.path == "/index.html")) return page(r)
         if (r.method == "GET" && r.path == "/favicon.svg") {
             val svg = ctx.assets.open("favicon.svg").use { it.readBytes() }
@@ -58,6 +76,11 @@ class Dashboard(private val ctx: Context) {
         }
         if (r.method == "GET" && r.path.startsWith("/vendor/")) return vendor(r)
         if (r.method == "GET" && r.path.startsWith("/guides/")) return guideImage(r.path.removePrefix("/guides/"))
+        if (r.path.startsWith("/desktop/v1/")) return DesktopLink.get(ctx).handle(r)
+        // MCP clients use their own token, not a dashboard session.
+        if (r.path == "/mcp" || r.path.startsWith("/mcp/")) return mcp.handle(r)
+        // Deploy hooks for CI: authenticated by their own token or signature, not a session.
+        if (r.path.startsWith("/hooks/")) return deployApi.hook(r)
         if (!r.path.startsWith("/api/")) return Response.error(404, "not found")
         val terminal = r.path == "/api/terminal" || r.path.startsWith("/api/nodes/") && r.path.endsWith("/terminal")
         if (!AuthSecurity.browserAllowed(r.method, r.headers, terminal)) {
@@ -156,6 +179,8 @@ class Dashboard(private val ctx: Context) {
 
     /** The API itself; [peer] is set when another phone in the cluster sent the request. */
     private fun route(r: Request, peer: Peer? = null): Response {
+        if (r.path.startsWith("/api/desktop/")) return DesktopLink.get(ctx).api(r)
+        if (r.path == "/api/macropads" || r.path.startsWith("/api/macropads/")) return MacroPads.get(ctx).api(r)
         val seg = r.path.removePrefix("/api/").split('/')
         return when {
             r.method == "POST" && seg == listOf("logout") -> {
@@ -166,7 +191,14 @@ class Dashboard(private val ctx: Context) {
             seg.firstOrNull() == "ai" && seg.getOrNull(1) in setOf("routines", "briefs", "speak") -> routines.handle(r, seg.drop(1))
             seg.firstOrNull() == "ai" -> ai.handle(r, seg.drop(1))
             seg.firstOrNull() == "wol" -> wol.handle(r, seg.drop(1))
+            seg.firstOrNull() == "mail" -> mail.handle(r, seg.drop(1))
+            seg.firstOrNull() == "repeater" -> repeater.handle(r, seg.drop(1))
+            seg.firstOrNull() == "mcp" -> mcp.api(r, seg.drop(1), peer != null)
             seg.firstOrNull() == "network" -> network.handle(r, seg.drop(1))
+            seg.firstOrNull() == "ddns" -> ddns.handle(r, seg.drop(1))
+            seg.firstOrNull() == "domains" -> domains.handle(r, seg.drop(1))
+            seg.firstOrNull() == "firewall" -> firewall.handle(r, seg.drop(1))
+            seg.firstOrNull() == "ui" && seg.getOrNull(1) == "prefs" -> uiPrefs.handle(r, seg.drop(2))
             r.method == "GET" && seg == listOf("status") -> Response.json(status())
             // Everything the overview shows, in one request instead of four.
             r.method == "GET" && seg == listOf("overview") -> Response.json(
@@ -177,6 +209,7 @@ class Dashboard(private val ctx: Context) {
             r.method == "GET" && seg == listOf("modules") -> Response.json(modules())
             r.method == "GET" && seg.size == 3 && seg[0] == "modules" && seg[2] == "export" -> exportApp(seg[1], r, peer)
             r.method == "POST" && seg.size == 3 && seg[0] in setOf("modules", "deploys") && seg[2] == "move" -> startMove(seg[0], seg[1], r)
+            seg[0] == "deploys" && seg.size >= 3 && seg[2] in DeployApi.ACTIONS -> deployApi.handle(r, seg[1], seg[2], seg.drop(3), peer)
             r.method == "GET" && seg.size == 3 && seg[0] == "deploys" && seg[2] == "config" -> {
                 // The full config includes secrets (env, repo token): only for a phone taking it over.
                 if (peer == null) return Response.error(403, "Only other phones in the cluster can read this")
@@ -195,10 +228,12 @@ class Dashboard(private val ctx: Context) {
             r.method == "POST" && seg == listOf("deploys") -> createDeploy(r)
             r.method == "POST" && seg.size == 3 && seg[0] == "deploys" -> deployAction(seg[1], seg[2])
             r.method == "DELETE" && seg.size == 2 && seg[0] == "deploys" -> deleteDeploy(seg[1])
+            seg.firstOrNull() == "db" -> databases.handle(r, seg.drop(1).filter { it.isNotEmpty() })
+            seg.firstOrNull() == "docs" -> databases.handleDocs(r, seg.drop(1).filter { it.isNotEmpty() })
             seg[0] == "files" -> files.handle(r, seg.drop(1).filter { it.isNotEmpty() })
             r.method == "GET" && seg == listOf("terminal") ->
-                if (peer != null) Terminal.open(r, cfg.sshEnabled && ServerService.running, fromPeer = true) { cluster.state.byFingerprint(r.peer) != null }
-                else Terminal.open(r, cfg.sshEnabled && ServerService.running) { sessionValid(r) }
+                if (peer != null) Terminal.open(r, ServerService.running, fromPeer = true) { cluster.state.byFingerprint(r.peer) != null }
+                else Terminal.open(r, ServerService.running) { sessionValid(r) }
             seg[0] == "ssh" -> ssh.handle(r, seg.drop(1))
             seg[0] == "tailscale" -> tailscaleRoute(r, seg.drop(1))
             r.method == "GET" && seg == listOf("update") -> Response.json(Updater.json(ctx, r.query["refresh"] == "1"))
@@ -215,7 +250,7 @@ class Dashboard(private val ctx: Context) {
 
     private fun login(r: Request): Response = synchronized(auth) {
         val password = r.json().optString("password")
-        val result = auth.password(r.remote) { passwordMatches(password) }
+        val result = auth.password(r.client) { passwordMatches(password) }
         if (result.accepted) newSession(r) else authError(result)
     }
 
@@ -231,7 +266,7 @@ class Dashboard(private val ctx: Context) {
     private fun authorized(r: Request): Response? = synchronized(auth) {
         if (auth.session(r.cookie(COOKIE))) return null
         val bearer = AuthSecurity.bearer(r.headers) ?: return Response.error(401, "log in first")
-        val result = auth.password(r.remote) { passwordMatches(bearer) }
+        val result = auth.password(r.client) { passwordMatches(bearer) }
         if (result.accepted) null else authError(result)
     }
 
@@ -240,8 +275,9 @@ class Dashboard(private val ctx: Context) {
             .put("retryAfter", result.retrySeconds), 429, mapOf("Retry-After" to result.retrySeconds.toString()))
     } else Response.error(status, "Incorrect password")
 
-    private fun passwordMatches(given: String) =
-        MessageDigest.isEqual(given.toByteArray(), cfg.dashboardPassword.toByteArray())
+    private fun passwordMatches(given: String) = cfg.dashboardPassword.let { pw ->
+        pw.isNotEmpty() && MessageDigest.isEqual(given.toByteArray(), pw.toByteArray())
+    }
 
     // --- views --------------------------------------------------------------------------
 
@@ -298,7 +334,7 @@ class Dashboard(private val ctx: Context) {
                     .put("id", m.id)
                     .put("name", m.name)
                     .put("description", m.description)
-                    .put("port", m.port)
+                    .put("port", if (m.id == "ssh") cfg.sshPort else m.port)
                     .put("kind", "core")
                     .put("installed", true)
                     .put("enabled", coreEnabled(m.id))
@@ -341,6 +377,10 @@ class Dashboard(private val ctx: Context) {
             .put("description", "Wake computers at home from anywhere: the phone sends the magic packet on your network.")
             .put("port", 0).put("kind", "core").put("installed", true).put("enabled", cfg.wolEnabled)
             .put("state", if (cfg.wolEnabled) "ready" else "stopped"))
+        core.put(JSONObject().put("id", "repeater").put("name", "Wi-Fi repeater")
+            .put("description", "Share this phone's internet over its own Wi-Fi network (Wi-Fi Direct) through built-in HTTP and SOCKS5 proxies. No root; devices set a proxy.")
+            .put("port", RepeaterCore.HTTP_PORT).put("kind", "core").put("installed", true).put("enabled", cfg.repeaterEnabled)
+            .put("state", repeater.json().getString("state")))
         core.put(network.module())
         return JSONObject().put("core", core).put("apps", catalog).put("job", job())
     }
@@ -380,6 +420,10 @@ class Dashboard(private val ctx: Context) {
             cfg.wolEnabled = action == "enable"
             return Response.ok()
         }
+        if (id == "repeater") {
+            if (action !in setOf("enable", "disable")) return Response.error(400, "The Wi-Fi repeater can only be turned on or off")
+            return repeater.setEnabled(action == "enable")?.let { Response.error(409, it) } ?: Response.ok()
+        }
         if (id == "ai") {
             if (action !in setOf("enable", "disable")) return Response.error(400, "AI can only be turned on or off")
             ai.cfg.enabled = action == "enable"
@@ -397,9 +441,13 @@ class Dashboard(private val ctx: Context) {
             return Response.ok()
         }
         val app = apps.catalog.firstOrNull { it.id == id } ?: return Response.error(404, "no module $id")
-        if (Jobs.running && action in setOf("install", "remove", "clear")) return Response.error(409, "another install is running")
+        if (Jobs.running && action in setOf("install", "update", "remove", "clear")) return Response.error(409, "another install is running")
         when (action) {
             "install" -> ServerService.install(ctx, app)
+            "update" -> {
+                if (!apps.isInstalled(app)) return Response.error(409, "${app.name} isn't installed")
+                ServerService.update(ctx, app)
+            }
             "remove" -> r.json().let {
                 val library = it.optBoolean("deleteLibrary")
                 ServerService.uninstall(ctx, app, it.optBoolean("deleteData") || library, library)
@@ -550,12 +598,13 @@ class Dashboard(private val ctx: Context) {
 
     private fun settings() = JSONObject().put("autostart", cfg.autostart).put("cameraEnabled", cfg.cameraEnabled).put("wolEnabled", cfg.wolEnabled)
         .put("dashboardPort", cfg.dashboardPort).put("sshPort", cfg.sshPort).put("webPort", cfg.webPort)
+        .put("appsDns", cfg.appsDns)
 
     private fun saveSettings(r: Request): Response = synchronized(auth) {
         val body = r.json()
         val password = body.optString("password")
         if (password.isNotEmpty()) {
-            val result = auth.password(r.remote) { passwordMatches(body.optString("currentPassword")) }
+            val result = auth.password(r.client) { passwordMatches(body.optString("currentPassword")) }
             if (!result.accepted) return authError(result, 403)
             if (password.length !in 12..128 || password.any { it.isISOControl() }) {
                 return Response.error(400, "Use 12–128 characters without control characters")
@@ -563,6 +612,21 @@ class Dashboard(private val ctx: Context) {
         }
         if (body.has("autostart") && body.opt("autostart") !is Boolean) return Response.error(400, "Invalid startup preference")
         if (body.has("autostart")) cfg.autostart = body.getBoolean("autostart")
+        if (body.has("appsDns")) {
+            val dns = DnsConfig.parseCustom(body.optString("appsDns"))
+                ?: return Response.error(400, "Enter up to three IP addresses, like 1.1.1.1, 9.9.9.9")
+            cfg.appsDns = dns.joinToString(", ")
+            Thread({ runCatching { Alpine(ctx, paths).refresh() } }, "dns").start()
+        }
+        if (body.has("sshPort")) {
+            val port = body.optInt("sshPort", -1)
+            if (!Config.validPort(port)) return Response.error(400, "Choose a port between 1024 and 65535 that Homedroid doesn't use")
+            if (port != cfg.sshPort) {
+                if (!portFree(port) || deploys.usesPort(port)) return Response.error(409, "Another app on the phone is already using port $port")
+                cfg.sshPort = port
+                if (cfg.sshEnabled) ServerService.restart(ctx)
+            }
+        }
         if (password.isNotEmpty()) {
             synchronized(auth) {
                 cfg.dashboardPassword = password
@@ -571,6 +635,13 @@ class Dashboard(private val ctx: Context) {
             }
         }
         return Response.ok()
+    }
+
+    private fun portFree(port: Int) = try {
+        java.net.ServerSocket(port).close()
+        true
+    } catch (_: java.io.IOException) {
+        false
     }
 
     private fun cameraRoute(r: Request, seg: List<String>): Response {
@@ -642,8 +713,10 @@ class Dashboard(private val ctx: Context) {
         } catch (e: IllegalArgumentException) {
             return Response.error(400, e.message ?: "invalid deployment")
         }
-        ServerService.deploy(ctx, d.id)
-        return Response.json(d.toJson(null))
+        // An uploaded project deploys once its archive arrives.
+        if (d.source == "git") ServerService.deploy(ctx, d.id)
+        // The hook secrets are shown this once; only the token's hash is kept.
+        return Response.json(d.toJson(null).put("token", deploys.issueToken(d.id)).put("webhookSecret", d.webhookSecret))
     }
 
     private fun deployAction(id: String, action: String): Response {
@@ -696,13 +769,13 @@ class Dashboard(private val ctx: Context) {
         private val VENDOR = setOf("xterm.js", "xterm.css", "addon-fit.js", "JetBrainsMono-Regular.woff2")
 
         private val SECURITY_HEADERS = mapOf(
-            "Content-Security-Policy" to "default-src 'self'; img-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+            "Content-Security-Policy" to "default-src 'self'; img-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; frame-src http: https:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
             "X-Frame-Options" to "DENY",
             "Referrer-Policy" to "no-referrer",
         )
 
         private val CORE = listOf(
-            Core("ssh", "SSH & SFTP", "Shell and file transfer, public-key login only.", 8022, "sshd"),
+            Core("ssh", "SSH & SFTP", "Shell and file transfer, public-key login only.", Config.DEFAULT_SSH_PORT, "sshd"),
             Core("web", "Web hosting", "Caddy web server for ~/www and deployed sites.", 8080, "caddy"),
             Core("tunnel", "Cloudflare Tunnel", "Publishes services on the internet, no port forwarding.", 0, "cloudflared"),
             Core("tailscale", "Tailscale", "Private access from your own devices, anywhere. No VPN slot or root needed.", 0, "tailscaled"),

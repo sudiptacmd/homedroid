@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen widget palette. Before Android 12 the widgets use this calm dark scheme;
+     values-v31 and values-night-v31 switch to the wallpaper's Material You colours. -->
+<resources>
+    <color name="widget_surface">#F2111518</color>
+    <color name="widget_surface_variant">#FF1E262B</color>
+    <color name="widget_on_surface">#FFEDF2F3</color>
+    <color name="widget_on_surface_variant">#FF9AA7AD</color>
+    <color name="widget_accent">#FF78E0C5</color>
+    <color name="widget_on_accent">#FF00382D</color>
+    <color name="widget_accent_container">#FF1F3D37</color>
+    <color name="widget_on_accent_container">#FFB5F2E1</color>
+    <dimen name="widget_radius">24dp</dimen>
+    <dimen name="widget_inner_radius">16dp</dimen>
+    <string name="widget_status_label">Homedroid status</string>
+    <string name="widget_clock_label">Dock clock</string>
+    <string name="widget_clock_description">A clock with your server\'s status. Tap to open Dock mode.</string>
+    <string name="dock_dream_label">Homedroid Dock</string>
+</resources>

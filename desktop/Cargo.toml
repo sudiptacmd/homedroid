@@ -1,0 +1,30 @@
+[package]
+name = "homedroid-desktop"
+version = "0.9.5"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Lightweight webcam and MacroPads companion for Homedroid"
+
+[workspace]
+members = ["vcam-win"]
+resolver = "2"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+zune-jpeg = "0.4"
+zune-core = "0.4"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+x11rb = { version = "0.13", default-features = false, features = ["xtest"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = ["Win32_Foundation", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_Memory", "Win32_System_Threading", "Win32_Security", "Win32_System_Com", "Win32_System_LibraryLoader", "Win32_Media_MediaFoundation", "Win32_System_Registry", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

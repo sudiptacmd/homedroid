@@ -187,12 +187,18 @@ class Ai(context: Context) {
     /** One complete answer, for routines. Returns the text and where it ran. */
     fun chat(model: String, messages: JSONArray, maxTokens: Int = 700): Pair<String, AiCore.Target> {
         val t = target(model)
-        val conn = open(t, JSONObject().put("messages", messages).put("stream", false).put("max_tokens", maxTokens).put("temperature", 0.3))
+        val body = JSONObject().put("messages", messages).put("stream", false).put("max_tokens", maxTokens).put("temperature", 0.3)
+        return AiCore.content(complete(t, body)) to t
+    }
+
+    /** One non-streaming chat completion, whole: the MCP agent reads its tool calls. */
+    fun complete(t: AiCore.Target, body: JSONObject): JSONObject {
+        val conn = open(t, body)
         try {
             val status = conn.responseCode
             val text = (if (status >= 400) conn.errorStream else conn.inputStream)?.use { it.readBytes().toString(Charsets.UTF_8) }.orEmpty()
             if (status >= 400) throw IOException("${t.label}: ${AiCore.errorMessage(text)}")
-            return AiCore.content(JSONObject(text)) to t
+            return JSONObject(text)
         } finally { conn.disconnect() }
     }
 
@@ -533,6 +539,8 @@ class Ai(context: Context) {
                 // ~7 cores spinning while idle and drained the battery (0.9.0). Sleep instead, and
                 // let go of the model after 10 idle minutes (it reloads in seconds when asked).
                 "--poll", "0", "--sleep-idle-seconds", "600",
+                // The model's own chat template, which the MCP agent's tool calls need.
+                "--jinja",
             ) + llama.deviceArgs()
             return Spec(SERVICE, llama.command("llama-server", args), llama.env(), workdir = llama.dir)
         }

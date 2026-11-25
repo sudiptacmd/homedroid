@@ -1,0 +1,12 @@
+[package]
+name = "homedroid-vcam"
+version = "0.9.5"
+edition = "2021"
+license = "GPL-3.0-only"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[target.'cfg(windows)'.dependencies]
+windows-core = "0.58"
+windows = { version = "0.58", features = ["implement", "Win32_Foundation", "Win32_System_Com", "Win32_System_Memory", "Win32_System_Threading", "Win32_System_Registry", "Win32_System_LibraryLoader", "Win32_Security", "Win32_Media_MediaFoundation", "Win32_System_Variant", "Win32_System_Com_StructuredStorage", "Win32_UI_Shell_PropertiesSystem"] }

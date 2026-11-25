@@ -1,22 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Window colours match MobileUi's curated palette, so screens open without a flash;
+         the screens then draw edge to edge and apply dynamic colour themselves. -->
     <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#006B57</item>
+        <item name="android:colorAccent">#006B58</item>
+        <item name="android:colorControlActivated">#006B58</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:statusBarColor">#F3F6F7</item>
-        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:statusBarColor">#F5FAF8</item>
+        <item name="android:navigationBarColor">#E9EFEC</item>
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowActionModeOverlay">true</item>
-        <item name="android:windowBackground">#F3F6F7</item>
+        <item name="android:windowBackground">#F5FAF8</item>
     </style>
     <style name="AppThemeDark" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#78E0C5</item>
-        <item name="android:statusBarColor">#101A22</item>
-        <item name="android:navigationBarColor">#1A2732</item>
+        <item name="android:colorAccent">#7DD8C0</item>
+        <item name="android:colorControlActivated">#7DD8C0</item>
+        <item name="android:statusBarColor">#0E1415</item>
+        <item name="android:navigationBarColor">#1A2122</item>
         <item name="android:windowActionModeOverlay">true</item>
-        <item name="android:windowBackground">#101A22</item>
+        <item name="android:windowBackground">#0E1415</item>
     </style>
     <style name="WidgetLabel">
         <item name="android:layout_width">match_parent</item>

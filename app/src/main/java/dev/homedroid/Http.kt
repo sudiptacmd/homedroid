@@ -30,6 +30,17 @@ class Request(
     /** On the cluster port: the SHA-256 fingerprint of the certificate the other phone presented. */
     val peer: String? = null,
 ) {
+    /**
+     * Who to rate-limit and log: the socket's address, unless that is loopback and the request
+     * came through the Cloudflare tunnel, which names the real visitor in Cf-Connecting-Ip.
+     * Otherwise everyone arriving through the tunnel would share one lockout.
+     */
+    val client: String by lazy {
+        val local = remote == "127.0.0.1" || remote == "::1" || remote == "0:0:0:0:0:0:0:1" || remote.startsWith("::ffff:127.")
+        val forwarded = headers["cf-connecting-ip"]?.trim().orEmpty()
+        if (local && forwarded.length in 2..45 && forwarded.all { it.isLetterOrDigit() || it == '.' || it == ':' }) forwarded else remote
+    }
+
     private var consumed = false
 
     val body: ByteArray by lazy {
@@ -84,6 +95,11 @@ class Response(
     val upgrade: ((InputStream, OutputStream) -> Unit)? = null,
     /** Rechecked while a terminal is open, including while the connection is idle. */
     val upgradeAuthorized: (() -> Boolean)? = null,
+    /** Desktop streams use chunked framing and a revocable socket lease. */
+    val chunked: Boolean = false,
+    val streamAuthorized: (() -> Boolean)? = null,
+    /** Runs even when sending headers fails, releasing pre-reserved stream slots. */
+    val onClose: (() -> Unit)? = null,
 ) {
     companion object {
         fun json(o: Any, status: Int = 200, headers: Map<String, String> = emptyMap()) =
@@ -188,6 +204,8 @@ class Http(
             }
         } catch (_: Exception) {
             // The client went away mid-download.
+        } finally {
+            runCatching { response.onClose?.invoke() }
         }
     }
 
@@ -242,16 +260,50 @@ class Http(
             .append("HTTP/1.1 ").append(r.status).append(' ').append(reason(r.status)).append("\r\n")
             .append("Content-Type: ").append(r.contentType).append("\r\n")
         val length = if (r.stream != null) r.length else r.body.size.toLong()
-        if (length != null) head.append("Content-Length: ").append(length).append("\r\n")
+        if (r.chunked) head.append("Transfer-Encoding: chunked\r\n")
+        if (length != null && !r.chunked) head.append("Content-Length: ").append(length).append("\r\n")
         head.append("Connection: close\r\n")
             .append("X-Content-Type-Options: nosniff\r\n")
         if ("Cache-Control" !in r.headers) head.append("Cache-Control: no-store\r\n")
         for ((k, v) in r.headers) head.append(k).append(": ").append(v).append("\r\n")
         head.append("\r\n")
         val buffered = BufferedOutputStream(out, 1 shl 16)
-        buffered.write(head.toString().toByteArray())
-        if (r.stream != null) r.stream.invoke(buffered) else buffered.write(r.body)
-        buffered.flush()
+        // Preserve buffering for ordinary downloads and existing dashboard streams.
+        if (r.streamAuthorized == null && !r.chunked) {
+            buffered.write(head.toString().toByteArray())
+            if (r.stream != null) r.stream.invoke(buffered) else buffered.write(r.body)
+            buffered.flush()
+            return
+        }
+        // A socket write has no SO_TIMEOUT. Close stalled desktop writers from the lease thread.
+        val writingSince = java.util.concurrent.atomic.AtomicLong(0)
+        val lease = if (r.streamAuthorized != null) leases.scheduleWithFixedDelay({
+            val since = writingSince.get()
+            if (!runCatching { r.streamAuthorized.invoke() }.getOrDefault(false) ||
+                since != 0L && System.nanoTime() - since > TimeUnit.SECONDS.toNanos(30)) runCatching { client.close() }
+        }, 1, 1, TimeUnit.SECONDS) else null
+        val sink = object : OutputStream() {
+            override fun write(b: Int) = write(byteArrayOf(b.toByte()))
+            override fun write(b: ByteArray, off: Int, len: Int) {
+                if (len == 0) return
+                writingSince.set(System.nanoTime())
+                try {
+                    if (r.chunked) buffered.write((len.toString(16) + "\r\n").toByteArray())
+                    buffered.write(b, off, len)
+                    if (r.chunked) buffered.write(byteArrayOf(13, 10))
+                    buffered.flush()
+                } finally { writingSince.set(0) }
+            }
+            override fun flush() = buffered.flush()
+        }
+        try {
+            writingSince.set(System.nanoTime())
+            buffered.write(head.toString().toByteArray()); buffered.flush()
+            writingSince.set(0)
+            if (r.stream != null) r.stream.invoke(sink) else sink.write(r.body)
+            if (r.chunked) buffered.write("0\r\n\r\n".toByteArray())
+            buffered.flush()
+        } finally { lease?.cancel(false) }
     }
 
     private fun decode(s: String) = URLDecoder.decode(s, "UTF-8")
@@ -259,6 +311,7 @@ class Http(
     private fun reason(status: Int) = when (status) {
         200 -> "OK"
         201 -> "Created"
+        202 -> "Accepted"
         204 -> "No Content"
         206 -> "Partial Content"
         302 -> "Found"
@@ -267,6 +320,7 @@ class Http(
         401 -> "Unauthorized"
         403 -> "Forbidden"
         404 -> "Not Found"
+        405 -> "Method Not Allowed"
         409 -> "Conflict"
         413 -> "Payload Too Large"
         416 -> "Range Not Satisfiable"
