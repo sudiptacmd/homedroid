@@ -235,7 +235,7 @@
     "description": "Indexer manager for Radarr and Sonarr. Connect your torrent tracker accounts here once; Prowlarr feeds them to Radarr and Sonarr automatically. Set up after installing Radarr and Sonarr.",
     "port": 9696,
     "size": "≈ 100 MB",
-    "install": "VER=2.7.0.5723\napk add --no-cache wget tar ca-certificates libstdc++ libgcc\ncase \"$(apk --print-arch)\" in\n  aarch64) ARCH=arm64 ;;\n  armv7)   ARCH=arm ;;\n  x86_64)  ARCH=x64 ;;\n  *) echo \"Prowlarr has no build for this CPU\"; exit 1 ;;\nesac\nif [ \"$(cat /usr/local/share/prowlarr.version 2>/dev/null)\" != \"$VER\" ]; then\n  mkdir -p /tmp/prowlarr-dl\n  wget -q -O /tmp/prowlarr-dl/prowlarr.tar.gz \\\n    \"https://github.com/Prowlarr/Prowlarr/releases/download/v$VER/Prowlarr.master.$VER.linux-musl-$ARCH.tar.gz\" \\\n    || { echo \"Prowlarr download failed\"; rm -rf /tmp/prowlarr-dl; exit 1; }\n  tar -xzf /tmp/prowlarr-dl/prowlarr.tar.gz -C /tmp/prowlarr-dl\n  rm -rf /opt/Prowlarr\n  mv /tmp/prowlarr-dl/Prowlarr /opt/Prowlarr\n  chmod +x /opt/Prowlarr/Prowlarr\n  rm -rf /tmp/prowlarr-dl\n  printf '%s' \"$VER\" > /usr/local/share/prowlarr.version\nfi\nmkdir -p /var/lib/prowlarr",
+    "install": "VER=2.7.0.5723\napk add --no-cache wget tar ca-certificates libstdc++ libgcc icu-libs sqlite-libs\ncase \"$(apk --print-arch)\" in\n  aarch64) ARCH=arm64 ;;\n  armv7)   ARCH=arm ;;\n  x86_64)  ARCH=x64 ;;\n  *) echo \"Prowlarr has no build for this CPU\"; exit 1 ;;\nesac\nif [ \"$(cat /usr/local/share/prowlarr.version 2>/dev/null)\" != \"$VER\" ]; then\n  mkdir -p /tmp/prowlarr-dl\n  wget -q -O /tmp/prowlarr-dl/prowlarr.tar.gz \\\n    \"https://github.com/Prowlarr/Prowlarr/releases/download/v$VER/Prowlarr.master.$VER.linux-musl-$ARCH.tar.gz\" \\\n    || { echo \"Prowlarr download failed\"; rm -rf /tmp/prowlarr-dl; exit 1; }\n  tar -xzf /tmp/prowlarr-dl/prowlarr.tar.gz -C /tmp/prowlarr-dl\n  rm -rf /opt/Prowlarr\n  mv /tmp/prowlarr-dl/Prowlarr /opt/Prowlarr\n  chmod +x /opt/Prowlarr/Prowlarr\n  rm -rf /tmp/prowlarr-dl\n  printf '%s' \"$VER\" > /usr/local/share/prowlarr.version\nfi\nmkdir -p /var/lib/prowlarr",
     "uninstall": "rm -rf /opt/Prowlarr /usr/local/share/prowlarr.version",
     "data": [
       "/var/lib/prowlarr"
@@ -247,8 +247,7 @@
     ],
     "env": {
       "DOTNET_gcServer": "0",
-      "DOTNET_GCHeapHardLimitPercent": "0x32",
-      "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1"
+      "DOTNET_GCHeapHardLimitPercent": "0x32"
     }
   },
   {
@@ -257,7 +256,7 @@
     "description": "Automatic movie downloader. Search for a movie and Radarr monitors trackers, grabs the best torrent, sends it to qBittorrent and notifies Jellyfin. Connect it to Prowlarr and qBittorrent after installing.",
     "port": 7878,
     "size": "≈ 110 MB",
-    "install": "VER=6.3.0.10514\napk add --no-cache wget tar ca-certificates libstdc++ libgcc\ncase \"$(apk --print-arch)\" in\n  aarch64) ARCH=arm64 ;;\n  armv7)   ARCH=arm ;;\n  x86_64)  ARCH=x64 ;;\n  *) echo \"Radarr has no build for this CPU\"; exit 1 ;;\nesac\nif [ \"$(cat /usr/local/share/radarr.version 2>/dev/null)\" != \"$VER\" ]; then\n  mkdir -p /tmp/radarr-dl\n  wget -q -O /tmp/radarr-dl/radarr.tar.gz \\\n    \"https://github.com/Radarr/Radarr/releases/download/v$VER/Radarr.master.$VER.linux-musl-core-$ARCH.tar.gz\" \\\n    || { echo \"Radarr download failed\"; rm -rf /tmp/radarr-dl; exit 1; }\n  tar -xzf /tmp/radarr-dl/radarr.tar.gz -C /tmp/radarr-dl\n  rm -rf /opt/Radarr\n  mv /tmp/radarr-dl/Radarr /opt/Radarr\n  chmod +x /opt/Radarr/Radarr\n  rm -rf /tmp/radarr-dl\n  printf '%s' \"$VER\" > /usr/local/share/radarr.version\nfi\nmkdir -p /var/lib/radarr /media/Movies",
+    "install": "VER=6.3.0.10514\napk add --no-cache wget tar ca-certificates libstdc++ libgcc icu-libs sqlite-libs\ncase \"$(apk --print-arch)\" in\n  aarch64) ARCH=arm64 ;;\n  armv7)   ARCH=arm ;;\n  x86_64)  ARCH=x64 ;;\n  *) echo \"Radarr has no build for this CPU\"; exit 1 ;;\nesac\nif [ \"$(cat /usr/local/share/radarr.version 2>/dev/null)\" != \"$VER\" ]; then\n  mkdir -p /tmp/radarr-dl\n  wget -q -O /tmp/radarr-dl/radarr.tar.gz \\\n    \"https://github.com/Radarr/Radarr/releases/download/v$VER/Radarr.master.$VER.linux-musl-core-$ARCH.tar.gz\" \\\n    || { echo \"Radarr download failed\"; rm -rf /tmp/radarr-dl; exit 1; }\n  tar -xzf /tmp/radarr-dl/radarr.tar.gz -C /tmp/radarr-dl\n  rm -rf /opt/Radarr\n  mv /tmp/radarr-dl/Radarr /opt/Radarr\n  chmod +x /opt/Radarr/Radarr\n  rm -rf /tmp/radarr-dl\n  printf '%s' \"$VER\" > /usr/local/share/radarr.version\nfi\nmkdir -p /var/lib/radarr /media/Movies",
     "uninstall": "rm -rf /opt/Radarr /usr/local/share/radarr.version",
     "data": [
       "/var/lib/radarr"
@@ -269,8 +268,7 @@
     ],
     "env": {
       "DOTNET_gcServer": "0",
-      "DOTNET_GCHeapHardLimitPercent": "0x32",
-      "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1"
+      "DOTNET_GCHeapHardLimitPercent": "0x32"
     },
     "storage": {
       "path": "/media/Movies",
@@ -284,7 +282,7 @@
     "description": "Automatic TV show downloader. Add a series and Sonarr tracks new episodes, grabs torrents via qBittorrent and updates Jellyfin. Connect it to Prowlarr and qBittorrent after installing.",
     "port": 8989,
     "size": "≈ 110 MB",
-    "install": "VER=4.0.20.3014\napk add --no-cache wget tar ca-certificates libstdc++ libgcc\ncase \"$(apk --print-arch)\" in\n  aarch64) ARCH=arm64 ;;\n  armv7)   ARCH=arm ;;\n  x86_64)  ARCH=x64 ;;\n  *) echo \"Sonarr has no build for this CPU\"; exit 1 ;;\nesac\nif [ \"$(cat /usr/local/share/sonarr.version 2>/dev/null)\" != \"$VER\" ]; then\n  mkdir -p /tmp/sonarr-dl\n  wget -q -O /tmp/sonarr-dl/sonarr.tar.gz \\\n    \"https://github.com/Sonarr/Sonarr/releases/download/v$VER/Sonarr.main.$VER.linux-musl-$ARCH.tar.gz\" \\\n    || { echo \"Sonarr download failed\"; rm -rf /tmp/sonarr-dl; exit 1; }\n  tar -xzf /tmp/sonarr-dl/sonarr.tar.gz -C /tmp/sonarr-dl\n  rm -rf /opt/Sonarr\n  mv /tmp/sonarr-dl/Sonarr /opt/Sonarr\n  chmod +x /opt/Sonarr/Sonarr\n  rm -rf /tmp/sonarr-dl\n  printf '%s' \"$VER\" > /usr/local/share/sonarr.version\nfi\nmkdir -p /var/lib/sonarr /media/TVShows",
+    "install": "VER=4.0.20.3014\napk add --no-cache wget tar ca-certificates libstdc++ libgcc icu-libs sqlite-libs\ncase \"$(apk --print-arch)\" in\n  aarch64) ARCH=arm64 ;;\n  armv7)   ARCH=arm ;;\n  x86_64)  ARCH=x64 ;;\n  *) echo \"Sonarr has no build for this CPU\"; exit 1 ;;\nesac\nif [ \"$(cat /usr/local/share/sonarr.version 2>/dev/null)\" != \"$VER\" ]; then\n  mkdir -p /tmp/sonarr-dl\n  wget -q -O /tmp/sonarr-dl/sonarr.tar.gz \\\n    \"https://github.com/Sonarr/Sonarr/releases/download/v$VER/Sonarr.main.$VER.linux-musl-$ARCH.tar.gz\" \\\n    || { echo \"Sonarr download failed\"; rm -rf /tmp/sonarr-dl; exit 1; }\n  tar -xzf /tmp/sonarr-dl/sonarr.tar.gz -C /tmp/sonarr-dl\n  rm -rf /opt/Sonarr\n  mv /tmp/sonarr-dl/Sonarr /opt/Sonarr\n  chmod +x /opt/Sonarr/Sonarr\n  rm -rf /tmp/sonarr-dl\n  printf '%s' \"$VER\" > /usr/local/share/sonarr.version\nfi\nmkdir -p /var/lib/sonarr /media/TVShows",
     "uninstall": "rm -rf /opt/Sonarr /usr/local/share/sonarr.version",
     "data": [
       "/var/lib/sonarr"
@@ -296,8 +294,7 @@
     ],
     "env": {
       "DOTNET_gcServer": "0",
-      "DOTNET_GCHeapHardLimitPercent": "0x32",
-      "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1"
+      "DOTNET_GCHeapHardLimitPercent": "0x32"
     },
     "storage": {
       "path": "/media/TVShows",
