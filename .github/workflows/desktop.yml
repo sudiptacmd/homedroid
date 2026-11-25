@@ -139,12 +139,12 @@ jobs:
           pattern: desktop-*
           merge-multiple: true
 
-      # The Release workflow creates the GitHub release for the tag; wait up to ~30 minutes for it.
+      # The Release workflow creates the GitHub release for the tag; wait up to ~90 minutes for it (it compiles the native binaries first).
       - name: Wait for the release
         run: |
-          for i in $(seq 1 60); do
+          for i in $(seq 1 180); do
             if gh release view "$TAG" > /dev/null 2>&1; then exit 0; fi
-            echo "Release $TAG does not exist yet ($i/60)"; sleep 30
+            echo "Release $TAG does not exist yet ($i/180)"; sleep 30
           done
           echo "Release $TAG never appeared" >&2; exit 1
 
