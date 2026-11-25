@@ -2270,7 +2270,7 @@ function spark(series, max, cls = ['']) {
 }
 const rate = b => b < 1024 ? b + ' B/s' : b < 1048576 ? (b / 1024).toFixed(b < 10240 ? 1 : 0) + ' KB/s' : (b / 1048576).toFixed(1) + ' MB/s';
 // ---- Modules ---------------------------------------------------------------------------
-const COLORS = {ai: '#9333ea', camera: '#0f766e', ssh: '#475569', web: '#0f766e', tunnel: '#c2410c', tailscale: '#1f2937', jellyfin: '#7c3aed', qbittorrent: '#4f46e5', homeassistant: '#0e7490', immich: '#db2777'};
+const COLORS = {ai: '#9333ea', camera: '#0f766e', ssh: '#475569', web: '#0f766e', tunnel: '#c2410c', tailscale: '#1f2937', jellyfin: '#7c3aed', qbittorrent: '#4f46e5', prowlarr: '#c2410c', radarr: '#b45309', sonarr: '#0369a1', seerr: '#6d28d9', homeassistant: '#0e7490', immich: '#db2777'};
 let modules = null;
 function modCard(x) {
   const busy = modules.job.running;

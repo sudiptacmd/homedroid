@@ -65,7 +65,7 @@ time. `dashboard-deploys` now shows the Pipelines tab.
 Windows 11 virtual camera and macOS input remain experimental; release notes also limit
 physical multi-phone load-balancing verification. Per-ABI APKs are about 50 to 60 MB and the
 universal APK is larger.
-Desktop's approximately 1 MB figure applies to Linux. Every download link points at the v0.9.5-beta tag, because /releases/latest skips pre-releases. Asset names follow
+Desktop's approximately 1 MB figure applies to Linux. Every download link points at the v0.9.6-beta tag, because /releases/latest skips pre-releases. Asset names follow
 the Desktop and release workflows.
 
 The final copy pass rewrote the hero, release band, grouped features, phone/dashboard tour,

@@ -31,7 +31,7 @@ for(const [file,s] of contents){
   if(!/<meta name="description" content="[^"]+">/.test(s))fail(file,'missing description');
  }
  for(const m of s.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)){
-  try{const data=JSON.parse(m[1]);schemas++;if(!data['@context']||!data['@type'])fail(file,'incomplete schema');if(data['@type']==='SoftwareApplication'&&data.softwareVersion!=='0.9.5-beta')fail(file,'old software version');}catch(e){fail(file,'invalid JSON-LD '+e.message);}
+  try{const data=JSON.parse(m[1]);schemas++;if(!data['@context']||!data['@type'])fail(file,'incomplete schema');if(data['@type']==='SoftwareApplication'&&data.softwareVersion!=='0.9.6-beta')fail(file,'old software version');}catch(e){fail(file,'invalid JSON-LD '+e.message);}
  }
  for(const m of s.matchAll(/\b(?:href|src|srcset|poster)="([^"]+)"/g))resolveLink(file,m[1]);
  for(const m of s.matchAll(/<img\b[^>]*>/g))if(!/\balt="[^"]*"/.test(m[0])||!m[0].includes('width=')||!m[0].includes('height='))fail(file,'image missing alt/dimensions');

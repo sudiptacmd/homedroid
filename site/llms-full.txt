@@ -1,17 +1,21 @@
 # Homedroid: an old Android phone as a home server
 
-Version: 0.9.5-beta
-Last updated: 2026-11-25
+Version: 0.9.6-beta
+Last updated: 2026-11-26
 Author: Sudipta Goswami
 Website: https://homedroid.seltiv.com/
 Source: https://github.com/sudiptacmd/homedroid
 License: https://github.com/sudiptacmd/homedroid/blob/main/LICENSE (GPL-3.0)
-Downloads: https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta
+Downloads: https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta
 
 Homedroid is an Android home server app that runs without root or Termux. Install one APK, start the server, and open the web dashboard from a browser. The phone runs the services; the browser manages them. This is beta software.
 
 ## Requirements and size
 Android 10+ (API 29). APKs: arm64-v8a, armeabi-v7a, x86_64 and universal. A 64-bit phone is recommended and required for Immich and local llama.cpp. Per-ABI APKs are about 50 to 60 MB and the universal APK is larger. Apps and AI models download separately. Homedroid Desktop is a small Rust binary, about 1 MB on Linux; sizes vary by platform. Leave free storage for the selected apps: Jellyfin roughly 420 MB, Immich roughly 1.6 GB and Home Assistant roughly 900 MB before media. These are approximate installation figures, not fixed download sizes.
+
+## What changed in 0.9.6
+Media automation: Prowlarr (port 9696), Radarr (7878), Sonarr (8989) and Jellyseerr, now named Seerr (5055), install from the app library. Homedroid connects them once as they start: Radarr and Sonarr use qBittorrent (localhost, no password) as their download client and /media/Movies and /media/Shows as root folders; Prowlarr syncs its indexers to both and has qBittorrent too; Jellyfin gets Movies and Shows libraries; Seerr gets Radarr and Sonarr (HD-1080p profile) after its setup wizard, where you sign in with Jellyfin at 127.0.0.1:8096. Removed connections are not re-added. Prowlarr, Radarr and Sonarr are the official musl builds pinned by SHA-256, with their own updater off. Sonarr and Seerr need arm64 or x86_64. Sonarr is version 5 (Sonarr's test release, pinned to 5.0.0.3041) because Sonarr 4's .NET 6 runtime cannot start inside Android's app sandbox. Requested in GitHub issue 15.
+Security updates for Go libraries in Caddy, cloudflared and Tailscale.
 
 ## What changed in 0.9.5
 Material 3 phone app, wallpaper colours on Android 12+, OLED black theme and burn-in protection. Six dashboard layouts: sidebar, rail, top bar, split, focus and kiosk. Thirteen themes, font choices, editable overview and Ctrl/Cmd+K command palette. Preferences are saved on the phone.
@@ -44,7 +48,7 @@ Network tools: discovery, ping, traceroute, DNS, nmap, HTTP checks, whois, iperf
 Remote access: Tailscale private access or Cloudflare Tunnel public HTTPS. Both work behind CGNAT without router port forwarding.
 
 ## Setup
-1. Install the APK: Download the 0.9.5 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.
+1. Install the APK: Download the 0.9.6 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.
 2. Start the server: Tap Start server. Copy the dashboard address and find the password under Dashboard login.
 3. Open the dashboard: On the same trusted network, open http://<phone-ip>:8800 in a browser and sign in. Install only the modules you need.
 4. Let Android keep it running: Allow background battery use. Follow the in-app guidance for vendor battery savers and Android 12+ process limits. Keep the phone cool.
@@ -111,6 +115,6 @@ https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md
 https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md
 https://github.com/sudiptacmd/homedroid/blob/main/desktop/README.md
 https://github.com/sudiptacmd/homedroid/blob/main/docs/desktop-protocol.md
-https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.5-beta.md
+https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.6-beta.md
 
 Screenshots: phone captures from an emulator and actual dashboard UI with mock API data. They are demonstrations, not hardware benchmarks.
