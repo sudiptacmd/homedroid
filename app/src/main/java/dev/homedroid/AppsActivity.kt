@@ -101,7 +101,7 @@ class AppsActivity : MobileActivity() {
     }
 
     private fun card(app: AppDef, index: Int): View {
-        val box = design.card(padding = Space.LG + 2)
+        val box = design.card(padding = Space.MD)
         val head = design.row().apply { gravity = Gravity.TOP }
         val (bg, fg) = when (index % 3) {
             0 -> p.primaryContainer to p.onPrimaryContainer
@@ -113,7 +113,7 @@ class AppsActivity : MobileActivity() {
             addView(design.text(app.name.take(1).uppercase(), TypeStyle.TitleLarge, fg).apply { gravity = Gravity.CENTER },
                 FrameLayout.LayoutParams(-1, -1))
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        }, design.lp(design.dp(48), design.dp(48), end = Space.MD))
+        }, design.lp(design.dp(40), design.dp(40), end = Space.SM))
         val words = design.column()
         words.addView(design.text(app.name, TypeStyle.TitleMedium).apply { isAccessibilityHeading = true })
         words.addView(design.text("Port ${app.port} · ${app.size}", TypeStyle.BodySmall, p.onSurfaceVariant), design.lp(top = 2))
@@ -123,7 +123,13 @@ class AppsActivity : MobileActivity() {
         box.addView(head)
 
         box.addView(design.text(app.description.substringBefore(". ").let { if (it.endsWith('.')) it else "$it." }, TypeStyle.BodyMedium, p.onSurfaceVariant),
-            design.lp(top = Space.MD))
+            design.lp(top = Space.SM))
+        ModuleResources.of(this, app.id)?.let { resources ->
+            box.addView(design.text(resources.summary, TypeStyle.BodySmall, p.onSurfaceVariant).apply {
+                maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+                tooltipText = resources.summary
+            }, design.lp(top = Space.XS))
+        }
         val notice = design.text("", TypeStyle.BodySmall).apply {
             setPadding(design.dp(Space.MD), design.dp(Space.SM + 2), design.dp(Space.MD), design.dp(Space.SM + 2)); visibility = View.GONE
             setTextIsSelectable(true)
@@ -143,20 +149,22 @@ class AppsActivity : MobileActivity() {
             box.addView(r, design.lp(top = Space.XS))
         }
 
-        val actions = FlowLayout(this, design.dp(Space.SM), 0)
-        val install = design.button("Install", ButtonKind.Filled, Icon.Download) {
+        val actions = design.row()
+        val install = design.button("Install", ButtonKind.Filled, compact = true) {
             design.haptic(box, Haptic.Confirm)
             ServerService.install(this, app)
             design.snackbar("Installing ${app.name}. You can leave this screen.")
         }
-        val open = design.button("Open", ButtonKind.Filled, Icon.OpenExternal) {
+        val open = design.button("Open", ButtonKind.Filled, compact = true) {
             runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("http://127.0.0.1:${app.port}"))) }
                 .onFailure { design.snackbar("Install a browser to open ${app.name}") }
         }
-        val turnOn = design.button("Turn on", ButtonKind.Filled, Icon.Power) { setDisabled(app, false) }
-        val update = design.button("Update", ButtonKind.Tonal, Icon.Refresh) { confirmUpdate(app) }
-        val manage = design.button("Manage", ButtonKind.Outlined, Icon.Tune) { manageSheet(app) }
-        for (b in listOf(install, open, turnOn, update, manage)) actions.addView(b)
+        val turnOn = design.button("Turn on", ButtonKind.Filled, compact = true) { setDisabled(app, false) }
+        val update = design.button("Update", ButtonKind.Tonal, compact = true) { confirmUpdate(app) }
+        val manage = design.button("Manage", ButtonKind.Outlined, compact = true) { manageSheet(app) }
+        for (b in listOf(install, open, turnOn, update, manage)) {
+            actions.addView(b, design.lp(0, -2, 1f, start = Space.XXS, end = Space.XXS))
+        }
         box.addView(actions, design.lp(top = Space.SM))
         cards += Card(app, box, pill, notice, progress, storageRow, storage, install, open, turnOn, update, manage)
         return box
@@ -251,6 +259,11 @@ class AppsActivity : MobileActivity() {
     /** Less frequent and destructive actions for an installed app. */
     private fun manageSheet(app: AppDef) {
         val s = design.sheet(app.name, "Port ${app.port} · ${app.size}")
+        ModuleResources.of(this, app.id)?.let { resources ->
+            s.body.addView(design.text(resources.summary, TypeStyle.BodyMedium, p.onSurfaceVariant), design.lp(bottom = Space.XS))
+            if (resources.note.isNotBlank()) s.body.addView(design.text(resources.note, TypeStyle.BodySmall, p.onSurfaceVariant),
+                design.lp(bottom = Space.MD))
+        }
         val busy = Jobs.running
         val g = design.group(s.body)
         val run = design.switchRow(Icon.Power, "Run this app", "When it's off, it stays installed but doesn't start", !cfg.isDisabled(app.id)) { on ->

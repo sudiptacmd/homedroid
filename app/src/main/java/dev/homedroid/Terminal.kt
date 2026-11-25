@@ -21,11 +21,29 @@ import java.util.Base64
  */
 object Terminal {
     /**
-     * Loopback port sshd serves the web terminal on: a free one picked once per process, so it
-     * never collides with an SSH port the user chose (or another app's server).
+     * Loopback port sshd serves the web terminal on, picked once per process: the first free one
+     * from 8023 up, so it never collides with an SSH port the user chose (or another app's
+     * server). Not a system-assigned (ephemeral) port: on Android the app's own connections to
+     * a listener on one of those were refused, and the web terminal never opened.
      */
-    val port: Int by lazy {
-        java.net.ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress()).use { it.localPort }
+    @Volatile private var picked = 0
+
+    /** The terminal port; [sshPort] (the user's SSH port) is never chosen. */
+    @Synchronized
+    fun port(sshPort: Int = Config.DEFAULT_SSH_PORT): Int {
+        if (picked == 0) picked = freePort(8023, avoid = setOf(sshPort, 8080, 8800, 8801))
+        return picked
+    }
+
+    internal fun freePort(from: Int, avoid: Set<Int>, tries: Int = 200): Int {
+        for (p in from until from + tries) {
+            if (p in avoid) continue
+            val free = runCatching {
+                java.net.ServerSocket().use { it.reuseAddress = true; it.bind(InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), p)) }
+            }.isSuccess
+            if (free) return p
+        }
+        return java.net.ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress()).use { it.localPort }
     }
 
     /** Proves to sshd that a terminal connection comes from this app, not another one on the phone. */
@@ -59,8 +77,9 @@ object Terminal {
     private fun relay(input: InputStream, output: OutputStream, cols: Int, rows: Int, alpine: Boolean, ip: String) {
         val ws = WebSocket(input, output)
         val shell = try {
-            Socket().apply { connect(InetSocketAddress("127.0.0.1", port), 3000) }
+            Socket().apply { connect(InetSocketAddress("127.0.0.1", port()), 3000) }
         } catch (e: IOException) {
+            android.util.Log.w("Homedroid", "web terminal: can't reach sshd on 127.0.0.1:${port()}", e)
             ws.send("The shell service isn't running yet, so the terminal can't start. Try again in a moment.\r\n".toByteArray())
             ws.close()
             return

@@ -1,0 +1,22 @@
+{
+  "_about": "Typical memory and CPU use of each module, for the dashboard, the phone's app library and the README. Memory is what the module's processes keep resident; measured on an emulator at idle where possible (see docs/releases/v0.9.6-beta.md), otherwise from the projects' own guidance. cpu is low, medium or high: what to expect while the module is busy.",
+  "ssh": {"ram": "about 10 MB", "cpu": "low", "note": "A little more while copying files over SFTP."},
+  "web": {"ram": "40–60 MB", "cpu": "low", "note": "Grows with traffic to your sites."},
+  "tunnel": {"ram": "30–60 MB", "cpu": "low", "note": "Grows with the traffic it carries."},
+  "tailscale": {"ram": "40–80 MB", "cpu": "medium", "note": "Encrypts traffic in software, so large transfers keep a core busy."},
+  "camera": {"ram": "50–120 MB", "cpu": "medium", "note": "Only while streaming or recording. Uses more battery and warms the phone."},
+  "ai": {"ram": "model size + 0.3–1 GB", "cpu": "high", "note": "Every core while it answers, nothing in between. A 1.5B model needs about 1.5 GB in all, a 3B model about 2.5 GB."},
+  "wol": {"ram": "under 1 MB", "cpu": "low", "note": "Runs only while sending a wake-up packet."},
+  "repeater": {"ram": "10–30 MB", "cpu": "medium", "note": "Grows with the traffic of the devices on its network."},
+  "network": {"ram": "about 5 MB", "cpu": "low", "note": "Scans and speed tests run only when you start them."},
+  "jellyfin": {"ram": "200–450 MB", "cpu": "high", "note": "Light when your devices play files as they are. Converting video decodes it in software and can use every core."},
+  "qbittorrent": {"ram": "40–150 MB", "cpu": "medium", "note": "Grows with the number of active torrents. Checking a finished download is busy for a moment."},
+  "prowlarr": {"ram": "150–200 MB", "cpu": "low", "note": "Busy for a few seconds during each search."},
+  "radarr": {"ram": "180–300 MB", "cpu": "low", "note": "Busier while importing downloads or rescanning a large library."},
+  "sonarr": {"ram": "200–300 MB", "cpu": "low", "note": "Busier while importing downloads or rescanning a large library."},
+  "seerr": {"ram": "190–300 MB", "cpu": "low", "note": "Mostly idle; looks up movies and shows when you browse."},
+  "homeassistant": {"ram": "300–500 MB", "cpu": "medium", "note": "Depends on your integrations; low for most homes."},
+  "immich": {"ram": "0.8–1.5 GB", "cpu": "high", "note": "Thumbnails and video conversion after uploads use every core, then it settles. Face and object recognition stay off."},
+  "adguard": {"ram": "40–100 MB", "cpu": "low", "note": "Bigger blocklists use more memory."},
+  "stalwart": {"ram": "80–200 MB", "cpu": "low", "note": "Spam checks add a little for each message."}
+}

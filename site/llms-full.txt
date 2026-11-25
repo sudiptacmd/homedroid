@@ -1,17 +1,21 @@
 # Homedroid: an old Android phone as a home server
 
-Version: 0.9.5-beta
-Last updated: 2026-11-25
+Version: 0.9.6-beta
+Last updated: 2026-11-26
 Author: Sudipta Goswami
 Website: https://homedroid.seltiv.com/
 Source: https://github.com/sudiptacmd/homedroid
 License: https://github.com/sudiptacmd/homedroid/blob/main/LICENSE (GPL-3.0)
-Downloads: https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta
+Downloads: https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta
 
 Homedroid is an Android home server app that runs without root or Termux. Install one APK, start the server, and open the web dashboard from a browser. The phone runs the services; the browser manages them. This is beta software.
 
 ## Requirements and size
 Android 10+ (API 29). APKs: arm64-v8a, armeabi-v7a, x86_64 and universal. A 64-bit phone is recommended and required for Immich and local llama.cpp. Per-ABI APKs are about 50 to 60 MB and the universal APK is larger. Apps and AI models download separately. Homedroid Desktop is a small Rust binary, about 1 MB on Linux; sizes vary by platform. Leave free storage for the selected apps: Jellyfin roughly 420 MB, Immich roughly 1.6 GB and Home Assistant roughly 900 MB before media. These are approximate installation figures, not fixed download sizes.
+
+## What changed in 0.9.6
+Media automation: Prowlarr (port 9696), Radarr (7878), Sonarr (8989) and Jellyseerr, now named Seerr (5055), install from the app library. Homedroid connects them once as they start: Radarr and Sonarr use qBittorrent (localhost, no password) as their download client and /media/Movies and /media/Shows as root folders; Prowlarr syncs its indexers to both and has qBittorrent too; Jellyfin gets Movies and Shows libraries; Seerr gets Radarr and Sonarr (HD-1080p profile) after its setup wizard, where you sign in with Jellyfin at 127.0.0.1:8096. Removed connections are not re-added. Prowlarr, Radarr and Sonarr are the official musl builds pinned by SHA-256, with their own updater off. Sonarr and Seerr need arm64 or x86_64. Sonarr is version 5 (Sonarr's test release, pinned to 5.0.0.3041) because Sonarr 4's .NET 6 runtime cannot start inside Android's app sandbox. Requested in GitHub issue 15.
+Security updates for Go libraries in Caddy, cloudflared and Tailscale.
 
 ## What changed in 0.9.5
 Material 3 phone app, wallpaper colours on Android 12+, OLED black theme and burn-in protection. Six dashboard layouts: sidebar, rail, top bar, split, focus and kiosk. Thirteen themes, font choices, editable overview and Ctrl/Cmd+K command palette. Preferences are saved on the phone.
@@ -24,6 +28,31 @@ Mail server: Mail server (Stalwart) from the app catalog, with a guided setup in
 Wi-Fi repeater: the phone hosts a Wi-Fi Direct network and relays traffic for devices that use its built-in proxy (HTTP/HTTPS 8282, PAC 8283, SOCKS5 8284). Join with a QR code. It is proxy-based, not a true hotspot: games, calls, VPN clients and apps that ignore proxy settings do not work. Guide: https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md
 PIN/biometric app lock and Android Keystore-encrypted secrets. Fixes for DNS install failures, configurable SSH port, terminal without SSH, installed-app updates from phone/dashboard.
 Also in 0.9.5: camera controls for the PC webcam (zoom, torch, focus, exposure, white balance, rotation, presets) and a custom look for MacroPads (backgrounds, fonts, key styles, 88 icons, your own images). Windows virtual camera, macOS input and multi-physical-phone load balancing have not been hardware-verified in the release notes.
+
+## Memory and CPU per module
+Typical memory while running and CPU while busy (idle figures measured on an emulator). Homedroid itself uses about 75 MB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB; Immich or local AI want 6 GB or more.
+- ssh: memory about 10 MB, CPU low. A little more while copying files over SFTP.
+- web: memory 40–60 MB, CPU low. Grows with traffic to your sites.
+- tunnel: memory 30–60 MB, CPU low. Grows with the traffic it carries.
+- tailscale: memory 40–80 MB, CPU medium. Encrypts traffic in software, so large transfers keep a core busy.
+- camera: memory 50–120 MB, CPU medium. Only while streaming or recording. Uses more battery and warms the phone.
+- ai: memory model size + 0.3–1 GB, CPU high. Every core while it answers, nothing in between. A 1.5B model needs about 1.5 GB in all, a 3B model about 2.5 GB.
+- wol: memory under 1 MB, CPU low. Runs only while sending a wake-up packet.
+- repeater: memory 10–30 MB, CPU medium. Grows with the traffic of the devices on its network.
+- network: memory about 5 MB, CPU low. Scans and speed tests run only when you start them.
+- jellyfin: memory 200–450 MB, CPU high. Light when your devices play files as they are. Converting video decodes it in software and can use every core.
+- qbittorrent: memory 40–150 MB, CPU medium. Grows with the number of active torrents. Checking a finished download is busy for a moment.
+- prowlarr: memory 150–200 MB, CPU low. Busy for a few seconds during each search.
+- radarr: memory 180–300 MB, CPU low. Busier while importing downloads or rescanning a large library.
+- sonarr: memory 200–300 MB, CPU low. Busier while importing downloads or rescanning a large library.
+- seerr: memory 190–300 MB, CPU low. Mostly idle; looks up movies and shows when you browse.
+- homeassistant: memory 300–500 MB, CPU medium. Depends on your integrations; low for most homes.
+- immich: memory 0.8–1.5 GB, CPU high. Thumbnails and video conversion after uploads use every core, then it settles. Face and object recognition stay off.
+- adguard: memory 40–100 MB, CPU low. Bigger blocklists use more memory.
+- stalwart: memory 80–200 MB, CPU low. Spam checks add a little for each message.
+
+## Installing other Linux software
+Homedroid includes Alpine Linux. In the dashboard, open Terminal, choose Alpine Linux and install packages with apk (for example apk add python3 git); over SSH, run alpine first. Packages persist across restarts and Homedroid updates. Video: https://homedroid.seltiv.com/#packages
 
 ## Services and ports
 Dashboard, IPCam and MCP: 8800 (MCP at /mcp).
@@ -44,7 +73,7 @@ Network tools: discovery, ping, traceroute, DNS, nmap, HTTP checks, whois, iperf
 Remote access: Tailscale private access or Cloudflare Tunnel public HTTPS. Both work behind CGNAT without router port forwarding.
 
 ## Setup
-1. Install the APK: Download the 0.9.5 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.
+1. Install the APK: Download the 0.9.6 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.
 2. Start the server: Tap Start server. Copy the dashboard address and find the password under Dashboard login.
 3. Open the dashboard: On the same trusted network, open http://<phone-ip>:8800 in a browser and sign in. Install only the modules you need.
 4. Let Android keep it running: Allow background battery use. Follow the in-app guidance for vendor battery savers and Android 12+ process limits. Keep the phone cool.
@@ -111,6 +140,6 @@ https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md
 https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md
 https://github.com/sudiptacmd/homedroid/blob/main/desktop/README.md
 https://github.com/sudiptacmd/homedroid/blob/main/docs/desktop-protocol.md
-https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.5-beta.md
+https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.6-beta.md
 
 Screenshots: phone captures from an emulator and actual dashboard UI with mock API data. They are demonstrations, not hardware benchmarks.

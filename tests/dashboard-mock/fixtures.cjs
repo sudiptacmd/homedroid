@@ -329,6 +329,9 @@ function modules(p) {
     const worst = ds.reduce((w, x) => order.indexOf(x.state) > order.indexOf(w.state) ? x : w);
     return {...o, state: worst.state, restarts: ds.reduce((s, x) => s + x.restarts, 0)};
   });
+  // Typical memory and CPU use, as Dashboard.kt adds it from assets/resources.json.
+  const res = JSON.parse(fs.readFileSync(path.join(ASSETS, 'resources.json'), 'utf8'));
+  for (const m of [...core, ...apps]) if (res[m.id]) m.resources = res[m.id];
   return {core, apps, job: job(p)};
 }
 const job = p => ({title: p.job.title, running: p.job.running, error: p.job.error, log: p.job.log.slice(-200)});

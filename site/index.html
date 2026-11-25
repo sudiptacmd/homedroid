@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Homedroid: turn an old Android phone into a home server, no root</title>
-<meta name="description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.">
+<meta name="description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.6 beta.">
 <link rel="canonical" href="https://homedroid.seltiv.com/">
 <meta name="theme-color" content="#0a100f">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Homedroid">
 <meta property="og:title" content="Homedroid: turn an old Android phone into a home server, no root">
-<meta property="og:description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.">
+<meta property="og:description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.6 beta.">
 <meta property="og:url" content="https://homedroid.seltiv.com/">
 <meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="640">
-<meta property="og:image:alt" content="Homedroid 0.9.5 beta: an old Android phone running a home server and web dashboard">
+<meta property="og:image:alt" content="Homedroid 0.9.6 beta: an old Android phone running a home server and web dashboard">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Homedroid: turn an old Android phone into a home server, no root">
-<meta name="twitter:description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.">
+<meta name="twitter:description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.6 beta.">
 <meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
 <meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
 <link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
@@ -34,7 +34,7 @@
   "@context": "https://schema.org",
   "@type": "WebPage",
   "name": "Homedroid: turn an old Android phone into a home server, no root",
-  "description": "Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.",
+  "description": "Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.6 beta.",
   "url": "https://homedroid.seltiv.com/",
   "dateModified": "2026-11-25",
   "isPartOf": {
@@ -49,7 +49,7 @@
   "@id": "https://homedroid.seltiv.com/#app",
   "name": "Homedroid",
   "url": "https://homedroid.seltiv.com/",
-  "softwareVersion": "0.9.5-beta",
+  "softwareVersion": "0.9.6-beta",
   "operatingSystem": "Android 10 or newer",
   "applicationCategory": "UtilitiesApplication",
   "license": "https://github.com/sudiptacmd/homedroid/blob/main/LICENSE",
@@ -58,7 +58,7 @@
     "price": "0",
     "priceCurrency": "USD"
   },
-  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta",
+  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta",
   "screenshot": "https://homedroid.seltiv.com/media/dashboard-overview.webp",
   "author": {
     "@id": "https://homedroid.seltiv.com/#author"
@@ -88,7 +88,7 @@
   "@id": "https://homedroid.seltiv.com/desktop/#app",
   "name": "Homedroid Desktop",
   "url": "https://homedroid.seltiv.com/desktop/",
-  "softwareVersion": "0.9.5-beta",
+  "softwareVersion": "0.9.6-beta",
   "operatingSystem": [
     "Linux",
     "Windows",
@@ -101,7 +101,7 @@
     "price": "0",
     "priceCurrency": "USD"
   },
-  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta",
+  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta",
   "screenshot": "https://homedroid.seltiv.com/media/phone-macropads-oled.webp",
   "author": {
     "@id": "https://homedroid.seltiv.com/#author"
@@ -142,6 +142,22 @@
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How much RAM does Homedroid need?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Homedroid itself uses about 75 MB. Each module adds its own share: SSH about 10 MB, Jellyfin 200–450 MB, Radarr and Sonarr about 200–300 MB each, Immich 0.8–1.5 GB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB, and Immich or a local AI model 6 GB or more. Modules you turn off use nothing."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I install other Linux software?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Homedroid includes Alpine Linux, so you can install packages from Alpine's repository with apk. Open Terminal in the dashboard, choose Alpine Linux and run, for example, apk add python3 git. Over SSH, type alpine first. Packages stay installed through restarts and Homedroid updates."
       }
     },
     {
@@ -238,6 +254,21 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": "Install Alpine Linux packages on an Android phone with Homedroid",
+  "description": "Open the Homedroid dashboard terminal, choose Alpine Linux and install git and htop with apk add. No root needed.",
+  "thumbnailUrl": "https://homedroid.seltiv.com/media/dashboard-alpine-packages.webp",
+  "contentUrl": "https://homedroid.seltiv.com/media/dashboard-alpine-packages.webm",
+  "uploadDate": "2026-11-26",
+  "duration": "PT15S",
+  "width": 1280,
+  "height": 800,
+  "embedUrl": "https://homedroid.seltiv.com/#packages"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
   "@type": "HowTo",
   "name": "Set up Homedroid on an old Android phone",
   "description": "Install Homedroid and open its home server dashboard.",
@@ -246,7 +277,7 @@
       "@type": "HowToStep",
       "position": 1,
       "name": "Install the APK",
-      "text": "Download the 0.9.5 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.",
+      "text": "Download the 0.9.6 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.",
       "url": "https://homedroid.seltiv.com/#start"
     },
     {
@@ -315,7 +346,7 @@
 <div class="hero-copy">
 <a class="release-pill" href="#new">
 <span class="status-dot">
-</span> 0.9.5 beta is here <span aria-hidden="true">↗</span>
+</span> 0.9.6 beta is here <span aria-hidden="true">↗</span>
 </a>
 <h1>Turn your old<br>Android phone<br>into a <em>home server.</em>
 </h1>
@@ -338,7 +369,7 @@
 <img src="/media/dashboard-overview.webp" alt="Homedroid web dashboard managing an old Android phone as a home server" width="1440" height="900" class="" fetchpriority="high">
 </div>
 <div class="phone-frame">
-<img src="/media/phone-overview-oled.webp" alt="Homedroid 0.9.5 Android app with OLED black theme and server vitals" width="540" height="1200" class="" fetchpriority="high">
+<img src="/media/phone-overview-oled.webp" alt="Homedroid 0.9.6 Android app with OLED black theme and server vitals" width="540" height="1200" class="" fetchpriority="high">
 </div>
 <div class="visual-note">
 <span class="status-dot">
@@ -359,12 +390,14 @@
 </div>
 <section class="wrap new-band" id="new">
 <div>
-<span class="eyebrow">WHAT’S NEW / 0.9.5 BETA</span>
+<span class="eyebrow">WHAT’S NEW / 0.9.6 BETA</span>
 <h2>More useful on the desk.<br>More capable under it.</h2>
-<a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.5-beta.md">Read the release notes <span aria-hidden="true">↗</span>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.6-beta.md">Read the release notes <span aria-hidden="true">↗</span>
 </a>
 </div>
 <div class="new-items">
+<p>
+<strong>Movies and TV on autopilot.</strong> New in 0.9.6: Prowlarr, Radarr, Sonarr and Jellyseerr. Ask for a film or a show and the phone finds it, downloads it with qBittorrent and files it in Jellyfin. Homedroid connects the apps for you.</p>
 <p>
 <strong>A new app and dashboard.</strong> Material 3, wallpaper colours on Android 12+, OLED black and burn-in protection. Six dashboard layouts and 13 themes.</p>
 <p>
@@ -390,8 +423,8 @@
 <article class="feature">
 <span class="eyebrow">01 / MEDIA & STORAGE</span>
 <h3>Jellyfin on your Android phone</h3>
-<p>Stream your library with MediaCodec hardware encoding. Add qBittorrent to download into the same Media folder. Immich backs up photos, with machine learning disabled.</p>
-<span class="feature-meta">Jellyfin · Immich · qBittorrent</span>
+<p>Stream your library with MediaCodec hardware encoding. Add qBittorrent, Radarr and Sonarr and new films and episodes land in it on their own; Jellyseerr is the request page. Immich backs up photos, with machine learning disabled.</p>
+<span class="feature-meta">Jellyfin · Radarr · Sonarr · Immich</span>
 </article>
 <article class="feature">
 <span class="eyebrow">02 / YOUR FILES</span>
@@ -443,6 +476,161 @@
 </article>
 </div>
 <p class="fine">Guides: <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/deploy-hooks.md">deploy hooks and pipelines</a>, <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mcp.md">MCP setup</a>, <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md">mail server</a> and <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md">Wi-Fi repeater</a>.</p>
+</section>
+<section class="wrap section" id="packages">
+<div class="section-head">
+<div>
+<span class="eyebrow">BEYOND THE APP LIBRARY</span>
+<h2>Need another tool?<br>apk add it.</h2>
+</div>
+<p>Homedroid runs a full Alpine Linux, so thousands of packages from Alpine’s repository are one command away: Python, Node.js, git, ffmpeg, rclone, htop. Open <strong>Terminal</strong> in the dashboard, choose <strong>Alpine Linux</strong> and install what you need. Over SSH, type <code>alpine</code> first. Packages stay installed through restarts and Homedroid updates.</p>
+</div>
+<figure class="packages-video">
+<video controls playsinline preload="none" poster="/media/dashboard-alpine-packages.webp" width="1280" height="800" aria-label="Installing git and htop from Alpine Linux in the Homedroid dashboard terminal">
+<source src="/media/dashboard-alpine-packages.webm" type="video/webm">
+</video>
+<figcaption>Installing git and htop with <code>apk add</code> in the dashboard terminal · recorded on a Homedroid emulator · silent</figcaption>
+</figure>
+<p class="fine">Find a package with <code>apk search name</code>, or browse <a href="https://pkgs.alpinelinux.org/packages">pkgs.alpinelinux.org</a>. Remove one with <code>apk del name</code>.</p>
+</section>
+<section class="wrap section" id="requirements">
+<div class="section-head">
+<div>
+<span class="eyebrow">WHAT IT NEEDS</span>
+<h2>How much phone<br>each module needs.</h2>
+</div>
+<p>A phone with 3 GB of RAM runs the file server, Jellyfin, qBittorrent and a few small services comfortably. The whole media automation set wants 4 GB; Immich or a local AI model want 6 GB or more. Modules you turn off use nothing.</p>
+</div>
+<div class="table-scroll">
+<table class="needs">
+<caption>Typical memory while running and CPU while busy. Idle figures measured on an emulator; Homedroid itself takes about 75 MB.</caption>
+<thead>
+<tr>
+<th scope="col">Module</th>
+<th scope="col">Memory</th>
+<th scope="col">CPU</th>
+<th scope="col">When it works hardest</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">SSH &amp; SFTP</th>
+<td>about 10 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>A little more while copying files over SFTP.</td>
+</tr>
+<tr>
+<th scope="row">Web hosting (Caddy)</th>
+<td>40–60 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Grows with traffic to your sites.</td>
+</tr>
+<tr>
+<th scope="row">Cloudflare Tunnel</th>
+<td>30–60 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Grows with the traffic it carries.</td>
+</tr>
+<tr>
+<th scope="row">Tailscale</th>
+<td>40–80 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Encrypts traffic in software, so large transfers keep a core busy.</td>
+</tr>
+<tr>
+<th scope="row">IPCam</th>
+<td>50–120 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Only while streaming or recording. Uses more battery and warms the phone.</td>
+</tr>
+<tr>
+<th scope="row">Local AI (llama.cpp)</th>
+<td>model size + 0.3–1 GB</td>
+<td><span class="cpu high">high</span></td>
+<td>Every core while it answers, nothing in between. A 1.5B model needs about 1.5 GB in all, a 3B model about 2.5 GB.</td>
+</tr>
+<tr>
+<th scope="row">Wake on LAN</th>
+<td>under 1 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Runs only while sending a wake-up packet.</td>
+</tr>
+<tr>
+<th scope="row">Wi-Fi repeater</th>
+<td>10–30 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Grows with the traffic of the devices on its network.</td>
+</tr>
+<tr>
+<th scope="row">Network tools</th>
+<td>about 5 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Scans and speed tests run only when you start them.</td>
+</tr>
+<tr>
+<th scope="row">Jellyfin</th>
+<td>200–450 MB</td>
+<td><span class="cpu high">high</span></td>
+<td>Light when your devices play files as they are. Converting video decodes it in software and can use every core.</td>
+</tr>
+<tr>
+<th scope="row">qBittorrent</th>
+<td>40–150 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Grows with the number of active torrents. Checking a finished download is busy for a moment.</td>
+</tr>
+<tr>
+<th scope="row">Prowlarr</th>
+<td>150–200 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Busy for a few seconds during each search.</td>
+</tr>
+<tr>
+<th scope="row">Radarr</th>
+<td>180–300 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Busier while importing downloads or rescanning a large library.</td>
+</tr>
+<tr>
+<th scope="row">Sonarr</th>
+<td>200–300 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Busier while importing downloads or rescanning a large library.</td>
+</tr>
+<tr>
+<th scope="row">Jellyseerr (Seerr)</th>
+<td>190–300 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Mostly idle; looks up movies and shows when you browse.</td>
+</tr>
+<tr>
+<th scope="row">Home Assistant</th>
+<td>300–500 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Depends on your integrations; low for most homes.</td>
+</tr>
+<tr>
+<th scope="row">Immich</th>
+<td>0.8–1.5 GB</td>
+<td><span class="cpu high">high</span></td>
+<td>Thumbnails and video conversion after uploads use every core, then it settles. Face and object recognition stay off.</td>
+</tr>
+<tr>
+<th scope="row">AdGuard Home</th>
+<td>40–100 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Bigger blocklists use more memory.</td>
+</tr>
+<tr>
+<th scope="row">Mail (Stalwart)</th>
+<td>80–200 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Spam checks add a little for each message.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="fine">The dashboard shows the same figures on each module card, and the phone app on each app.</p>
 </section>
 <section class="section tour-section" id="tour">
 <div class="wrap">
@@ -588,7 +776,7 @@
 <figcaption>Overview / wallpaper colours</figcaption>
 </figure>
 <figure>
-<img src="/media/phone-apps-light.webp" alt="Homedroid app library with Jellyfin and Immich" width="540" height="1200" class="" loading="lazy" decoding="async">
+<img src="/media/phone-apps-light.webp" alt="Homedroid app library: Jellyfin and qBittorrent running, with typical memory and CPU use on each app" width="540" height="1200" class="" loading="lazy" decoding="async">
 <figcaption>Apps / install and update</figcaption>
 </figure>
 <figure>
@@ -665,38 +853,38 @@
 </div>
 <p>Linux uses v4l2loopback. Windows 11 virtual camera support is experimental. On macOS and Windows 10, use the local stream in OBS and start OBS Virtual Camera. macOS input is experimental and has not been tested on hardware.</p>
 <div class="downloads">
-<a class="download" data-os="linux" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-linux-x86_64.tar.gz">
+<a class="download" data-os="linux" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-desktop-v0.9.6-beta-linux-x86_64.tar.gz">
 <span>Linux</span>
 <strong>x86_64 <span aria-hidden="true">↗</span>
 </strong>
-<small>tar.gz · <span class="os-hint">0.9.5 beta</span>
+<small>tar.gz · <span class="os-hint">0.9.6 beta</span>
 </small>
 </a>
-<a class="download" data-os="linux" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-linux-aarch64.tar.gz">
+<a class="download" data-os="linux" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-desktop-v0.9.6-beta-linux-aarch64.tar.gz">
 <span>Linux</span>
 <strong>ARM64 <span aria-hidden="true">↗</span>
 </strong>
-<small>tar.gz · <span class="os-hint">0.9.5 beta</span>
+<small>tar.gz · <span class="os-hint">0.9.6 beta</span>
 </small>
 </a>
-<a class="download" data-os="windows" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-windows-x86_64.zip">
+<a class="download" data-os="windows" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-desktop-v0.9.6-beta-windows-x86_64.zip">
 <span>Windows</span>
 <strong>x86_64 <span aria-hidden="true">↗</span>
 </strong>
-<small>zip · <span class="os-hint">0.9.5 beta</span>
+<small>zip · <span class="os-hint">0.9.6 beta</span>
 </small>
 </a>
-<a class="download" data-os="macos" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-macos-universal.tar.gz">
+<a class="download" data-os="macos" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-desktop-v0.9.6-beta-macos-universal.tar.gz">
 <span>macOS</span>
 <strong>Universal <span aria-hidden="true">↗</span>
 </strong>
-<small>tar.gz · <span class="os-hint">0.9.5 beta</span>
+<small>tar.gz · <span class="os-hint">0.9.6 beta</span>
 </small>
 </a>
 </div>
 <p class="fine" id="os-note">Choose your operating system and CPU. All four downloads stay available.</p>
 <div class="actions">
-<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">Get Homedroid Desktop <span aria-hidden="true">↓</span>
+<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">Get Homedroid Desktop <span aria-hidden="true">↓</span>
 </a>
 <a href="/desktop/">Webcam setup and platform notes <span aria-hidden="true">↗</span>
 </a>
@@ -766,7 +954,7 @@
 <li>
 <span>01</span>
 <h3>Install the APK</h3>
-<p>Download the 0.9.5 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.</p>
+<p>Download the 0.9.6 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.</p>
 </li>
 <li>
 <span>02</span>
@@ -792,23 +980,23 @@
 </div>
 </section>
 <section class="wrap section download-section" id="download">
-<span class="eyebrow">HOMEDROID 0.9.5 BETA</span>
+<span class="eyebrow">HOMEDROID 0.9.6 BETA</span>
 <h2>Give the old phone<br>something to do.</h2>
 <p>Android 10+, no root. Per-ABI APKs are about 50 to 60 MB and the universal APK is larger. Apps and AI models download separately.</p>
 <div class="actions">
-<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-arm64-v8a.apk">Download APK · ARM64 <span aria-hidden="true">↓</span>
+<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-0.9.6-beta-arm64-v8a.apk">Download APK · ARM64 <span aria-hidden="true">↓</span>
 </a>
 <a class="button star-button" href="https://github.com/sudiptacmd/homedroid">★ Star on GitHub<span class="star-count" data-stars hidden></span>
 </a>
 </div>
 <div class="apk-alternatives">
-<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-armeabi-v7a.apk">32-bit ARM</a>
-<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-x86_64.apk">x86_64 / emulators</a>
-<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-universal.apk">Universal APK</a>
-<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/SHA256SUMS">SHA256SUMS</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-0.9.6-beta-armeabi-v7a.apk">32-bit ARM</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-0.9.6-beta-x86_64.apk">x86_64 / emulators</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-0.9.6-beta-universal.apk">Universal APK</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/SHA256SUMS">SHA256SUMS</a>
 </div>
 <p class="fine star-ask">Homedroid is free and open source. If it gave your old phone a new job, a star on GitHub helps other people find it.</p>
-<p class="fine">Already installed? Use Settings → App updates in the dashboard. Check <a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">the beta release</a> for availability and release notes.</p>
+<p class="fine">Already installed? Use Settings → App updates in the dashboard. Check <a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">the beta release</a> for availability and release notes.</p>
 </section>
 <section class="wrap section faq-section" id="faq">
 <div>
@@ -830,6 +1018,14 @@
 <details>
 <summary>Which phones can run Homedroid?</summary>
 <p>Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install.</p>
+</details>
+<details>
+<summary>How much RAM does Homedroid need?</summary>
+<p>Homedroid itself uses about 75 MB. Each module adds its own share: SSH about 10 MB, Jellyfin 200–450 MB, Radarr and Sonarr about 200–300 MB each, Immich 0.8–1.5 GB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB, and Immich or a local AI model 6 GB or more. Modules you turn off use nothing. <a href="/#requirements">See every module</a>.</p>
+</details>
+<details>
+<summary>Can I install other Linux software?</summary>
+<p>Yes. Homedroid includes Alpine Linux, so you can install packages from Alpine’s repository with <code>apk</code>. Open Terminal in the dashboard, choose Alpine Linux and run, for example, <code>apk add python3 git</code>. Over SSH, type <code>alpine</code> first. Packages stay installed through restarts and Homedroid updates. <a href="/#packages">Watch it</a>.</p>
 </details>
 <details>
 <summary>Can I leave an old phone plugged in as a server?</summary>
@@ -886,7 +1082,7 @@
 </div>
 <nav aria-label="Footer">
 <a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
-<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">0.9.5 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">0.9.6 release notes</a>
 <a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
 <a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
 <a href="/dock/">Dock mode</a>
@@ -895,7 +1091,7 @@
 <a href="/compare/">Phone vs Raspberry Pi</a>
 <a href="/llms.txt">llms.txt</a>
 </nav>
-<p class="fine">Last updated <time datetime="2026-11-25">25 November 2026</time> · 0.9.5-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+<p class="fine">Last updated <time datetime="2026-11-26">26 November 2026</time> · 0.9.6-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
 </footer>
 </body>
 </html>

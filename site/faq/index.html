@@ -15,7 +15,7 @@
 <meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="640">
-<meta property="og:image:alt" content="Homedroid 0.9.5 beta: an old Android phone running a home server and web dashboard">
+<meta property="og:image:alt" content="Homedroid 0.9.6 beta: an old Android phone running a home server and web dashboard">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Android home server FAQ: requirements, root and privacy | Homedroid">
 <meta name="twitter:description" content="Homedroid Android home server FAQ: Android 10+ requirements, no-root setup, Jellyfin, remote access, battery care, webcam support, MacroPads and privacy.">
@@ -89,6 +89,22 @@
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How much RAM does Homedroid need?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Homedroid itself uses about 75 MB. Each module adds its own share: SSH about 10 MB, Jellyfin 200–450 MB, Radarr and Sonarr about 200–300 MB each, Immich 0.8–1.5 GB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB, and Immich or a local AI model 6 GB or more. Modules you turn off use nothing."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I install other Linux software?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Homedroid includes Alpine Linux, so you can install packages from Alpine's repository with apk. Open Terminal in the dashboard, choose Alpine Linux and run, for example, apk add python3 git. Over SSH, type alpine first. Packages stay installed through restarts and Homedroid updates."
       }
     },
     {
@@ -206,7 +222,7 @@
 <nav class="breadcrumb" aria-label="Breadcrumb">
 <a href="/">Homedroid</a>
 <span>/</span>Android home server FAQ: requirements, root and privacy</nav>
-<span class="eyebrow">HOMEDROID / 0.9.5 BETA</span>
+<span class="eyebrow">HOMEDROID / 0.9.6 BETA</span>
 <h1>Homedroid Android home server FAQ.</h1>
 <p class="lead">Homedroid runs a home server on Android 10 or newer without root. This FAQ covers phone requirements, remote access, battery care, Jellyfin, webcam support, MacroPads and privacy.</p>
 <h2>Android home server requirements and answers</h2>
@@ -221,6 +237,14 @@
 <details>
 <summary>Which phones can run Homedroid?</summary>
 <p>Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install.</p>
+</details>
+<details>
+<summary>How much RAM does Homedroid need?</summary>
+<p>Homedroid itself uses about 75 MB. Each module adds its own share: SSH about 10 MB, Jellyfin 200–450 MB, Radarr and Sonarr about 200–300 MB each, Immich 0.8–1.5 GB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB, and Immich or a local AI model 6 GB or more. Modules you turn off use nothing. <a href="/#requirements">See every module</a>.</p>
+</details>
+<details>
+<summary>Can I install other Linux software?</summary>
+<p>Yes. Homedroid includes Alpine Linux, so you can install packages from Alpine’s repository with <code>apk</code>. Open Terminal in the dashboard, choose Alpine Linux and run, for example, <code>apk add python3 git</code>. Over SSH, type <code>alpine</code> first. Packages stay installed through restarts and Homedroid updates. <a href="/#packages">Watch it</a>.</p>
 </details>
 <details>
 <summary>Can I leave an old phone plugged in as a server?</summary>
@@ -301,6 +325,18 @@
 <td>8081</td>
 </tr>
 <tr>
+<th scope="row">Prowlarr</th>
+<td>9696</td>
+</tr>
+<tr>
+<th scope="row">Radarr / Sonarr</th>
+<td>7878 / 8989</td>
+</tr>
+<tr>
+<th scope="row">Jellyseerr (Seerr)</th>
+<td>5055</td>
+</tr>
+<tr>
 <th scope="row">Home Assistant</th>
 <td>8123</td>
 </tr>
@@ -338,7 +374,7 @@
 </div>
 <nav aria-label="Footer">
 <a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
-<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">0.9.5 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">0.9.6 release notes</a>
 <a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
 <a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
 <a href="/dock/">Dock mode</a>
@@ -347,7 +383,7 @@
 <a href="/compare/">Phone vs Raspberry Pi</a>
 <a href="/llms.txt">llms.txt</a>
 </nav>
-<p class="fine">Last updated <time datetime="2026-11-25">25 November 2026</time> · 0.9.5-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+<p class="fine">Last updated <time datetime="2026-11-26">26 November 2026</time> · 0.9.6-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
 </footer>
 </body>
 </html>

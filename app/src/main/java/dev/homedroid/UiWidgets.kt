@@ -117,6 +117,7 @@ class RingGauge(ctx: Context, private var trackColor: Int, private var arcColor:
     }
 
     override fun onDraw(canvas: Canvas) {
+        paint.strokeWidth = minOf(4.5f * density, minOf(width, height) / 9f)
         val inset = paint.strokeWidth / 2 + density
         box.set(inset, inset, width - inset, height - inset)
         paint.color = trackColor
@@ -216,4 +217,50 @@ class FlowLayout(ctx: Context, private val hGap: Int, private val vGap: Int) : V
             lineH = maxOf(lineH, c.measuredHeight)
         }
     }
+}
+
+/** Equal-width tiles, measured at their natural text height before matching each row. */
+@android.annotation.SuppressLint("ViewConstructor")
+class AdaptiveGrid(ctx: Context, private val gap: Int) : ViewGroup(ctx) {
+    private val rows = mutableListOf<List<View>>()
+    private var columns = 2
+
+    override fun onMeasure(widthSpec: Int, heightSpec: Int) {
+        val width = MeasureSpec.getSize(widthSpec)
+        val density = resources.displayMetrics.density
+        val windowDp = width / density + 2 * Space.GUTTER
+        columns = when {
+            windowDp >= 840 -> 4
+            windowDp >= 600 -> 3
+            else -> 2
+        }
+        // At very large text sizes, retain enough width for values and action titles.
+        if (resources.configuration.fontScale >= 1.6f) columns = maxOf(1, columns - 1)
+        val visible = (0 until childCount).map(::getChildAt).filter { it.visibility != GONE }
+        rows.clear(); rows.addAll(visible.chunked(columns))
+        val cellWidth = ((width - (columns - 1) * gap) / columns).coerceAtLeast(0)
+        var height = 0
+        for (row in rows) {
+            row.forEach { it.measure(MeasureSpec.makeMeasureSpec(cellWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)) }
+            val rowHeight = row.maxOf { it.measuredHeight }
+            row.forEach { it.measure(MeasureSpec.makeMeasureSpec(cellWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(rowHeight, MeasureSpec.EXACTLY)) }
+            height += rowHeight
+        }
+        height += gap * (rows.size - 1).coerceAtLeast(0)
+        setMeasuredDimension(resolveSize(width, widthSpec), resolveSize(height, heightSpec))
+    }
+
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        var y = 0
+        for (row in rows) {
+            row.forEachIndexed { i, child ->
+                val x = i * (child.measuredWidth + gap)
+                val left = if (layoutDirection == LAYOUT_DIRECTION_RTL) width - x - child.measuredWidth else x
+                child.layout(left, y, left + child.measuredWidth, y + child.measuredHeight)
+            }
+            y += row.first().measuredHeight + gap
+        }
+    }
+
+    override fun generateDefaultLayoutParams() = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
 }
