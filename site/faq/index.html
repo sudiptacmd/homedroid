@@ -93,6 +93,22 @@
     },
     {
       "@type": "Question",
+      "name": "How much RAM does Homedroid need?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Homedroid itself uses about 75 MB. Each module adds its own share: SSH about 10 MB, Jellyfin 200–450 MB, Radarr and Sonarr about 200–300 MB each, Immich 0.8–1.5 GB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB, and Immich or a local AI model 6 GB or more. Modules you turn off use nothing."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I install other Linux software?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Homedroid includes Alpine Linux, so you can install packages from Alpine's repository with apk. Open Terminal in the dashboard, choose Alpine Linux and run, for example, apk add python3 git. Over SSH, type alpine first. Packages stay installed through restarts and Homedroid updates."
+      }
+    },
+    {
+      "@type": "Question",
       "name": "Can I leave an old phone plugged in as a server?",
       "acceptedAnswer": {
         "@type": "Answer",
@@ -221,6 +237,14 @@
 <details>
 <summary>Which phones can run Homedroid?</summary>
 <p>Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install.</p>
+</details>
+<details>
+<summary>How much RAM does Homedroid need?</summary>
+<p>Homedroid itself uses about 75 MB. Each module adds its own share: SSH about 10 MB, Jellyfin 200–450 MB, Radarr and Sonarr about 200–300 MB each, Immich 0.8–1.5 GB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB, and Immich or a local AI model 6 GB or more. Modules you turn off use nothing. <a href="/#requirements">See every module</a>.</p>
+</details>
+<details>
+<summary>Can I install other Linux software?</summary>
+<p>Yes. Homedroid includes Alpine Linux, so you can install packages from Alpine’s repository with <code>apk</code>. Open Terminal in the dashboard, choose Alpine Linux and run, for example, <code>apk add python3 git</code>. Over SSH, type <code>alpine</code> first. Packages stay installed through restarts and Homedroid updates. <a href="/#packages">Watch it</a>.</p>
 </details>
 <details>
 <summary>Can I leave an old phone plugged in as a server?</summary>

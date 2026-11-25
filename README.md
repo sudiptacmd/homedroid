@@ -36,6 +36,11 @@ mock API data, not hardware benchmarks. Last updated: 26 November 2026.*
   keys to copy between them. Sonarr is version 5, Sonarr's test release, because version 4
   can't run on Android. Requested in
   [#15](https://github.com/sudiptacmd/homedroid/issues/15).
+- **Know what each module costs:** typical memory and CPU use on every module, in the
+  dashboard, the phone app and [the table below](#how-much-memory-and-cpu-each-module-needs).
+- **A tighter phone app:** a denser Overview that fits small phones and spreads out on
+  tablets, one-row app actions, and less empty space throughout.
+- **Fixed:** the web terminal, which didn't open in 0.9.5.
 - **Security updates** for the Go libraries inside Caddy, cloudflared and Tailscale.
 
 See the [0.9.6 release notes](docs/releases/v0.9.6-beta.md).
@@ -167,6 +172,41 @@ use a trusted network or an encrypted tunnel.
 
 Nothing you turn off needs to keep running. A foreground service supervises enabled processes,
 restarts failures with backoff, and keeps logs. Start-on-boot is optional.
+
+## How much memory and CPU each module needs
+
+Typical figures, so you can tell what fits on your phone. Memory is what a module keeps in RAM
+while running; idle figures were measured on an emulator, the rest come from the projects' own
+guidance. CPU is what to expect while the module is busy; almost everything is close to idle
+the rest of the time. Modules you turn off use nothing. The dashboard shows the same figures on
+each module card, and the phone app on each app.
+
+| Module | Memory | CPU | When it works hardest |
+|---|---|---|---|
+| SSH & SFTP | about 10 MB | low | A little more while copying files over SFTP. |
+| Web hosting (Caddy) | 40–60 MB | low | Grows with traffic to your sites. |
+| Cloudflare Tunnel | 30–60 MB | low | Grows with the traffic it carries. |
+| Tailscale | 40–80 MB | medium | Encrypts traffic in software, so large transfers keep a core busy. |
+| IPCam | 50–120 MB | medium | Only while streaming or recording. Uses more battery and warms the phone. |
+| Local AI (llama.cpp) | model size + 0.3–1 GB | high | Every core while it answers, nothing in between. A 1.5B model needs about 1.5 GB in all, a 3B model about 2.5 GB. |
+| Wake on LAN | under 1 MB | low | Runs only while sending a wake-up packet. |
+| Wi-Fi repeater | 10–30 MB | medium | Grows with the traffic of the devices on its network. |
+| Network tools | about 5 MB | low | Scans and speed tests run only when you start them. |
+| Jellyfin | 200–450 MB | high | Light when your devices play files as they are. Converting video decodes it in software and can use every core. |
+| qBittorrent | 40–150 MB | medium | Grows with the number of active torrents. Checking a finished download is busy for a moment. |
+| Prowlarr | 150–200 MB | low | Busy for a few seconds during each search. |
+| Radarr | 180–300 MB | low | Busier while importing downloads or rescanning a large library. |
+| Sonarr | 200–300 MB | low | Busier while importing downloads or rescanning a large library. |
+| Jellyseerr (Seerr) | 190–300 MB | low | Mostly idle; looks up movies and shows when you browse. |
+| Home Assistant | 300–500 MB | medium | Depends on your integrations; low for most homes. |
+| Immich | 0.8–1.5 GB | high | Thumbnails and video conversion after uploads use every core, then it settles. Face and object recognition stay off. |
+| AdGuard Home | 40–100 MB | low | Bigger blocklists use more memory. |
+| Mail (Stalwart) | 80–200 MB | low | Spam checks add a little for each message. |
+
+Homedroid itself takes about 75 MB. As a rule of thumb, a phone with 3 GB of RAM runs the file
+server, Jellyfin, qBittorrent and a few small services comfortably. Add the whole media
+automation set and you want 4 GB; Immich or a local AI model want 6 GB or more. Android closes
+background apps when memory runs low, so leave some headroom.
 
 ## The phone app and dashboard
 

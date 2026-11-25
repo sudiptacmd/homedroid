@@ -81,7 +81,7 @@ class MobileUi(val activity: Activity) {
     val dark get() = p.dark
     private val density = activity.resources.displayMetrics.density
 
-    /** Large font sizes (accessibility): grids collapse to one column. */
+    /** Extra room for text in controls and sheets at accessibility font sizes. */
     val largeFont = activity.resources.configuration.fontScale >= 1.3f
 
     /** Lists and cards on the page background. */
@@ -252,47 +252,39 @@ class MobileUi(val activity: Activity) {
     private var nav: View? = null
     private var bottomInset = 0
 
-    /**
-     * Sets up a screen: an optional top app bar whose large [title] collapses into the bar as
-     * the page scrolls, the scrolling content (returned) and the bottom navigation when
-     * [selected] names a tab.
-     */
-    fun page(selected: String? = null, title: String? = null, subtitle: String? = null, back: Boolean = false): LinearLayout {
+    /** A compact top bar, scrolling content and optional bottom navigation. */
+    fun page(selected: String? = null, title: String? = null, subtitle: String? = null, back: Boolean = false, maxWidth: Int = 720): LinearLayout {
         applyWindow()
         activity.window.setBackgroundDrawable(ColorDrawable(p.background))
         val shell = column().apply { setBackgroundColor(p.background) }
-        val content = column().apply { setPadding(dp(Space.GUTTER), 0, dp(Space.GUTTER), dp(Space.XXXL)) }
-        val scroll = ScrollView(activity).apply { isFillViewport = true; clipToPadding = false; addView(content) }
+        val content = column().apply { setPadding(dp(Space.GUTTER), dp(Space.SM), dp(Space.GUTTER), dp(Space.LG)) }
+        val canvas = object : FrameLayout(activity) {
+            override fun onMeasure(widthSpec: Int, heightSpec: Int) {
+                content.layoutParams.width = minOf(View.MeasureSpec.getSize(widthSpec), dp(maxWidth))
+                super.onMeasure(widthSpec, heightSpec)
+            }
+        }.apply { addView(content, FrameLayout.LayoutParams(-1, -2, Gravity.TOP or Gravity.CENTER_HORIZONTAL)) }
+        val scroll = ScrollView(activity).apply { isFillViewport = true; clipToPadding = false; addView(canvas) }
 
         val small: TextView? = title?.let { text(it, TypeStyle.TitleLarge) }
         if (title != null && small != null) {
-            val bar = row().apply { minimumHeight = dp(64); setPadding(dp(4), 0, dp(4), 0) }
+            val bar = row().apply { minimumHeight = dp(56); setPadding(dp(4), 0, dp(4), 0) }
             if (back) bar.addView(iconButton(Icon.ChevronRight, "Back") { activity.finish() }.apply { rotation = 180f })
             else bar.addView(View(activity), LinearLayout.LayoutParams(dp(12), 1))
-            small.apply { alpha = 0f; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
+            small.apply { isAccessibilityHeading = true; setPadding(0, dp(Space.SM), 0, dp(Space.SM)) }
             bar.addView(small, lp(0, -2, 1f, start = 4))
             topActions = row().also { bar.addView(it) }
             topBar = bar
             shell.addView(bar)
-            content.addView(text(title, TypeStyle.HeadlineMedium).apply {
-                isAccessibilityHeading = true
-                setPadding(dp(4), dp(8), dp(4), if (subtitle == null) dp(Space.LG) else dp(Space.XS))
-            })
             if (subtitle != null) content.addView(text(subtitle, TypeStyle.BodyMedium, p.onSurfaceVariant).apply {
-                setPadding(dp(4), 0, dp(4), dp(Space.LG)); tag = "subtitle"
+                setPadding(0, 0, 0, dp(Space.SM)); tag = "subtitle"
             })
-        } else {
-            content.setPadding(dp(Space.GUTTER), dp(Space.LG), dp(Space.GUTTER), dp(Space.XXXL))
         }
         shell.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
 
-        // Collapse the large title into the bar, and lift the bar with a container colour once scrolled.
+        // Give the fixed title bar a surface colour once content scrolls underneath it.
         var lastLift = -1f
         scroll.setOnScrollChangeListener { _, _, y, _, _ ->
-            small?.let { s ->
-                val a = ((y - dp(28)) / dpf(24f)).coerceIn(0f, 1f)
-                if (s.alpha != a) s.alpha = a
-            }
             val lift = (y / dpf(12f)).coerceIn(0f, 1f)
             if (lift != lastLift) {
                 lastLift = lift
@@ -303,7 +295,7 @@ class MobileUi(val activity: Activity) {
         if (selected != null) {
             val tabs = listOf(Triple("Overview", Icon.Home, MainActivity::class.java), Triple("Apps", Icon.Apps, AppsActivity::class.java),
                 Triple("Settings", Icon.Settings, SettingsActivity::class.java))
-            val bar = row().apply { setBackgroundColor(p.surfaceContainer); setPadding(dp(8), dp(12), dp(8), dp(12)) }
+            val bar = row().apply { setBackgroundColor(p.surfaceContainer); setPadding(dp(8), dp(4), dp(8), dp(4)) }
             for ((name, icon, target) in tabs) {
                 val on = name == selected
                 val item = column().apply {
@@ -342,10 +334,10 @@ class MobileUi(val activity: Activity) {
         shell.setOnApplyWindowInsetsListener { _, insets ->
             val b = bars(insets)
             shell.setPadding(b.left, if (topBar == null) b.top else 0, b.right, 0)
-            topBar?.let { it.setPadding(dp(4), b.top, dp(4), 0); it.minimumHeight = dp(64) + b.top }
+            topBar?.let { it.setPadding(dp(4), b.top, dp(4), 0); it.minimumHeight = dp(56) + b.top }
             bottomInset = b.bottom
             if (navBar != null) {
-                navBar.setPadding(dp(8), dp(12), dp(8), dp(12) + b.bottom)
+                navBar.setPadding(dp(8), dp(4), dp(8), dp(4) + b.bottom)
                 // The keyboard covers the navigation bar; lift the content above it instead.
                 shell.setPadding(b.left, shell.paddingTop, b.right, (b.ime - navBar.height).coerceAtLeast(0))
             } else {
@@ -364,7 +356,7 @@ class MobileUi(val activity: Activity) {
 
     /** A list section title, aligned with the rows' content. */
     fun header(title: String, supporting: String? = null): LinearLayout = column().apply {
-        setPadding(dp(Space.LG), dp(Space.XXL), dp(Space.LG), dp(Space.SM))
+        setPadding(dp(Space.MD), dp(Space.MD), dp(Space.MD), dp(Space.XS))
         addView(text(title, TypeStyle.TitleSmall, p.primary).apply { isAccessibilityHeading = true })
         if (supporting != null) addView(text(supporting, TypeStyle.BodySmall, p.onSurfaceVariant), lp(top = 2))
     }
@@ -404,7 +396,7 @@ class MobileUi(val activity: Activity) {
         return GroupLayout().also { parent?.addView(it, lp()) }
     }
 
-    fun card(kind: CardKind = CardKind.Filled, color: Int? = null, padding: Int = Space.XL, radius: Int = Shape.XL - 4): LinearLayout = column().apply {
+    fun card(kind: CardKind = CardKind.Filled, color: Int? = null, padding: Int = Space.LG, radius: Int = Shape.XL - 4): LinearLayout = column().apply {
         val fill = color ?: when (kind) { CardKind.Filled -> containerColor; CardKind.Outlined -> p.background; CardKind.Elevated -> p.surfaceLow }
         background = shape(fill, radius, if (kind == CardKind.Outlined) p.outlineVariant else null)
         if (kind == CardKind.Elevated) elevation = dpf(2f)
@@ -412,16 +404,11 @@ class MobileUi(val activity: Activity) {
         layoutParams = lp(bottom = Space.MD)
     }
 
-    /** Lays [items] out in a grid of [columns] equal-width cells. */
-    fun grid(parent: LinearLayout, items: List<View>, columns: Int = if (largeFont) 1 else 2, gap: Int = Space.SM) {
-        items.chunked(columns).forEach { line ->
-            val r = row().apply { gravity = Gravity.TOP }
-            line.forEachIndexed { i, v ->
-                r.addView(v, LinearLayout.LayoutParams(0, -1, 1f).apply { if (i > 0) marginStart = dp(gap) })
-            }
-            repeat(columns - line.size) { r.addView(View(activity), LinearLayout.LayoutParams(0, 1, 1f).apply { marginStart = dp(gap) }) }
-            parent.addView(r, lp(bottom = gap))
-        }
+    /** Responds to available width, including split-screen and window insets. */
+    fun grid(parent: LinearLayout, items: List<View>, gap: Int = Space.SM) {
+        val grid = AdaptiveGrid(activity, dp(gap))
+        items.forEach { grid.addView(it) }
+        parent.addView(grid, lp(bottom = gap))
     }
 
     // --- list rows ----------------------------------------------------------------------------
@@ -450,10 +437,10 @@ class MobileUi(val activity: Activity) {
     fun listRow(icon: Icon?, title: String, supporting: String? = null, trailing: Trailing = Trailing.Chevron,
                 value: String? = null, action: (() -> Unit)? = null): ListRow {
         val v = row().apply {
-            minimumHeight = dp(if (supporting == null) 56 else 72)
-            setPadding(dp(Space.LG), dp(Space.MD), dp(if (trailing == Trailing.None) Space.LG else Space.MD), dp(Space.MD))
+            minimumHeight = dp(if (supporting == null) 48 else 64)
+            setPadding(dp(Space.MD), dp(Space.SM), dp(Space.MD), dp(Space.SM))
         }
-        if (icon != null) v.addView(iconBadge(icon), lp(dp(40), dp(40), end = Space.LG))
+        if (icon != null) v.addView(iconBadge(icon, sizeDp = 32), lp(dp(32), dp(32), end = Space.MD))
         val words = column()
         val t = text(title, TypeStyle.BodyLarge)
         val s = text(supporting.orEmpty(), TypeStyle.BodyMedium, p.onSurfaceVariant).apply { visibility = if (supporting == null) View.GONE else View.VISIBLE }
@@ -513,8 +500,8 @@ class MobileUi(val activity: Activity) {
     // --- buttons ------------------------------------------------------------------------------
 
     /** A Material 3 button: 40 dp tall (56 dp when [large]) inside a 48 dp touch target. */
-    fun button(label: String, kind: ButtonKind = ButtonKind.Filled, icon: Icon? = null, large: Boolean = false, action: () -> Unit): UiButton =
-        UiButton(activity, this, large).apply {
+    fun button(label: String, kind: ButtonKind = ButtonKind.Filled, icon: Icon? = null, large: Boolean = false, compact: Boolean = false, action: () -> Unit): UiButton =
+        UiButton(activity, this, large, compact).apply {
             text = label
             this.icon = icon
             paint(kind)
@@ -648,7 +635,7 @@ class MobileUi(val activity: Activity) {
         val dot = oval(accentOf(tone))
         val v = row().apply { background = bg; setPadding(dp(10), dp(4), dp(12), dp(4)) }
         v.addView(View(activity).apply { background = dot; importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }, lp(dp(8), dp(8), end = 6))
-        val label = text(value, TypeStyle.LabelMedium, onContainerOf(tone)).apply { maxLines = 1 }
+        val label = text(value, TypeStyle.LabelMedium, onContainerOf(tone)).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
         v.addView(label)
         return Pill(v, dot, label, bg).also { it.set(value, tone) }
     }
@@ -730,29 +717,28 @@ class MobileUi(val activity: Activity) {
     fun gaugeTile(icon: Icon, label: String, ring: Boolean = true): GaugeTile {
         val v = column().apply {
             background = shape(containerColor, Shape.XL - 8)
-            setPadding(dp(Space.LG), dp(Space.LG), dp(Space.LG), dp(Space.LG))
+            setPadding(dp(Space.MD), dp(Space.MD), dp(Space.MD), dp(Space.MD))
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES; isFocusable = true
         }
         val top = row()
         val holder = FrameLayout(activity)
         val gauge = if (ring) RingGauge(activity, p.alpha(p.primary, 0.18f), p.primary) else null
-        if (gauge != null) holder.addView(gauge, FrameLayout.LayoutParams(dp(48), dp(48)))
+        if (gauge != null) holder.addView(gauge, FrameLayout.LayoutParams(dp(28), dp(28)))
         // No value to show as a ring: the same circle as a plain track, so every tile matches.
         else holder.background = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL; setStroke(dp(4), p.alpha(p.primary, 0.18f))
+            shape = GradientDrawable.OVAL; setStroke(dp(3), p.alpha(p.primary, 0.18f))
         }
         val badge = IconView(activity, icon, p.primary)
-        holder.addView(badge, FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER))
-        top.addView(holder, lp(dp(48), dp(48)))
+        holder.addView(badge, FrameLayout.LayoutParams(dp(16), dp(16), Gravity.CENTER))
+        top.addView(holder, lp(dp(28), dp(28)))
         // The label sits beside its icon, where the eye looks for it.
-        top.addView(text(label, TypeStyle.LabelLarge, p.onSurfaceVariant).apply {
-            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO; maxLines = 1
-            ellipsize = android.text.TextUtils.TruncateAt.END
-        }, lp(0, -2, 1f).apply { marginStart = dp(Space.MD) })
+        top.addView(text(label, TypeStyle.BodySmall, p.onSurfaceVariant).apply {
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }, lp(0, -2, 1f).apply { marginStart = dp(Space.XS) })
         v.addView(top)
         val value = text("—", TypeStyle.HeadlineSmall).apply { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
         val caption = text("", TypeStyle.BodySmall, p.onSurfaceVariant).apply { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
-        v.addView(value, lp(top = Space.MD)); v.addView(caption)
+        v.addView(value, lp(top = Space.XS)); v.addView(caption)
         return GaugeTile(v, gauge, badge, value, caption, label)
     }
 
@@ -761,13 +747,13 @@ class MobileUi(val activity: Activity) {
         column().apply {
             val bg = shape(containerColor, Shape.XL - 8)
             background = if (action != null) ripple(bg, shape(Color.WHITE, Shape.XL - 8)) else bg
-            setPadding(dp(Space.LG), dp(Space.LG), dp(Space.LG), dp(Space.LG))
+            setPadding(dp(Space.MD), dp(Space.MD), dp(Space.MD), dp(Space.MD))
             val top = row().apply { gravity = Gravity.TOP }
-            top.addView(iconBadge(icon, containerOf(tone), onContainerOf(tone), 44, Shape.MD + 2))
+            top.addView(iconBadge(icon, containerOf(tone), onContainerOf(tone), 32, Shape.MD))
             top.addView(View(activity), lp(0, 1, 1f))
             if (badge != null) top.addView(pill(badge, Tone.Neutral).view)
             addView(top)
-            addView(text(title, TypeStyle.TitleSmall), lp(top = Space.MD))
+            addView(text(title, TypeStyle.TitleSmall), lp(top = Space.SM))
             addView(text(subtitle, TypeStyle.BodySmall, p.onSurfaceVariant), lp(top = 2))
             contentDescription = listOfNotNull(title, subtitle, badge).joinToString(", ")
             if (action != null) {
@@ -1096,13 +1082,14 @@ class MobileUi(val activity: Activity) {
 
 /** A Material 3 button; dims itself when disabled. */
 @SuppressLint("ViewConstructor")
-class UiButton(ctx: Context, private val ui: MobileUi, private val large: Boolean) : Button(ctx) {
+class UiButton(ctx: Context, private val ui: MobileUi, private val large: Boolean, private val compact: Boolean = false) : Button(ctx) {
     var icon: Icon? = null
         set(v) { field = v; applyIcon() }
     private var fg = 0
 
     init {
         isAllCaps = false; stateListAnimator = null
+        setSingleLine(false); maxLines = Int.MAX_VALUE; ellipsize = null
         with(ui) { style(if (large) TypeStyle.TitleMedium else TypeStyle.LabelLarge) }
         minHeight = ui.dp(if (large) 64 else 48); minimumHeight = minHeight
         minWidth = ui.dp(48); minimumWidth = minWidth
@@ -1124,8 +1111,8 @@ class UiButton(ctx: Context, private val ui: MobileUi, private val large: Boolea
         val mask = InsetDrawable(ui.shape(Color.WHITE, radius), 0, inset, 0, inset)
         background = RippleDrawable(ColorStateList.valueOf(ui.p.alpha(fg, 0.14f)), content, mask)
         setTextColor(fg)
-        val padH = ui.dp(if (large) 28 else if (bg == Color.TRANSPARENT && stroke == null) 12 else 24)
-        setPadding(if (icon != null) padH - ui.dp(6) else padH, ui.dp(if (large) 14 else 10), padH, ui.dp(if (large) 14 else 10))
+        val padH = ui.dp(if (compact) 8 else if (large) 28 else if (bg == Color.TRANSPARENT && stroke == null) 12 else 24)
+        setPadding(if (icon != null && !compact) padH - ui.dp(6) else padH, ui.dp(if (large) 14 else 10), padH, ui.dp(if (large) 14 else 10))
         applyIcon()
     }
 

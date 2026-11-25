@@ -33,7 +33,6 @@ class MainActivity : MobileActivity() {
     private lateinit var heroBg: GradientDrawable
     private lateinit var status: MobileUi.Pill
     private lateinit var phone: TextView
-    private lateinit var headline: TextView
     private lateinit var summary: TextView
     private lateinit var toggle: UiButton
     private lateinit var connect: LinearLayout
@@ -84,7 +83,7 @@ class MainActivity : MobileActivity() {
         super.onCreate(savedInstanceState)
         cfg = Config(this)
         Paths(this).ensure()
-        val page = design.page("Overview", "Overview")
+        val page = design.page("Overview", "Overview", maxWidth = 1040)
         page.addView(buildHero())
 
         heat = design.banner(Tone.Warning, Icon.Thermometer, "Your phone is warm",
@@ -137,57 +136,73 @@ class MainActivity : MobileActivity() {
     }
 
     private fun buildHero(): LinearLayout {
-        heroBg = design.shape(p.surfaceHigh, Shape.XL)
+        heroBg = design.shape(p.surfaceHigh, Shape.LG)
         hero = design.column().apply {
             background = heroBg
-            setPadding(design.dp(Space.XL), design.dp(Space.XL), design.dp(Space.XL), design.dp(Space.XL))
-            layoutParams = design.lp(bottom = Space.MD)
+            setPadding(design.dp(Space.MD), design.dp(Space.MD), design.dp(Space.MD), design.dp(Space.MD))
+            layoutParams = design.lp()
         }
+        val state = design.column()
         val top = design.row()
         status = design.pill("Offline", Tone.Neutral)
-        top.addView(status.view)
-        top.addView(View(this), design.lp(0, 1, 1f))
-        val phoneIcon = design.icon(Icon.Phone, p.onSurfaceVariant, 18)
-        heroIcons += phoneIcon
-        top.addView(phoneIcon, design.lp(design.dp(18), design.dp(18), end = Space.XS))
+        top.addView(status.view, design.lp(-2, -2))
         val name = runCatching { android.provider.Settings.Global.getString(contentResolver, android.provider.Settings.Global.DEVICE_NAME) }.getOrNull()
             ?.takeIf { it.isNotBlank() } ?: "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}"
-        phone = design.text(name,TypeStyle.LabelLarge, p.onSurfaceVariant).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
-        top.addView(phone, design.lp(-2, -2))
-        hero.addView(top)
+        phone = design.text(name, TypeStyle.BodySmall, p.onSurfaceVariant).apply {
+            maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; tooltipText = name
+            gravity = android.view.Gravity.END
+        }
+        top.addView(phone, design.lp(0, -2, 1f, start = Space.SM))
+        state.addView(top)
 
-        headline = design.text("Ready when you are", TypeStyle.HeadlineMedium).apply { accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE }
-        hero.addView(headline, design.lp(top = Space.LG))
-        summary = design.text("", TypeStyle.BodyMedium, p.onSurfaceVariant)
-        hero.addView(summary, design.lp(top = Space.XS))
-        heroTexts += headline
+        val control = design.row()
+        summary = design.text("", TypeStyle.BodyMedium, p.onSurfaceVariant).apply {
+            accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        }
+        control.addView(summary, design.lp(0, -2, 1f, end = Space.SM))
+        toggle = design.button("Start server", ButtonKind.Filled, Icon.Power, compact = true) { onToggle() }
+        control.addView(toggle, design.lp(-2, -2))
+        state.addView(control, design.lp(top = Space.XS))
 
-        toggle = design.button("Start server", ButtonKind.Filled, Icon.Power, large = true) { onToggle() }
-        hero.addView(toggle, design.lp(top = Space.LG))
-
-        // How to reach the dashboard from another device.
-        connectBg = design.shape(p.alpha(p.onSurface, 0.05f), Shape.LG)
-        connect = design.column().apply { background = connectBg; setPadding(design.dp(Space.LG), design.dp(Space.MD), design.dp(Space.XS), design.dp(Space.XS)) }
-        val line = design.row()
+        // The address opens the dashboard; the related actions stay together below it.
+        connectBg = design.shape(p.alpha(p.onSurface, 0.05f), Shape.MD)
+        connect = design.column().apply { background = connectBg }
+        val line = design.row().apply {
+            minimumHeight = design.dp(48)
+            setPadding(design.dp(Space.SM), design.dp(Space.XS), design.dp(Space.SM), design.dp(Space.XS))
+            background = design.ripple(null, design.shape(Color.WHITE, Shape.MD))
+            isClickable = true; isFocusable = true
+            design.role(this, "android.widget.Button")
+            setOnClickListener { DashboardActivity.open(this@MainActivity, "overview") }
+        }
         val words = design.column()
-        connectLabel = design.text("Dashboard on your network", TypeStyle.LabelMedium, p.onSurfaceVariant)
-        url = design.text("", TypeStyle.TitleMedium).apply { setTextIsSelectable(true); typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }
-        words.addView(connectLabel); words.addView(url, design.lp(top = 2))
+        connectLabel = design.text("Open dashboard", TypeStyle.BodySmall, p.onSurfaceVariant)
+        url = design.text("", TypeStyle.TitleSmall)
+        words.addView(connectLabel); words.addView(url)
         line.addView(words, design.lp(0, -2, 1f))
+        val openIcon = design.icon(Icon.OpenExternal, p.onSurfaceVariant, 18)
+        heroIcons += openIcon
+        line.addView(openIcon, design.lp(design.dp(18), design.dp(18), start = Space.SM))
         connect.addView(line)
         val actions = design.row()
-        actions.addView(design.iconButton(Icon.Copy, "Copy dashboard address") { dashboardUrl()?.let { design.copy("Dashboard address", it) } })
-        actions.addView(design.iconButton(Icon.Share, "Share dashboard address") { share() })
-        actions.addView(design.iconButton(Icon.Key, "Dashboard login") { showCredentials() })
-        actions.addView(View(this), design.lp(0, 1, 1f))
-        actions.addView(design.button("Open", ButtonKind.Text, Icon.OpenExternal) { DashboardActivity.open(this, "overview") }.apply {
-            contentDescription = "Open the control panel"
-        })
-        connect.addView(actions, design.lp(top = Space.XS))
+        actions.addView(design.button("Copy", ButtonKind.Text, compact = true) {
+            dashboardUrl()?.let { design.copy("Dashboard address", it) }
+        }, design.lp(0, -2, 1f))
+        actions.addView(design.button("Share", ButtonKind.Text, compact = true) { share() }, design.lp(0, -2, 1f))
+        actions.addView(design.button("Password", ButtonKind.Text, compact = true) { showCredentials() }, design.lp(0, -2, 1f))
+        connect.addView(actions)
         noAddress = design.text("Connect to Wi-Fi to reach the dashboard from your other devices.", TypeStyle.BodyMedium, p.onSurfaceVariant)
         heroTexts += url
-        hero.addView(connect, design.lp(top = Space.LG))
-        hero.addView(noAddress, design.lp(top = Space.LG))
+        val connection = design.column().apply { addView(connect); addView(noAddress) }
+        if (resources.configuration.screenWidthDp >= (if (design.largeFont) 720 else 600)) {
+            val panes = design.row().apply { gravity = android.view.Gravity.TOP }
+            panes.addView(state, design.lp(0, -2, 1f, end = Space.MD))
+            panes.addView(connection, design.lp(0, -2, 1f))
+            hero.addView(panes)
+        } else {
+            hero.addView(state)
+            hero.addView(connection, design.lp(top = Space.SM))
+        }
         return hero
     }
 
@@ -217,9 +232,9 @@ class MainActivity : MobileActivity() {
         val s = design.sheet("Dashboard login", "Sign in with this password when you open the dashboard from another device.")
         val field = design.field(s.body, "Password", cfg.dashboardPassword, secret = true)
         field.edit.isFocusable = false; field.edit.isLongClickable = false
-        val row = design.row()
+        val row = FlowLayout(this, design.dp(Space.SM), 0)
         row.addView(design.button("Copy password", ButtonKind.Tonal, Icon.Copy) { design.copy("Password", cfg.dashboardPassword, sensitive = true, host = s.frame) })
-        row.addView(design.button("Change", ButtonKind.Text) { s.close(); startActivity(Intent(this, SettingsActivity::class.java)) }, design.lp(-2, -2, start = Space.SM))
+        row.addView(design.button("Change", ButtonKind.Text) { s.close(); startActivity(Intent(this, SettingsActivity::class.java)) }, design.lp(-2, -2))
         s.body.addView(row, design.lp(top = Space.LG))
         s.done()
         s.show()
@@ -424,12 +439,11 @@ class MainActivity : MobileActivity() {
             ServerService.active -> status.set("Starting", Tone.Warning)
             else -> status.set("Offline", Tone.Neutral)
         }
-        headline.setTextIfChanged(if (online) "Your server is online" else if (ServerService.active) "Starting your server…" else "Ready when you are")
         summary.setTextIfChanged(when {
-            online && daemons.isEmpty() -> "No services are turned on yet."
-            online -> "$running of ${daemons.size} services running" + if (trouble > 0) " · $trouble retrying" else ""
-            ServerService.active -> "Getting your services ready."
-            else -> "Start the server to bring your apps and connections online."
+            online && daemons.isEmpty() -> "No services enabled"
+            online -> "$running of ${daemons.size} services" + if (trouble > 0) " · $trouble retrying" else ""
+            ServerService.active -> "Preparing services…"
+            else -> "Apps and connections are off"
         })
         toggle.setTextIfChanged(if (ServerService.active) "Stop server" else "Start server")
         paintHero(ServerService.active)
@@ -523,9 +537,9 @@ class MainActivity : MobileActivity() {
             spoken = "%.0f percent".format(load))
 
         val ramUsed = 1f - dev.ramFreeMb.toFloat() / dev.ramTotalMb.coerceAtLeast(1)
-        memory.set(gb(dev.ramFreeMb) + " free", "of ${gb(dev.ramTotalMb, 0)}", ramUsed, if (ramUsed >= 0.9f) Tone.Warning else Tone.Primary)
+        memory.set(gb(dev.ramFreeMb), "free of ${gb(dev.ramTotalMb, 0)}", ramUsed, if (ramUsed >= 0.9f) Tone.Warning else Tone.Primary)
         val diskUsed = 1f - dev.storageFreeMb.toFloat() / dev.storageTotalMb.coerceAtLeast(1)
-        storage.set(gb(dev.storageFreeMb) + " free", "of ${gb(dev.storageTotalMb, 0)}", diskUsed,
+        storage.set(gb(dev.storageFreeMb), "free of ${gb(dev.storageTotalMb, 0)}", diskUsed,
             when { diskUsed >= 0.95f -> Tone.Error; diskUsed >= 0.85f -> Tone.Warning; else -> Tone.Primary })
         val rx = m?.optLong("rxBps", 0) ?: 0
         val tx = m?.optLong("txBps", 0) ?: 0
@@ -556,12 +570,24 @@ class MainActivity : MobileActivity() {
         else -> Icon.Apps
     }
 
-    private fun serviceName(name: String): String = when (name) {
-        "sshd" -> "SSH & SFTP"
-        "caddy" -> "Web hosting"
-        "cloudflared" -> "Cloudflare Tunnel"
-        "tailscaled" -> "Tailscale"
-        "ai-llama" -> "AI (llama.cpp)"
-        else -> name.replaceFirstChar { it.uppercase() }
+    private val catalog by lazy { runCatching { Apps(this, Paths(this)).catalog }.getOrDefault(emptyList()) }
+
+    /** What people call a service: app names from the catalog, not supervisor ids like "qbittorrent". */
+    private fun serviceName(name: String): String {
+        when (name) {
+            "sshd" -> return "SSH & SFTP"
+            "caddy" -> return "Web hosting"
+            "cloudflared" -> return "Cloudflare Tunnel"
+            "tailscaled" -> return "Tailscale"
+            "ai-llama" -> return "AI (llama.cpp)"
+        }
+        catalog.firstOrNull { it.id == name }?.let { return it.name }
+        // An app with several processes: "seerr-server" is the app itself, the rest are its helpers.
+        catalog.firstOrNull { a -> a.services.isNotEmpty() && name.startsWith("${a.id}-") }?.let { a ->
+            val part = name.removePrefix("${a.id}-")
+            return if (part == "server") a.name else "${a.name} · $part"
+        }
+        if (name.startsWith("deploy-")) return "Site · ${name.removePrefix("deploy-")}"
+        return name.replaceFirstChar { it.uppercase() }
     }
 }

@@ -211,6 +211,13 @@ pre { margin: 0; background: var(--code); border-radius: var(--r-sm); padding: 1
 .avatar { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; font-size: calc(15px * var(--fs)); color: #fff; flex: none; }
 .mod .title { font-weight: 650; font-size: calc(15px * var(--fs)); line-height: 1.3; margin-bottom: 2px; }
 .mod .desc { color: var(--text-2); font-size: calc(13px * var(--fs)); }
+.mod-res { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: calc(12px * var(--fs)); color: var(--text-2); }
+.mod-res > span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.mod-res .i { width: 14px; height: 14px; opacity: .75; }
+.mod-res b { color: var(--text); font-weight: 600; }
+.mod-res .lvl.medium { color: var(--warn, #d97706); }
+.mod-res .lvl.high { color: var(--bad, #dc2626); }
+.mod-res small { flex-basis: 100%; color: var(--muted); font-size: calc(11.5px * var(--fs)); line-height: 1.45; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 5px; font-size: calc(12px * var(--fs)); color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; max-width: 100%; }
 .chip svg.i { width: 13px; height: 13px; }
@@ -2288,6 +2295,7 @@ function modCard(x) {
     </div>
     <div class="desc">${esc(x.description)}</div>
     ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}
+    ${modResources(x.resources)}
     ${x.notice ? `<div class="notice">${icon('alert')}<span>${esc(x.notice)}</span></div>` : ''}
     ${x.id === 'tailscale' && x.enabled ? tailscaleInfo(x.tailscale) : ''}
     <div class="mod-foot">
@@ -2304,6 +2312,14 @@ function modCard(x) {
         <button class="btn ghost sm" style="margin-left:auto" data-act="clearMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>Clear data</button>
         <button class="btn ghost sm danger" data-act="removeMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('trash')}Remove</button>` : ''}
     </div></div>`;
+}
+// Typical memory and CPU use (assets/resources.json): one quiet line plus what drives it.
+function modResources(r) {
+  if (!r) return '';
+  return `<div class="mod-res" aria-label="Typical use: memory ${esc(r.ram)}, CPU ${esc(r.cpu)}">
+    <span>${icon('memory')}Memory <b>${esc(r.ram)}</b></span>
+    <span>${icon('cpu')}CPU <b class="lvl ${esc(r.cpu)}">${esc(r.cpu)}</b></span>
+    ${r.note ? `<small>${esc(r.note)}</small>` : ''}</div>`;
 }
 async function renderModules() {
   modules = await api('modules');

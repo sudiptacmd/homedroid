@@ -29,6 +29,31 @@ Wi-Fi repeater: the phone hosts a Wi-Fi Direct network and relays traffic for de
 PIN/biometric app lock and Android Keystore-encrypted secrets. Fixes for DNS install failures, configurable SSH port, terminal without SSH, installed-app updates from phone/dashboard.
 Also in 0.9.5: camera controls for the PC webcam (zoom, torch, focus, exposure, white balance, rotation, presets) and a custom look for MacroPads (backgrounds, fonts, key styles, 88 icons, your own images). Windows virtual camera, macOS input and multi-physical-phone load balancing have not been hardware-verified in the release notes.
 
+## Memory and CPU per module
+Typical memory while running and CPU while busy (idle figures measured on an emulator). Homedroid itself uses about 75 MB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB; Immich or local AI want 6 GB or more.
+- ssh: memory about 10 MB, CPU low. A little more while copying files over SFTP.
+- web: memory 40–60 MB, CPU low. Grows with traffic to your sites.
+- tunnel: memory 30–60 MB, CPU low. Grows with the traffic it carries.
+- tailscale: memory 40–80 MB, CPU medium. Encrypts traffic in software, so large transfers keep a core busy.
+- camera: memory 50–120 MB, CPU medium. Only while streaming or recording. Uses more battery and warms the phone.
+- ai: memory model size + 0.3–1 GB, CPU high. Every core while it answers, nothing in between. A 1.5B model needs about 1.5 GB in all, a 3B model about 2.5 GB.
+- wol: memory under 1 MB, CPU low. Runs only while sending a wake-up packet.
+- repeater: memory 10–30 MB, CPU medium. Grows with the traffic of the devices on its network.
+- network: memory about 5 MB, CPU low. Scans and speed tests run only when you start them.
+- jellyfin: memory 200–450 MB, CPU high. Light when your devices play files as they are. Converting video decodes it in software and can use every core.
+- qbittorrent: memory 40–150 MB, CPU medium. Grows with the number of active torrents. Checking a finished download is busy for a moment.
+- prowlarr: memory 150–200 MB, CPU low. Busy for a few seconds during each search.
+- radarr: memory 180–300 MB, CPU low. Busier while importing downloads or rescanning a large library.
+- sonarr: memory 200–300 MB, CPU low. Busier while importing downloads or rescanning a large library.
+- seerr: memory 190–300 MB, CPU low. Mostly idle; looks up movies and shows when you browse.
+- homeassistant: memory 300–500 MB, CPU medium. Depends on your integrations; low for most homes.
+- immich: memory 0.8–1.5 GB, CPU high. Thumbnails and video conversion after uploads use every core, then it settles. Face and object recognition stay off.
+- adguard: memory 40–100 MB, CPU low. Bigger blocklists use more memory.
+- stalwart: memory 80–200 MB, CPU low. Spam checks add a little for each message.
+
+## Installing other Linux software
+Homedroid includes Alpine Linux. In the dashboard, open Terminal, choose Alpine Linux and install packages with apk (for example apk add python3 git); over SSH, run alpine first. Packages persist across restarts and Homedroid updates. Video: https://homedroid.seltiv.com/#packages
+
 ## Services and ports
 Dashboard, IPCam and MCP: 8800 (MCP at /mcp).
 SSH and SFTP: 8022 by default, configurable; public-key authentication.

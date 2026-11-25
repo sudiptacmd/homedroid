@@ -23,7 +23,7 @@ jobs:
           node-version: 22
 
       - name: Dashboard and helper tests
-        run: node --test tests/
+        run: node --test tests/*.test.cjs
 
       - uses: actions/setup-go@v5
         with:

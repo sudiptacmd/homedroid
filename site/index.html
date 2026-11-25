@@ -146,6 +146,22 @@
     },
     {
       "@type": "Question",
+      "name": "How much RAM does Homedroid need?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Homedroid itself uses about 75 MB. Each module adds its own share: SSH about 10 MB, Jellyfin 200–450 MB, Radarr and Sonarr about 200–300 MB each, Immich 0.8–1.5 GB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB, and Immich or a local AI model 6 GB or more. Modules you turn off use nothing."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I install other Linux software?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Homedroid includes Alpine Linux, so you can install packages from Alpine's repository with apk. Open Terminal in the dashboard, choose Alpine Linux and run, for example, apk add python3 git. Over SSH, type alpine first. Packages stay installed through restarts and Homedroid updates."
+      }
+    },
+    {
+      "@type": "Question",
       "name": "Can I leave an old phone plugged in as a server?",
       "acceptedAnswer": {
         "@type": "Answer",
@@ -233,6 +249,21 @@
       }
     }
   ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": "Install Alpine Linux packages on an Android phone with Homedroid",
+  "description": "Open the Homedroid dashboard terminal, choose Alpine Linux and install git and htop with apk add. No root needed.",
+  "thumbnailUrl": "https://homedroid.seltiv.com/media/dashboard-alpine-packages.webp",
+  "contentUrl": "https://homedroid.seltiv.com/media/dashboard-alpine-packages.webm",
+  "uploadDate": "2026-11-26",
+  "duration": "PT15S",
+  "width": 1280,
+  "height": 800,
+  "embedUrl": "https://homedroid.seltiv.com/#packages"
 }
 </script>
 <script type="application/ld+json">
@@ -446,6 +477,161 @@
 </div>
 <p class="fine">Guides: <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/deploy-hooks.md">deploy hooks and pipelines</a>, <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mcp.md">MCP setup</a>, <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md">mail server</a> and <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md">Wi-Fi repeater</a>.</p>
 </section>
+<section class="wrap section" id="packages">
+<div class="section-head">
+<div>
+<span class="eyebrow">BEYOND THE APP LIBRARY</span>
+<h2>Need another tool?<br>apk add it.</h2>
+</div>
+<p>Homedroid runs a full Alpine Linux, so thousands of packages from Alpine’s repository are one command away: Python, Node.js, git, ffmpeg, rclone, htop. Open <strong>Terminal</strong> in the dashboard, choose <strong>Alpine Linux</strong> and install what you need. Over SSH, type <code>alpine</code> first. Packages stay installed through restarts and Homedroid updates.</p>
+</div>
+<figure class="packages-video">
+<video controls playsinline preload="none" poster="/media/dashboard-alpine-packages.webp" width="1280" height="800" aria-label="Installing git and htop from Alpine Linux in the Homedroid dashboard terminal">
+<source src="/media/dashboard-alpine-packages.webm" type="video/webm">
+</video>
+<figcaption>Installing git and htop with <code>apk add</code> in the dashboard terminal · recorded on a Homedroid emulator · silent</figcaption>
+</figure>
+<p class="fine">Find a package with <code>apk search name</code>, or browse <a href="https://pkgs.alpinelinux.org/packages">pkgs.alpinelinux.org</a>. Remove one with <code>apk del name</code>.</p>
+</section>
+<section class="wrap section" id="requirements">
+<div class="section-head">
+<div>
+<span class="eyebrow">WHAT IT NEEDS</span>
+<h2>How much phone<br>each module needs.</h2>
+</div>
+<p>A phone with 3 GB of RAM runs the file server, Jellyfin, qBittorrent and a few small services comfortably. The whole media automation set wants 4 GB; Immich or a local AI model want 6 GB or more. Modules you turn off use nothing.</p>
+</div>
+<div class="table-scroll">
+<table class="needs">
+<caption>Typical memory while running and CPU while busy. Idle figures measured on an emulator; Homedroid itself takes about 75 MB.</caption>
+<thead>
+<tr>
+<th scope="col">Module</th>
+<th scope="col">Memory</th>
+<th scope="col">CPU</th>
+<th scope="col">When it works hardest</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">SSH &amp; SFTP</th>
+<td>about 10 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>A little more while copying files over SFTP.</td>
+</tr>
+<tr>
+<th scope="row">Web hosting (Caddy)</th>
+<td>40–60 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Grows with traffic to your sites.</td>
+</tr>
+<tr>
+<th scope="row">Cloudflare Tunnel</th>
+<td>30–60 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Grows with the traffic it carries.</td>
+</tr>
+<tr>
+<th scope="row">Tailscale</th>
+<td>40–80 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Encrypts traffic in software, so large transfers keep a core busy.</td>
+</tr>
+<tr>
+<th scope="row">IPCam</th>
+<td>50–120 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Only while streaming or recording. Uses more battery and warms the phone.</td>
+</tr>
+<tr>
+<th scope="row">Local AI (llama.cpp)</th>
+<td>model size + 0.3–1 GB</td>
+<td><span class="cpu high">high</span></td>
+<td>Every core while it answers, nothing in between. A 1.5B model needs about 1.5 GB in all, a 3B model about 2.5 GB.</td>
+</tr>
+<tr>
+<th scope="row">Wake on LAN</th>
+<td>under 1 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Runs only while sending a wake-up packet.</td>
+</tr>
+<tr>
+<th scope="row">Wi-Fi repeater</th>
+<td>10–30 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Grows with the traffic of the devices on its network.</td>
+</tr>
+<tr>
+<th scope="row">Network tools</th>
+<td>about 5 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Scans and speed tests run only when you start them.</td>
+</tr>
+<tr>
+<th scope="row">Jellyfin</th>
+<td>200–450 MB</td>
+<td><span class="cpu high">high</span></td>
+<td>Light when your devices play files as they are. Converting video decodes it in software and can use every core.</td>
+</tr>
+<tr>
+<th scope="row">qBittorrent</th>
+<td>40–150 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Grows with the number of active torrents. Checking a finished download is busy for a moment.</td>
+</tr>
+<tr>
+<th scope="row">Prowlarr</th>
+<td>150–200 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Busy for a few seconds during each search.</td>
+</tr>
+<tr>
+<th scope="row">Radarr</th>
+<td>180–300 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Busier while importing downloads or rescanning a large library.</td>
+</tr>
+<tr>
+<th scope="row">Sonarr</th>
+<td>200–300 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Busier while importing downloads or rescanning a large library.</td>
+</tr>
+<tr>
+<th scope="row">Jellyseerr (Seerr)</th>
+<td>190–300 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Mostly idle; looks up movies and shows when you browse.</td>
+</tr>
+<tr>
+<th scope="row">Home Assistant</th>
+<td>300–500 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Depends on your integrations; low for most homes.</td>
+</tr>
+<tr>
+<th scope="row">Immich</th>
+<td>0.8–1.5 GB</td>
+<td><span class="cpu high">high</span></td>
+<td>Thumbnails and video conversion after uploads use every core, then it settles. Face and object recognition stay off.</td>
+</tr>
+<tr>
+<th scope="row">AdGuard Home</th>
+<td>40–100 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Bigger blocklists use more memory.</td>
+</tr>
+<tr>
+<th scope="row">Mail (Stalwart)</th>
+<td>80–200 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Spam checks add a little for each message.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="fine">The dashboard shows the same figures on each module card, and the phone app on each app.</p>
+</section>
 <section class="section tour-section" id="tour">
 <div class="wrap">
 <div class="section-head">
@@ -590,7 +776,7 @@
 <figcaption>Overview / wallpaper colours</figcaption>
 </figure>
 <figure>
-<img src="/media/phone-apps-light.webp" alt="Homedroid app library with Jellyfin and Immich" width="540" height="1200" class="" loading="lazy" decoding="async">
+<img src="/media/phone-apps-light.webp" alt="Homedroid app library: Jellyfin and qBittorrent running, with typical memory and CPU use on each app" width="540" height="1200" class="" loading="lazy" decoding="async">
 <figcaption>Apps / install and update</figcaption>
 </figure>
 <figure>
@@ -832,6 +1018,14 @@
 <details>
 <summary>Which phones can run Homedroid?</summary>
 <p>Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install.</p>
+</details>
+<details>
+<summary>How much RAM does Homedroid need?</summary>
+<p>Homedroid itself uses about 75 MB. Each module adds its own share: SSH about 10 MB, Jellyfin 200–450 MB, Radarr and Sonarr about 200–300 MB each, Immich 0.8–1.5 GB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB, and Immich or a local AI model 6 GB or more. Modules you turn off use nothing. <a href="/#requirements">See every module</a>.</p>
+</details>
+<details>
+<summary>Can I install other Linux software?</summary>
+<p>Yes. Homedroid includes Alpine Linux, so you can install packages from Alpine’s repository with <code>apk</code>. Open Terminal in the dashboard, choose Alpine Linux and run, for example, <code>apk add python3 git</code>. Over SSH, type <code>alpine</code> first. Packages stay installed through restarts and Homedroid updates. <a href="/#packages">Watch it</a>.</p>
 </details>
 <details>
 <summary>Can I leave an old phone plugged in as a server?</summary>
