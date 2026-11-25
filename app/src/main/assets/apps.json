@@ -247,7 +247,8 @@
     ],
     "env": {
       "DOTNET_gcServer": "0",
-      "DOTNET_GCHeapHardLimitPercent": "0x32"
+      "DOTNET_GCHeapHardLimitPercent": "0x32",
+      "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1"
     }
   },
   {
@@ -268,7 +269,8 @@
     ],
     "env": {
       "DOTNET_gcServer": "0",
-      "DOTNET_GCHeapHardLimitPercent": "0x32"
+      "DOTNET_GCHeapHardLimitPercent": "0x32",
+      "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1"
     },
     "storage": {
       "path": "/media/Movies",
@@ -294,7 +296,8 @@
     ],
     "env": {
       "DOTNET_gcServer": "0",
-      "DOTNET_GCHeapHardLimitPercent": "0x32"
+      "DOTNET_GCHeapHardLimitPercent": "0x32",
+      "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1"
     },
     "storage": {
       "path": "/media/TVShows",
