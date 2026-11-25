@@ -46,3 +46,25 @@ for (const video of document.querySelectorAll('video')) video.addEventListener('
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) document.querySelectorAll('video').forEach(v => v.pause());
 });
+// Live GitHub star count; the links work without it.
+(async () => {
+  const slots = document.querySelectorAll('[data-stars]');
+  if (!slots.length) return;
+  const key = 'hd-stars';
+  let n;
+  try {
+    const c = JSON.parse(sessionStorage.getItem(key) || 'null');
+    if (c && Date.now() - c.t < 36e5) n = c.n;
+  } catch {}
+  if (n == null) {
+    try {
+      const r = await fetch('https://api.github.com/repos/sudiptacmd/homedroid', {headers: {Accept: 'application/vnd.github+json'}});
+      if (!r.ok) return;
+      n = (await r.json()).stargazers_count;
+      if (typeof n !== 'number') return;
+      try { sessionStorage.setItem(key, JSON.stringify({n, t: Date.now()})); } catch {}
+    } catch { return; }
+  }
+  const text = n >= 1000 ? (n / 1000).toFixed(n >= 1e4 ? 0 : 1).replace(/\.0$/, '') + 'k' : String(n);
+  slots.forEach(s => { s.textContent = text; s.hidden = false; s.title = `${n.toLocaleString()} stars`; });
+})();

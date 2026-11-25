@@ -252,3 +252,10 @@ table{min-width:560px}
 
 /* Mobile gallery uses real 390×844 dashboard captures. */
 @media(max-width:600px){.gallery figure img{aspect-ratio:390/844;max-height:640px;object-fit:contain;background:#0d1411}.nav nav a{display:inline-flex;align-items:center;min-height:36px}}
+.nav nav .nav-star{display:inline-flex;align-items:center;gap:6px;color:var(--text,#e8f1eb);border:1px solid var(--line);border-radius:999px;padding:5px 11px}
+.nav nav .nav-star:hover{border-color:var(--green)}
+.nav nav .nav-star svg{color:#f5c84c}
+.star-count{font-variant-numeric:tabular-nums;border-left:1px solid var(--line);padding-left:8px;margin-left:2px;color:var(--muted)}
+.star-button .star-count{margin-left:10px}
+.star-ask{margin-top:18px}
+@media(max-width:720px){.nav nav{gap:14px}.nav nav .nav-star{padding:4px 9px;gap:5px}.nav nav .nav-star .star-label{display:none}.nav nav .nav-star .star-count{border:0;padding:0;margin:0;color:inherit}.nav nav .nav-download{padding-left:14px}}
