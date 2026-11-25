@@ -51,11 +51,17 @@ impl Config {
         {
             return Err(invalid("invalid pairing credentials"));
         }
-        if self.camera_presets.len() > 32 { return Err(invalid("at most 32 camera presets")); }
+        if self.camera_presets.len() > 32 {
+            return Err(invalid("at most 32 camera presets"));
+        }
         for (name, settings) in &self.camera_presets {
-            if name.trim().is_empty() || name.len() > 80 { return Err(invalid("preset name must be 1–80 bytes")); }
+            if name.trim().is_empty() || name.len() > 80 {
+                return Err(invalid("preset name must be 1–80 bytes"));
+            }
             crate::controls::validate(settings)?;
-            if settings.get("x").is_some() || settings.get("reset").is_some() { return Err(invalid("presets cannot contain transient controls")); }
+            if settings.get("x").is_some() || settings.get("reset").is_some() {
+                return Err(invalid("presets cannot contain transient controls"));
+            }
         }
         Ok(())
     }

@@ -111,15 +111,24 @@ fn serve(command: &str, args: &[String]) -> io::Result<()> {
             "--webcam" if command == "run" => camera_on = true,
             "--mirror" => options.mirror = true,
             "--torch" | "--flip" | "--ae-lock" | "--awb-lock" | "--stabilization" => {
-                let key = match arg { "--ae-lock" => "aeLock", "--awb-lock" => "awbLock", _ => &arg[2..] };
+                let key = match arg {
+                    "--ae-lock" => "aeLock",
+                    "--awb-lock" => "awbLock",
+                    _ => &arg[2..],
+                };
                 options.controls[key] = serde_json::json!(true);
             }
-            "--zoom" | "--ev" | "--wb" | "--rotate" | "--focus" | "--focus-distance" | "--iso" | "--shutter-ns" | "--anti-banding" => {
+            "--zoom" | "--ev" | "--wb" | "--rotate" | "--focus" | "--focus-distance" | "--iso"
+            | "--shutter-ns" | "--anti-banding" => {
                 i += 1;
-                let v = args.get(i).ok_or_else(|| usage(&format!("missing value for {arg}")))?;
+                let v = args
+                    .get(i)
+                    .ok_or_else(|| usage(&format!("missing value for {arg}")))?;
                 let (key, value) = controls::flag(arg, v)?;
                 options.controls[&key] = value;
-                if key == "iso" || key == "shutterNs" { options.controls["manualSensor"] = serde_json::json!(true); }
+                if key == "iso" || key == "shutterNs" {
+                    options.controls["manualSensor"] = serde_json::json!(true);
+                }
             }
             "--no-browser" => browser = false,
             "--dry-run" => dry = true,

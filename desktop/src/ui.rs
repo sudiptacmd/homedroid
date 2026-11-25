@@ -123,10 +123,16 @@ fn handle(s: &mut TcpStream, app: &Arc<App>) -> io::Result<()> {
             }
             "/api/control" => app.control_camera(&value),
             "/api/preset" => {
-                let name = value["name"].as_str().ok_or_else(|| invalid("preset name required"))?;
+                let name = value["name"]
+                    .as_str()
+                    .ok_or_else(|| invalid("preset name required"))?;
                 let mut c = lock(&app.config).clone();
-                if value["delete"] == true { c.camera_presets.remove(name); }
-                else { c.camera_presets.insert(name.to_owned(), value["settings"].clone()); }
+                if value["delete"] == true {
+                    c.camera_presets.remove(name);
+                } else {
+                    c.camera_presets
+                        .insert(name.to_owned(), value["settings"].clone());
+                }
                 app.update_config(c)
             }
             "/api/webcam" => {

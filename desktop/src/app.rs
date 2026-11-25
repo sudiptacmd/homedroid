@@ -160,24 +160,46 @@ impl App {
 
     fn send_controls(&self, c: &Config, controls: &Value) -> io::Result<()> {
         crate::controls::validate(controls)?;
-        let reply = http::json(&c.address, &c.token, "POST", "/desktop/v1/webcam/control", Some(controls))?;
+        let reply = http::json(
+            &c.address,
+            &c.token,
+            "POST",
+            "/desktop/v1/webcam/control",
+            Some(controls),
+        )?;
         if let Some(settings) = reply.get("settings").filter(|v| v.is_object()) {
             let mut o = lock(&self.options);
-            if let Some(v) = settings["camera"].as_str() { o.camera = v.into(); }
-            if let Some(v) = settings["width"].as_u64() { o.width = v as u32; }
-            if let Some(v) = settings["height"].as_u64() { o.height = v as u32; }
-            if let Some(v) = settings["fps"].as_u64() { o.fps = v as u32; }
-            if let Some(v) = settings["quality"].as_u64() { o.quality = v as u32; }
+            if let Some(v) = settings["camera"].as_str() {
+                o.camera = v.into();
+            }
+            if let Some(v) = settings["width"].as_u64() {
+                o.width = v as u32;
+            }
+            if let Some(v) = settings["height"].as_u64() {
+                o.height = v as u32;
+            }
+            if let Some(v) = settings["fps"].as_u64() {
+                o.fps = v as u32;
+            }
+            if let Some(v) = settings["quality"].as_u64() {
+                o.quality = v as u32;
+            }
             o.mirror = settings["mirror"].as_bool().unwrap_or(false);
             let mut extra = settings.clone();
-            if let Some(map) = extra.as_object_mut() { for key in ["camera", "width", "height", "fps", "quality", "mirror"] { map.remove(key); } }
+            if let Some(map) = extra.as_object_mut() {
+                for key in ["camera", "width", "height", "fps", "quality", "mirror"] {
+                    map.remove(key);
+                }
+            }
             o.controls = extra;
         }
         Ok(())
     }
 
     pub fn control_camera(&self, value: &Value) -> io::Result<()> {
-        if !self.camera_on.load(Ordering::SeqCst) { return Err(invalid("Start webcam before changing live controls")); }
+        if !self.camera_on.load(Ordering::SeqCst) {
+            return Err(invalid("Start webcam before changing live controls"));
+        }
         let c = lock(&self.config).clone();
         self.send_controls(&c, value)
     }
