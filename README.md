@@ -13,7 +13,7 @@
 ![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84)
 ![No root](https://img.shields.io/badge/root-not%20needed-00e5ff)
 
-**[Website](https://homedroid.seltiv.com/) · [Video guides](https://homedroid.seltiv.com/guides/) · [Download 0.9.6.1 beta](https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6.1-beta) · [Desktop companion](#homedroid-desktop) · [Send feedback](https://github.com/sudiptacmd/homedroid/issues/new/choose)**
+**[Website](https://homedroid.seltiv.com/) · [Video guides](https://homedroid.seltiv.com/guides/) · [Download 0.9.6.2 beta](https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6.2-beta) · [Desktop companion](#homedroid-desktop) · [Send feedback](https://github.com/sudiptacmd/homedroid/issues/new/choose)**
 
 That phone in your drawer still has a CPU, a camera, Wi-Fi and storage. It can do more than
 hold a charge badly. **Homedroid turns an old Android phone into a self-hosted home server**:
@@ -28,7 +28,18 @@ deck and a wireless webcam through Homedroid Desktop. Free software, built by Su
 *Phone screenshots are from an emulator. Dashboard screenshots use the actual dashboard with
 mock API data, not hardware benchmarks. Last updated: 26 November 2026.*
 
-## What’s new in 0.9.6.1
+## What’s new in 0.9.6.2
+
+- **Tailscale starts on more phones:** on some Android 11+ phones (reported on Samsung One UI,
+  Android 15) the Tailscale module crashed at startup with
+  `netmon.New: route ip+net: netlinkrib: permission denied`, because Android blocks the call that
+  lists network interfaces. Tailscale now falls back to a call Android still allows. Phones where
+  it already worked are unaffected. Reported in
+  [#17](https://github.com/sudiptacmd/homedroid/issues/17).
+
+See the [0.9.6.2 release notes](docs/releases/v0.9.6.2-beta.md).
+
+### New in 0.9.6.1
 
 - **A calmer sidebar:** the heavy scrollbar on the slim Rail and the sidebar is gone. A soft
   fade on the cut-off edge and a small chevron now show that the menu scrolls.
@@ -54,7 +65,7 @@ See the [0.9.6.1 release notes](docs/releases/v0.9.6.1-beta.md).
 - **Fixed:** the web terminal, which didn't open in 0.9.5.
 - **Security updates** for the Go libraries inside Caddy, cloudflared and Tailscale.
 
-See the [0.9.6 release notes](docs/releases/v0.9.6.1-beta.md).
+See the [0.9.6 release notes](docs/releases/v0.9.6.2-beta.md).
 
 ### New in 0.9.5
 
@@ -92,24 +103,24 @@ See the [0.9.6 release notes](docs/releases/v0.9.6.1-beta.md).
 
 ## Download
 
-Homedroid is **0.9.6.1 beta**. Android 10+ is required. Use ARM64 for most modern phones;
+Homedroid is **0.9.6.2 beta**. Android 10+ is required. Use ARM64 for most modern phones;
 Immich and local llama.cpp need 64-bit. Per-ABI APKs are about 50 to 60 MB and the universal
 APK is larger. Apps and AI models download separately.
 
 | Phone | APK |
 |---|---|
-| Most phones, 64-bit ARM | [homedroid-0.9.6.1-beta-arm64-v8a.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.1-beta/homedroid-0.9.6.1-beta-arm64-v8a.apk) |
-| Older 32-bit ARM phones | [homedroid-0.9.6.1-beta-armeabi-v7a.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.1-beta/homedroid-0.9.6.1-beta-armeabi-v7a.apk) |
-| x86_64 emulators / compatible Chromebooks | [homedroid-0.9.6.1-beta-x86_64.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.1-beta/homedroid-0.9.6.1-beta-x86_64.apk) |
-| Not sure; larger download | [homedroid-0.9.6.1-beta-universal.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.1-beta/homedroid-0.9.6.1-beta-universal.apk) |
+| Most phones, 64-bit ARM | [homedroid-0.9.6.2-beta-arm64-v8a.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-0.9.6.2-beta-arm64-v8a.apk) |
+| Older 32-bit ARM phones | [homedroid-0.9.6.2-beta-armeabi-v7a.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-0.9.6.2-beta-armeabi-v7a.apk) |
+| x86_64 emulators / compatible Chromebooks | [homedroid-0.9.6.2-beta-x86_64.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-0.9.6.2-beta-x86_64.apk) |
+| Not sure; larger download | [homedroid-0.9.6.2-beta-universal.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-0.9.6.2-beta-universal.apk) |
 
 Open the APK on the phone and allow installation from your browser or file manager, or run:
 
 ```sh
-adb install homedroid-0.9.6.1-beta-arm64-v8a.apk
+adb install homedroid-0.9.6.2-beta-arm64-v8a.apk
 ```
 
-Check APK downloads against [SHA256SUMS](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.1-beta/SHA256SUMS).
+Check APK downloads against [SHA256SUMS](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/SHA256SUMS).
 Signed releases install over earlier signed releases and keep your apps and data.
 **Updating Homedroid:** dashboard → Settings → App updates. Android may ask for confirmation
 on the phone. **Updating installed server apps:** use their Update button in Apps or Modules.
@@ -122,10 +133,10 @@ it opens a local control page at `http://127.0.0.1:8891`.
 
 | Computer | 0.9.6 beta download |
 |---|---|
-| Linux x86_64 | [homedroid-desktop-v0.9.6.1-beta-linux-x86_64.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.1-beta/homedroid-desktop-v0.9.6.1-beta-linux-x86_64.tar.gz) |
-| Linux ARM64 | [homedroid-desktop-v0.9.6.1-beta-linux-aarch64.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.1-beta/homedroid-desktop-v0.9.6.1-beta-linux-aarch64.tar.gz) |
-| Windows x86_64 | [homedroid-desktop-v0.9.6.1-beta-windows-x86_64.zip](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.1-beta/homedroid-desktop-v0.9.6.1-beta-windows-x86_64.zip) |
-| macOS Intel + Apple Silicon | [homedroid-desktop-v0.9.6.1-beta-macos-universal.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.1-beta/homedroid-desktop-v0.9.6.1-beta-macos-universal.tar.gz) |
+| Linux x86_64 | [homedroid-desktop-v0.9.6.2-beta-linux-x86_64.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-desktop-v0.9.6.2-beta-linux-x86_64.tar.gz) |
+| Linux ARM64 | [homedroid-desktop-v0.9.6.2-beta-linux-aarch64.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-desktop-v0.9.6.2-beta-linux-aarch64.tar.gz) |
+| Windows x86_64 | [homedroid-desktop-v0.9.6.2-beta-windows-x86_64.zip](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-desktop-v0.9.6.2-beta-windows-x86_64.zip) |
+| macOS Intel + Apple Silicon | [homedroid-desktop-v0.9.6.2-beta-macos-universal.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-desktop-v0.9.6.2-beta-macos-universal.tar.gz) |
 
 [All releases](https://github.com/sudiptacmd/homedroid/releases) ·
 [Desktop setup and permissions](desktop/README.md) ·
@@ -500,7 +511,7 @@ adb install app/build/outputs/apk/release/app-arm64-v8a-release.apk
 On Windows, `tools/dev.ps1` selects already-installed project-local tools. Native build scripts accept ABI
 arguments, for example `native/build-ffmpeg.sh arm64-v8a`. To sign with your own key, copy
 `keystore.properties.example` to `keystore.properties`; otherwise local builds use the debug
-key and cannot update an official signed release. CI tags such as `v0.9.6.1-beta` publish signed
+key and cannot update an official signed release. CI tags such as `v0.9.6.2-beta` publish signed
 APKs and runtime archives; the Desktop workflow publishes the companion archives.
 
 ```sh
