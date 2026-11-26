@@ -13,74 +13,48 @@
 ![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84)
 ![No root](https://img.shields.io/badge/root-not%20needed-00e5ff)
 
-**[Website](https://homedroid.seltiv.com/) · [Download 0.9.5 beta](https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta) · [Desktop companion](#homedroid-desktop) · [Send feedback](https://github.com/sudiptacmd/homedroid/issues/new/choose)**
+**[Website](https://homedroid.seltiv.com/) · [Video guides](https://homedroid.seltiv.com/guides/) · [Download 0.9.6.2 beta](https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6.2-beta) · [Desktop companion](#homedroid-desktop) · [Send feedback](https://github.com/sudiptacmd/homedroid/issues/new/choose)**
 
 That phone in your drawer still has a CPU, a camera, Wi-Fi and storage. It can do more than
 hold a charge badly. **Homedroid turns an old Android phone into a self-hosted home server**:
 Jellyfin, a NAS for USB drives and microSD cards, photo backup, web apps, local AI and home
 automation. Install one APK, start the server, open the web dashboard. **No root or Termux.**
 
-In **0.9.5 beta**, it also earns its place on the desk: a standby clock, a MacroPads button
+In **0.9.6 beta**, it also earns its place on the desk: a standby clock, a MacroPads button
 deck and a wireless webcam through Homedroid Desktop. Free software, built by Sudipta Goswami.
 
-<img src="docs/screenshots/dashboard-overview-dark.png" width="1000" alt="Homedroid 0.9.5 web dashboard: an old Android phone home server, Forest theme, server health and live vitals">
+<img src="docs/screenshots/dashboard-overview-dark.png" width="1000" alt="Homedroid 0.9.6 web dashboard: an old Android phone home server, Forest theme, server health and live vitals">
 
 *Phone screenshots are from an emulator. Dashboard screenshots use the actual dashboard with
-mock API data, not hardware benchmarks. Last updated: 25 November 2026.*
+mock API data, not hardware benchmarks. Last updated: 26 November 2026.*
 
-## What’s new in 0.9.5
+## What’s new
 
-- **A redesigned phone app:** Material 3, wallpaper colours on Android 12+, OLED black and
-  burn-in protection. The app library and settings have been rebuilt too.
-- **A dashboard you can arrange:** six layouts (sidebar, rail, top bar, split, focus and kiosk),
-  13 themes, font choices, overview widgets and a Ctrl/Cmd+K command palette. Preferences live
-  on the phone and follow you between browsers.
-- **Dock mode:** five clock faces, live server tiles, a red night mode and OLED care. Works
-  while charging or as Android’s screen saver. Four status widget sizes and a new clock widget.
-- **MacroPads + Homedroid Desktop:** custom phone buttons for your computer, plus a wireless
-  phone webcam. Linux, Windows and macOS companion downloads below.
-- **Hosting from the dashboard:** add your own domain, keep dynamic DNS (DuckDNS or Cloudflare)
-  updated, set firewall rules and read request logs. Go, PHP, Bun and Deno join Node.js, Python
-  and static deployments. Upload ZIP/tar archives, trigger deploys from CI, run build pipelines
-  and roll deployments across load-balanced cluster phones.
-- **MCP and databases:** let AI assistants such as Claude, Cursor and VS Code manage the server
-  over MCP, with write tools off until you allow them and an on-phone agent that asks before
-  it changes anything. Browse SQLite databases with a schema diagram and a SQL console, or use
-  the JSON document store.
-- **Your own mail server:** install Stalwart from the app catalog and follow the guided setup
-  in the dashboard. It lists the DNS records to copy, runs health checks and shows the settings
-  for your mail apps. Many home internet providers block port 25, so you may need a relay.
-- **Wi-Fi repeater:** the phone hosts a Wi-Fi Direct network and shares its connection through
-  a built-in HTTP, SOCKS5 and PAC proxy. Join with a QR code. It is proxy-based, so apps that
-  ignore proxy settings will not work.
-- **Security and fixes:** PIN/biometric app lock, Keystore-encrypted secrets, DNS install fixes,
-  configurable SSH port, a terminal that works with SSH off, and installed-app updates from
-  the phone or dashboard.
-
-Camera controls for the PC webcam and a customizable look for MacroPads (backgrounds, fonts
-and icons) are being worked on and are not in this beta yet. See the
-[0.9.5 release notes](docs/releases/v0.9.5-beta.md) for verification limits.
+**0.9.6.2 beta** fixes Tailscale not starting on phones that block the network interface list
+([#17](https://github.com/sudiptacmd/homedroid/issues/17)). **0.9.6.1 beta** calms the dashboard
+sidebar scrollbar and uses wide screens better. See the **[changelog](CHANGELOG.md)** for every
+release.
 
 ## Download
 
-Homedroid is **0.9.5 beta**. Android 10+ is required. Use ARM64 for most modern phones;
+Homedroid is **0.9.6.2 beta**. Android 10+ is required. Use ARM64 for most modern phones;
 Immich and local llama.cpp need 64-bit. Per-ABI APKs are about 50 to 60 MB and the universal
 APK is larger. Apps and AI models download separately.
 
 | Phone | APK |
 |---|---|
-| Most phones, 64-bit ARM | [homedroid-0.9.5-beta-arm64-v8a.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-arm64-v8a.apk) |
-| Older 32-bit ARM phones | [homedroid-0.9.5-beta-armeabi-v7a.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-armeabi-v7a.apk) |
-| x86_64 emulators / compatible Chromebooks | [homedroid-0.9.5-beta-x86_64.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-x86_64.apk) |
-| Not sure; larger download | [homedroid-0.9.5-beta-universal.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-universal.apk) |
+| Most phones, 64-bit ARM | [homedroid-0.9.6.2-beta-arm64-v8a.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-0.9.6.2-beta-arm64-v8a.apk) |
+| Older 32-bit ARM phones | [homedroid-0.9.6.2-beta-armeabi-v7a.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-0.9.6.2-beta-armeabi-v7a.apk) |
+| x86_64 emulators / compatible Chromebooks | [homedroid-0.9.6.2-beta-x86_64.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-0.9.6.2-beta-x86_64.apk) |
+| Not sure; larger download | [homedroid-0.9.6.2-beta-universal.apk](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-0.9.6.2-beta-universal.apk) |
 
 Open the APK on the phone and allow installation from your browser or file manager, or run:
 
 ```sh
-adb install homedroid-0.9.5-beta-arm64-v8a.apk
+adb install homedroid-0.9.6.2-beta-arm64-v8a.apk
 ```
 
-Check APK downloads against [SHA256SUMS](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/SHA256SUMS).
+Check APK downloads against [SHA256SUMS](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/SHA256SUMS).
 Signed releases install over earlier signed releases and keep your apps and data.
 **Updating Homedroid:** dashboard → Settings → App updates. Android may ask for confirmation
 on the phone. **Updating installed server apps:** use their Update button in Apps or Modules.
@@ -91,12 +65,12 @@ The companion is a small Rust binary, about 1 MB on Linux, with no separate lang
 Unpack it and run `homedroid-desktop` (`homedroid-desktop.exe` on Windows). With no arguments,
 it opens a local control page at `http://127.0.0.1:8891`.
 
-| Computer | 0.9.5 beta download |
+| Computer | 0.9.6 beta download |
 |---|---|
-| Linux x86_64 | [homedroid-desktop-v0.9.5-beta-linux-x86_64.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-linux-x86_64.tar.gz) |
-| Linux ARM64 | [homedroid-desktop-v0.9.5-beta-linux-aarch64.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-linux-aarch64.tar.gz) |
-| Windows x86_64 | [homedroid-desktop-v0.9.5-beta-windows-x86_64.zip](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-windows-x86_64.zip) |
-| macOS Intel + Apple Silicon | [homedroid-desktop-v0.9.5-beta-macos-universal.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-macos-universal.tar.gz) |
+| Linux x86_64 | [homedroid-desktop-v0.9.6.2-beta-linux-x86_64.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-desktop-v0.9.6.2-beta-linux-x86_64.tar.gz) |
+| Linux ARM64 | [homedroid-desktop-v0.9.6.2-beta-linux-aarch64.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-desktop-v0.9.6.2-beta-linux-aarch64.tar.gz) |
+| Windows x86_64 | [homedroid-desktop-v0.9.6.2-beta-windows-x86_64.zip](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-desktop-v0.9.6.2-beta-windows-x86_64.zip) |
+| macOS Intel + Apple Silicon | [homedroid-desktop-v0.9.6.2-beta-macos-universal.tar.gz](https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6.2-beta/homedroid-desktop-v0.9.6.2-beta-macos-universal.tar.gz) |
 
 [All releases](https://github.com/sudiptacmd/homedroid/releases) ·
 [Desktop setup and permissions](desktop/README.md) ·
@@ -137,6 +111,9 @@ use a trusted network or an encrypted tunnel.
 | Jellyfin | Media library with phone hardware encoding through MediaCodec | 8096 |
 | Immich | Photo/video backup; machine learning disabled | 2283 |
 | qBittorrent | Downloads into Jellyfin’s shared Media folder | 8081 |
+| Prowlarr | Torrent indexers in one place, synced to Radarr and Sonarr | 9696 |
+| Radarr / Sonarr | Find, download and file movies / TV shows | 7878 / 8989 |
+| Jellyseerr (Seerr) | Search and request page that feeds Radarr and Sonarr | 5055 |
 | Home Assistant | Network and cloud integrations | 8123 |
 | IPCam | Live camera, photos, motion clips, microphone and spoken announcements | 8800 |
 | Local AI | llama.cpp, chat, routines, OpenAI-compatible API at `/v1` | 8090 |
@@ -151,6 +128,41 @@ use a trusted network or an encrypted tunnel.
 
 Nothing you turn off needs to keep running. A foreground service supervises enabled processes,
 restarts failures with backoff, and keeps logs. Start-on-boot is optional.
+
+## How much memory and CPU each module needs
+
+Typical figures, so you can tell what fits on your phone. Memory is what a module keeps in RAM
+while running; idle figures were measured on an emulator, the rest come from the projects' own
+guidance. CPU is what to expect while the module is busy; almost everything is close to idle
+the rest of the time. Modules you turn off use nothing. The dashboard shows the same figures on
+each module card, and the phone app on each app.
+
+| Module | Memory | CPU | When it works hardest |
+|---|---|---|---|
+| SSH & SFTP | about 10 MB | low | A little more while copying files over SFTP. |
+| Web hosting (Caddy) | 40–60 MB | low | Grows with traffic to your sites. |
+| Cloudflare Tunnel | 30–60 MB | low | Grows with the traffic it carries. |
+| Tailscale | 40–80 MB | medium | Encrypts traffic in software, so large transfers keep a core busy. |
+| IPCam | 50–120 MB | medium | Only while streaming or recording. Uses more battery and warms the phone. |
+| Local AI (llama.cpp) | model size + 0.3–1 GB | high | Every core while it answers, nothing in between. A 1.5B model needs about 1.5 GB in all, a 3B model about 2.5 GB. |
+| Wake on LAN | under 1 MB | low | Runs only while sending a wake-up packet. |
+| Wi-Fi repeater | 10–30 MB | medium | Grows with the traffic of the devices on its network. |
+| Network tools | about 5 MB | low | Scans and speed tests run only when you start them. |
+| Jellyfin | 200–450 MB | high | Light when your devices play files as they are. Converting video decodes it in software and can use every core. |
+| qBittorrent | 40–150 MB | medium | Grows with the number of active torrents. Checking a finished download is busy for a moment. |
+| Prowlarr | 150–200 MB | low | Busy for a few seconds during each search. |
+| Radarr | 180–300 MB | low | Busier while importing downloads or rescanning a large library. |
+| Sonarr | 200–300 MB | low | Busier while importing downloads or rescanning a large library. |
+| Jellyseerr (Seerr) | 190–300 MB | low | Mostly idle; looks up movies and shows when you browse. |
+| Home Assistant | 300–500 MB | medium | Depends on your integrations; low for most homes. |
+| Immich | 0.8–1.5 GB | high | Thumbnails and video conversion after uploads use every core, then it settles. Face and object recognition stay off. |
+| AdGuard Home | 40–100 MB | low | Bigger blocklists use more memory. |
+| Mail (Stalwart) | 80–200 MB | low | Spam checks add a little for each message. |
+
+Homedroid itself takes about 75 MB. As a rule of thumb, a phone with 3 GB of RAM runs the file
+server, Jellyfin, qBittorrent and a few small services comfortably. Add the whole media
+automation set and you want 4 GB; Immich or a local AI model want 6 GB or more. Android closes
+background apps when memory runs low, so leave some headroom.
 
 ## The phone app and dashboard
 
@@ -261,7 +273,10 @@ somewhere unexpected.
 ## Jellyfin, Immich and home automation
 
 Jellyfin and qBittorrent share the Media folder. Completed downloads appear in Jellyfin’s
-Downloads library. **Hardware transcoding is encode-side:** H.264 and HEVC use the phone’s
+Downloads library. Add **Prowlarr, Radarr, Sonarr and Jellyseerr** and the phone runs the whole
+*arr stack: request a movie or show, and it is found, downloaded, renamed and filed in a Movies
+or Shows library in Jellyfin. Homedroid connects the apps to each other and to qBittorrent and
+Jellyfin for you. See the [media automation guide](docs/guides/media-automation.md). **Hardware transcoding is encode-side:** H.264 and HEVC use the phone’s
 MediaCodec encoder where supported. Decoding, scaling, subtitle burn-in and HDR tone mapping
 still use software. Check your phone with your actual videos before promising it movie night.
 
@@ -395,6 +410,12 @@ its child servers behind.
 
 ## Security
 
+**No telemetry.** Homedroid has no analytics, tracking, crash reporting or accounts, and sends
+nothing about you, your phone or your files anywhere. It connects to the internet only for
+features you use: downloading apps and AI models, your own tunnel, Tailscale or dynamic DNS,
+notifications you set up, and checking GitHub's public release list for updates (a plain
+request with no identifier). It turns off the usage reporting of Radarr, Sonarr and Prowlarr.
+
 SSH accepts public keys only. The dashboard has a generated password and expiring
 HttpOnly/SameSite sessions. That password also opens the web terminal, so treat it like an
 SSH key. Authentication attempts are rate-limited; changing the password revokes sessions.
@@ -402,7 +423,8 @@ SSH key. Authentication attempts are rate-limited; changing the password revokes
 PIN/biometric app lock protects the phone UI, and Android Keystore encrypts stored secrets.
 MCP has its own token and call audit log. Desktop command execution requires local opt-in.
 Pair only computers and cluster phones you trust. Other Android apps can reach localhost;
-qBittorrent’s localhost authentication exception exists for the `torrent` helper.
+qBittorrent’s localhost authentication exception exists for the `torrent` helper and for
+Radarr, Sonarr and Prowlarr. Those three ask for a login on the first visit: set it right away.
 
 See the [0.8.5 security review](docs/SECURITY-REVIEW-0.8.5.md),
 [0.9.0 security review](docs/SECURITY-REVIEW-0.9.0.md), and [Desktop security notes](desktop/README.md#security-notes).
@@ -423,7 +445,7 @@ adb install app/build/outputs/apk/release/app-arm64-v8a-release.apk
 On Windows, `tools/dev.ps1` selects already-installed project-local tools. Native build scripts accept ABI
 arguments, for example `native/build-ffmpeg.sh arm64-v8a`. To sign with your own key, copy
 `keystore.properties.example` to `keystore.properties`; otherwise local builds use the debug
-key and cannot update an official signed release. CI tags such as `v0.9.5-beta` publish signed
+key and cannot update an official signed release. CI tags such as `v0.9.6.2-beta` publish signed
 APKs and runtime archives; the Desktop workflow publishes the companion archives.
 
 ```sh

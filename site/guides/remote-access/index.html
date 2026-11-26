@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to access your Android home server remotely | Homedroid</title>
+<meta name="description" content="Access your Android home server remotely with Tailscale or Cloudflare Tunnel. Follow the setup video and steps for private access or a public HTTPS hostname.">
+<link rel="canonical" href="https://homedroid.seltiv.com/guides/remote-access/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="How to access your Android home server remotely | Homedroid">
+<meta property="og:description" content="Access your Android home server remotely with Tailscale or Cloudflare Tunnel. Follow the setup video and steps for private access or a public HTTPS hostname.">
+<meta property="og:url" content="https://homedroid.seltiv.com/guides/remote-access/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.6 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to access your Android home server remotely | Homedroid">
+<meta name="twitter:description" content="Access your Android home server remotely with Tailscale or Cloudflare Tunnel. Follow the setup video and steps for private access or a public HTTPS hostname.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to access your Android home server remotely",
+  "description": "Reach your Android home server away from home with Tailscale, or publish a web app with Cloudflare Tunnel. Both connect out from the phone and work behind CGNAT without router port forwarding.",
+  "url": "https://homedroid.seltiv.com/guides/remote-access/",
+  "video": {
+    "@id": "https://homedroid.seltiv.com/guides/remote-access/#video"
+  },
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "For private access, turn on Tailscale",
+      "text": "In Modules, switch on Tailscale. Choose a device name, leave Auth key empty to use a login link, and select Turn on. Homedroid includes Tailscale; no separate Tailscale app is needed on the server phone.",
+      "url": "https://homedroid.seltiv.com/guides/remote-access/#step-1"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Sign in and connect",
+      "text": "Select Log in to Tailscale on the card, sign in and connect the phone to your tailnet. Approve the phone in the Tailscale admin console if your network requires it. Wait for Connected and its 100.x.y.z address.",
+      "url": "https://homedroid.seltiv.com/guides/remote-access/#step-2"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Open the phone from another device",
+      "text": "With Tailscale connected on your computer, open http://<phone-tailscale-ip>:8800. Use each app’s port for that app, such as 8096 for Jellyfin. MagicDNS also lets you use the device name.",
+      "url": "https://homedroid.seltiv.com/guides/remote-access/#step-3"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "For a public site, create a Cloudflare tunnel",
+      "text": "In Cloudflare Zero Trust, create a Cloudflared tunnel. From the connector command, copy only the long token after --token. In Homedroid’s Modules, switch on Cloudflare Tunnel, paste the token and select Turn on.",
+      "url": "https://homedroid.seltiv.com/guides/remote-access/#step-4"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Add the public hostname",
+      "text": "In Cloudflare, add a public hostname or published application route. Select HTTP and the local service address, such as http://localhost:8080 for Web hosting. Use the app’s own port if publishing it directly.",
+      "url": "https://homedroid.seltiv.com/guides/remote-access/#step-5"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Test the intended access",
+      "text": "Try the private address from a device on your tailnet, or the public hostname from another connection. If publishing the dashboard at port 8800, put a Cloudflare Access policy in front of it and keep the dashboard password enabled.",
+      "url": "https://homedroid.seltiv.com/guides/remote-access/#step-6"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "@id": "https://homedroid.seltiv.com/guides/remote-access/#video",
+  "name": "Reach your server from anywhere",
+  "description": "Private access with Tailscale, or publish a site to the internet with a Cloudflare Tunnel, without opening ports on your router.",
+  "thumbnailUrl": "https://homedroid.seltiv.com/media/guide-remote-access.webp",
+  "contentUrl": "https://homedroid.seltiv.com/media/guide-remote-access.webm",
+  "uploadDate": "2026-11-26T00:00:00+06:00",
+  "embedUrl": "https://homedroid.seltiv.com/guides/remote-access/#video"
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/guides/">Guides</a>
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-star" href="https://github.com/sudiptacmd/homedroid" aria-label="Star Homedroid on GitHub"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M8 .6l2.3 4.7 5.1.7-3.7 3.6.9 5.1L8 12.3l-4.6 2.4.9-5.1L.6 6l5.1-.7z"/></svg><span class="star-label">Star</span><span class="star-count" data-stars hidden></span></a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article guide-article">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Homedroid</a><span>/</span><a href="/guides/">Guides</a><span>/</span>Reach your server from anywhere</nav>
+<span class="eyebrow">VIDEO GUIDE / DASHBOARD</span>
+<h1>How to access your Android home server remotely</h1>
+<p class="lead">Reach your Android home server away from home with Tailscale, or publish a web app with Cloudflare Tunnel. Both connect out from the phone and work behind CGNAT without router port forwarding.</p>
+<figure class="guide-video" id="video">
+<video controls playsinline preload="none" poster="/media/guide-remote-access.webp" width="1280" height="800" aria-label="Reach your server from anywhere">
+<source src="/media/guide-remote-access.webm" type="video/webm">
+<p><a href="/media/guide-remote-access.webm">Download the setup video</a>, or follow the written steps below.</p>
+</video>
+<figcaption>Dashboard setup · silent screen recording · demo data. The steps below explain the actions.</figcaption>
+</figure>
+<h2>Before you start</h2>
+<ul><li>A running Homedroid server with internet access.</li><li>For private access: a Tailscale account and Tailscale on the devices you connect from. For a public site: a Cloudflare account and a domain using Cloudflare DNS.</li></ul>
+<h2>How to access your Android home server remotely: step by step</h2>
+<ol class="guide-steps">
+<li id="step-1"><h3>For private access, turn on Tailscale</h3><p>In Modules, switch on Tailscale. Choose a device name, leave Auth key empty to use a login link, and select Turn on. Homedroid includes Tailscale; no separate Tailscale app is needed on the server phone.</p></li>
+<li id="step-2"><h3>Sign in and connect</h3><p>Select Log in to Tailscale on the card, sign in and connect the phone to your tailnet. Approve the phone in the Tailscale admin console if your network requires it. Wait for Connected and its 100.x.y.z address.</p></li>
+<li id="step-3"><h3>Open the phone from another device</h3><p>With Tailscale connected on your computer, open http://&lt;phone-tailscale-ip&gt;:8800. Use each app’s port for that app, such as 8096 for Jellyfin. MagicDNS also lets you use the device name.</p></li>
+<li id="step-4"><h3>For a public site, create a Cloudflare tunnel</h3><p>In Cloudflare Zero Trust, create a Cloudflared tunnel. From the connector command, copy only the long token after --token. In Homedroid’s Modules, switch on Cloudflare Tunnel, paste the token and select Turn on.</p></li>
+<li id="step-5"><h3>Add the public hostname</h3><p>In Cloudflare, add a public hostname or published application route. Select HTTP and the local service address, such as http://localhost:8080 for Web hosting. Use the app’s own port if publishing it directly.</p></li>
+<li id="step-6"><h3>Test the intended access</h3><p>Try the private address from a device on your tailnet, or the public hostname from another connection. If publishing the dashboard at port 8800, put a Cloudflare Access policy in front of it and keep the dashboard password enabled.</p></li>
+</ol>
+<h2>Typical memory and CPU</h2>
+<p>These are the estimates shown by Homedroid, from its module resource data. Memory is resident process memory; CPU describes use while busy. Actual use depends on the phone and workload.</p>
+<div class="table-scroll"><table class="needs"><caption>Typical running resources, not download or disk sizes</caption><thead><tr><th scope="col">Module</th><th scope="col">Memory</th><th scope="col">CPU</th><th scope="col">What affects it</th></tr></thead><tbody><tr><th scope="row">Tailscale</th><td>40–80 MB</td><td><span class="cpu medium">medium</span></td><td>Encrypts traffic in software, so large transfers keep a core busy.</td></tr><tr><th scope="row">Cloudflare Tunnel</th><td>30–60 MB</td><td><span class="cpu low">low</span></td><td>Grows with the traffic it carries.</td></tr></tbody></table></div>
+<h2>Good to know and troubleshooting</h2>
+<ul><li>Use Tailscale for private admin tools. A Cloudflare hostname is public unless you add access restrictions.</li><li>Keep tunnel tokens and auth keys private. If the Tailscale phone is waiting for approval, check the admin console before changing Homedroid settings.</li><li>For private HTTPS, Tailscale settings offer Tailnet only (Tailscale Serve). Enable MagicDNS and HTTPS certificates in Tailscale first. Public internet (Tailscale Funnel) makes the address public.</li></ul>
+<aside class="article-cta"><h2>Related guides</h2><ul><li><a href="/guides/domains/">Use your own domain</a></li>
+<li><a href="/guides/adguard/">Block ads on every device with AdGuard Home</a></li>
+<li><a href="/guides/deploy/">Deploy a website or app from GitHub</a></li></ul><a href="/guides/">All video guides</a></aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="/guides/">Guides</a>
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">0.9.6 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-26">26 November 2026</time> · 0.9.6-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>

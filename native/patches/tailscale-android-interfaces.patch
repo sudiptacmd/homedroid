@@ -1,0 +1,193 @@
+diff --git a/net/netmon/interfaces_android_fallback.go b/net/netmon/interfaces_android_fallback.go
+new file mode 100644
+index 0000000..e44da12
+--- /dev/null
++++ b/net/netmon/interfaces_android_fallback.go
+@@ -0,0 +1,160 @@
++// Copyright (c) Tailscale Inc & contributors
++// SPDX-License-Identifier: BSD-3-Clause
++
++//go:build android
++
++package netmon
++
++import (
++	"errors"
++	"fmt"
++	"net"
++	"sort"
++	"syscall"
++	"unsafe"
++
++	"golang.org/x/sys/unix"
++)
++
++// Android 11 and later stop apps from asking the kernel for the link list (an
++// RTM_GETLINK netlink request, because it carries MAC addresses), and on some devices
++// (Samsung One UI 7, Android 15) that applies to a daemon started by an app too. Go's
++// net.Interfaces needs exactly that request, so it fails with
++// "route ip+net: netlinkrib: permission denied" and tailscaled exits at startup.
++//
++// The Tailscale Android app works around it by registering an interface getter backed
++// by the Java API. A standalone tailscaled has no Java, so this does what bionic's
++// getifaddrs does on Android 11+: dump the addresses (RTM_GETADDR, still allowed) and
++// get each interface's name, flags and MTU from the ioctls apps may still use.
++// netInterfaces only calls it after net.Interfaces failed, so devices where that works
++// behave exactly as before.
++func init() {
++	fallbackNetInterfaces = interfacesFromAddrDump
++}
++
++func interfacesFromAddrDump() ([]Interface, error) {
++	rib, err := syscall.NetlinkRIB(syscall.RTM_GETADDR, syscall.AF_UNSPEC)
++	if err != nil {
++		return nil, fmt.Errorf("netlink address dump: %w", err)
++	}
++	msgs, err := syscall.ParseNetlinkMessage(rib)
++	if err != nil {
++		return nil, fmt.Errorf("netlink address dump: %w", err)
++	}
++	fd, err := unix.Socket(unix.AF_INET, unix.SOCK_DGRAM|unix.SOCK_CLOEXEC, 0)
++	if err != nil {
++		return nil, fmt.Errorf("interface ioctl socket: %w", err)
++	}
++	defer unix.Close(fd)
++
++	byIndex := map[int]*Interface{}
++	var order []int
++loop:
++	for _, m := range msgs {
++		switch m.Header.Type {
++		case syscall.NLMSG_DONE:
++			break loop
++		case syscall.NLMSG_ERROR:
++			return nil, errors.New("netlink address dump: kernel returned an error")
++		case syscall.RTM_NEWADDR:
++		default:
++			continue
++		}
++		if len(m.Data) < syscall.SizeofIfAddrmsg {
++			continue
++		}
++		ifam := (*syscall.IfAddrmsg)(unsafe.Pointer(&m.Data[0]))
++		attrs, err := syscall.ParseNetlinkRouteAttr(&m)
++		if err != nil {
++			continue
++		}
++		var ip, local net.IP
++		var label string
++		for _, a := range attrs {
++			switch a.Attr.Type {
++			case syscall.IFA_ADDRESS:
++				ip = net.IP(append([]byte(nil), a.Value...))
++			case syscall.IFA_LOCAL:
++				local = net.IP(append([]byte(nil), a.Value...))
++			case syscall.IFA_LABEL:
++				label = cString(a.Value)
++			}
++		}
++		if local != nil { // on point-to-point links IFA_ADDRESS is the peer
++			ip = local
++		}
++		bits := 8 * len(ip)
++		if len(ip) != net.IPv4len && len(ip) != net.IPv6len {
++			continue
++		}
++		idx := int(ifam.Index)
++		ifc := byIndex[idx]
++		if ifc == nil {
++			ni := &net.Interface{Index: idx}
++			if name := ifNameByIndex(fd, idx); name != "" {
++				ni.Name = name
++			} else if label != "" {
++				ni.Name = label // IPv4 addresses carry the interface name
++			} else {
++				continue // can't name it; nothing could look it up
++			}
++			ni.Flags, ni.MTU = ifFlagsAndMTU(fd, ni.Name)
++			ifc = &Interface{Interface: ni, AltAddrs: []net.Addr{}}
++			byIndex[idx] = ifc
++			order = append(order, idx)
++		}
++		ifc.AltAddrs = append(ifc.AltAddrs, &net.IPNet{IP: ip, Mask: net.CIDRMask(int(ifam.Prefixlen), bits)})
++	}
++	sort.Ints(order)
++	ret := make([]Interface, 0, len(order))
++	for _, idx := range order {
++		ret = append(ret, *byIndex[idx])
++	}
++	return ret, nil
++}
++
++func ifNameByIndex(fd, index int) string {
++	ifr, err := unix.NewIfreq("")
++	if err != nil {
++		return ""
++	}
++	ifr.SetUint32(uint32(index))
++	if err := unix.IoctlIfreq(fd, unix.SIOCGIFNAME, ifr); err != nil {
++		return ""
++	}
++	return ifr.Name()
++}
++
++func ifFlagsAndMTU(fd int, name string) (net.Flags, int) {
++	ifr, err := unix.NewIfreq(name)
++	if err != nil {
++		return net.FlagUp, 0
++	}
++	flags := net.FlagUp // an interface the kernel lists addresses for; used if the ioctl is refused
++	if err := unix.IoctlIfreq(fd, unix.SIOCGIFFLAGS, ifr); err == nil {
++		f := ifr.Uint16()
++		flags = 0
++		for iff, nf := range map[uint16]net.Flags{
++			unix.IFF_UP: net.FlagUp, unix.IFF_BROADCAST: net.FlagBroadcast, unix.IFF_LOOPBACK: net.FlagLoopback,
++			unix.IFF_POINTOPOINT: net.FlagPointToPoint, unix.IFF_MULTICAST: net.FlagMulticast, unix.IFF_RUNNING: net.FlagRunning,
++		} {
++			if f&iff != 0 {
++				flags |= nf
++			}
++		}
++	}
++	mtu := 0
++	if err := unix.IoctlIfreq(fd, unix.SIOCGIFMTU, ifr); err == nil {
++		mtu = int(ifr.Uint32())
++	}
++	return flags, mtu
++}
++
++func cString(b []byte) string {
++	for i, c := range b {
++		if c == 0 {
++			return string(b[:i])
++		}
++	}
++	return string(b)
++}
+diff --git a/net/netmon/state.go b/net/netmon/state.go
+index 94554dc..2deb2ca 100644
+--- a/net/netmon/state.go
++++ b/net/netmon/state.go
+@@ -820,6 +820,9 @@ func (s *State) keepInterfaceInStringSummary(ifName string) bool {
+ 
+ var altNetInterfaces func() ([]Interface, error)
+ 
++// fallbackNetInterfaces, if set, lists interfaces when net.Interfaces fails (see interfaces_android_fallback.go).
++var fallbackNetInterfaces func() ([]Interface, error)
++
+ // RegisterInterfaceGetter sets the function that's used to query
+ // the system network interfaces.
+ func RegisterInterfaceGetter(getInterfaces func() ([]Interface, error)) {
+@@ -845,6 +848,12 @@ func netInterfaces() ([]Interface, error) {
+ 	}
+ 	ifs, err := net.Interfaces()
+ 	if err != nil {
++		if fallbackNetInterfaces != nil {
++			// Android 11+ may refuse the netlink link dump net.Interfaces needs.
++			if ret, ferr := fallbackNetInterfaces(); ferr == nil {
++				return ret, nil
++			}
++		}
+ 		return nil, err
+ 	}
+ 	ret := make([]Interface, len(ifs))

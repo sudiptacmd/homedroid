@@ -41,8 +41,9 @@ android {
         applicationId = if (providers.gradleProperty("cameraTest").orNull == "true") "dev.homedroid.cameratest" else "dev.homedroid"
         minSdk = 29
         targetSdk = 36
-        versionCode = 905
-        versionName = "0.9.5-beta"
+        // From 0.9.6.1 the code is the version times 10 (0.9.6.2 = 9062, 0.9.7 = 9070), so a point release never blocks the next one.
+        versionCode = 9062
+        versionName = "0.9.6.2-beta"
         testInstrumentationRunner = "dev.homedroid.CameraHardwareTest"
     }
 

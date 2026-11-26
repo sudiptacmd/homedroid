@@ -17,6 +17,14 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      # Dashboard behaviour and the media-stack helper (needs sh, curl and jq, all on the runner).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Dashboard and helper tests
+        run: node --test tests/*.test.cjs
+
       - uses: actions/setup-go@v5
         with:
           go-version: stable

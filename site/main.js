@@ -3,6 +3,7 @@ for (const gallery of document.querySelectorAll('[data-gallery]')) {
   const tabs = [...gallery.querySelectorAll('[data-tab]')];
   const panels = [...gallery.querySelectorAll('[data-panel]')];
   const list = gallery.querySelector('.tablist');
+  if (!list || !tabs.length || tabs.length !== panels.length) continue;
   list.hidden = false;
   list.setAttribute('role', 'tablist');
   function select(index, focus = false) {
@@ -18,6 +19,7 @@ for (const gallery of document.querySelectorAll('[data-gallery]')) {
     tab.setAttribute('role', 'tab');
     panels[i].setAttribute('role', 'tabpanel');
     panels[i].setAttribute('aria-labelledby', tab.id);
+    tab.setAttribute('aria-controls', panels[i].id);
     panels[i].tabIndex = 0;
     tab.addEventListener('click', () => select(i));
     tab.addEventListener('keydown', e => {
@@ -25,7 +27,15 @@ for (const gallery of document.querySelectorAll('[data-gallery]')) {
       if (next >= 0) { e.preventDefault(); select(next, true); }
     });
   });
+  // A linked screenshot must remain reachable after enhancement, including Back.
+  function selectFragment() {
+    const index = panels.findIndex(panel => `#${panel.id}` === location.hash);
+    if (index >= 0) select(index);
+    return index;
+  }
   select(0);
+  selectFragment();
+  window.addEventListener('hashchange', selectFragment);
 }
 // OS is a hint, never an automatic download or an architecture guess.
 const platform = navigator.userAgentData?.platform || navigator.platform || '';

@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Homedroid: turn an old Android phone into a home server, no root</title>
-<meta name="description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.">
+<meta name="description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.6 beta.">
 <link rel="canonical" href="https://homedroid.seltiv.com/">
 <meta name="theme-color" content="#0a100f">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Homedroid">
 <meta property="og:title" content="Homedroid: turn an old Android phone into a home server, no root">
-<meta property="og:description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.">
+<meta property="og:description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.6 beta.">
 <meta property="og:url" content="https://homedroid.seltiv.com/">
 <meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="640">
-<meta property="og:image:alt" content="Homedroid 0.9.5 beta: an old Android phone running a home server and web dashboard">
+<meta property="og:image:alt" content="Homedroid 0.9.6 beta: an old Android phone running a home server and web dashboard">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Homedroid: turn an old Android phone into a home server, no root">
-<meta name="twitter:description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.">
+<meta name="twitter:description" content="Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.6 beta.">
 <meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
 <meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
 <link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
@@ -34,7 +34,7 @@
   "@context": "https://schema.org",
   "@type": "WebPage",
   "name": "Homedroid: turn an old Android phone into a home server, no root",
-  "description": "Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.5 beta.",
+  "description": "Turn an old Android phone into a home server with Homedroid. No root: Jellyfin, NAS, local AI, Dock mode, MacroPads and a wireless webcam. Free 0.9.6 beta.",
   "url": "https://homedroid.seltiv.com/",
   "dateModified": "2026-11-25",
   "isPartOf": {
@@ -49,7 +49,7 @@
   "@id": "https://homedroid.seltiv.com/#app",
   "name": "Homedroid",
   "url": "https://homedroid.seltiv.com/",
-  "softwareVersion": "0.9.5-beta",
+  "softwareVersion": "0.9.6-beta",
   "operatingSystem": "Android 10 or newer",
   "applicationCategory": "UtilitiesApplication",
   "license": "https://github.com/sudiptacmd/homedroid/blob/main/LICENSE",
@@ -58,7 +58,7 @@
     "price": "0",
     "priceCurrency": "USD"
   },
-  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta",
+  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta",
   "screenshot": "https://homedroid.seltiv.com/media/dashboard-overview.webp",
   "author": {
     "@id": "https://homedroid.seltiv.com/#author"
@@ -88,7 +88,7 @@
   "@id": "https://homedroid.seltiv.com/desktop/#app",
   "name": "Homedroid Desktop",
   "url": "https://homedroid.seltiv.com/desktop/",
-  "softwareVersion": "0.9.5-beta",
+  "softwareVersion": "0.9.6-beta",
   "operatingSystem": [
     "Linux",
     "Windows",
@@ -101,7 +101,7 @@
     "price": "0",
     "priceCurrency": "USD"
   },
-  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta",
+  "downloadUrl": "https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta",
   "screenshot": "https://homedroid.seltiv.com/media/phone-macropads-oled.webp",
   "author": {
     "@id": "https://homedroid.seltiv.com/#author"
@@ -138,10 +138,34 @@
     },
     {
       "@type": "Question",
+      "name": "Does Homedroid collect any data?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Homedroid has no analytics, tracking, crash reporting or accounts, and sends nothing about you, your phone or your files anywhere. It only connects to the internet for features you turn on, such as downloading apps or models, your own tunnel, Tailscale or dynamic DNS, and checking GitHub's public release list for updates. The source code is open, so you can verify every connection."
+      }
+    },
+    {
+      "@type": "Question",
       "name": "Which phones can run Homedroid?",
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How much RAM does Homedroid need?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Homedroid itself uses about 75 MB. Each module adds its own share: SSH about 10 MB, Jellyfin 200–450 MB, Radarr and Sonarr about 200–300 MB each, Immich 0.8–1.5 GB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB, and Immich or a local AI model 6 GB or more. Modules you turn off use nothing."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I install other Linux software?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Homedroid includes Alpine Linux, so you can install packages from Alpine's repository with apk. Open Terminal in the dashboard, choose Alpine Linux and run, for example, apk add python3 git. Over SSH, type alpine first. Packages stay installed through restarts and Homedroid updates."
       }
     },
     {
@@ -238,6 +262,21 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": "Install Alpine Linux packages on an Android phone with Homedroid",
+  "description": "Open the Homedroid dashboard terminal, choose Alpine Linux and install git and htop with apk add. No root needed.",
+  "thumbnailUrl": "https://homedroid.seltiv.com/media/dashboard-alpine-packages.webp",
+  "contentUrl": "https://homedroid.seltiv.com/media/dashboard-alpine-packages.webm",
+  "uploadDate": "2026-11-26",
+  "duration": "PT15S",
+  "width": 1280,
+  "height": 800,
+  "embedUrl": "https://homedroid.seltiv.com/#packages"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
   "@type": "HowTo",
   "name": "Set up Homedroid on an old Android phone",
   "description": "Install Homedroid and open its home server dashboard.",
@@ -246,7 +285,7 @@
       "@type": "HowToStep",
       "position": 1,
       "name": "Install the APK",
-      "text": "Download the 0.9.5 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.",
+      "text": "Download the 0.9.6 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.",
       "url": "https://homedroid.seltiv.com/#start"
     },
     {
@@ -300,6 +339,7 @@
 <img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
 </a>
 <nav aria-label="Main">
+<a href="/guides/">Guides</a>
 <a href="/#features">Features</a>
 <a href="/#tour">Tour</a>
 <a href="/desktop/">Desktop</a>
@@ -315,7 +355,7 @@
 <div class="hero-copy">
 <a class="release-pill" href="#new">
 <span class="status-dot">
-</span> 0.9.5 beta is here <span aria-hidden="true">↗</span>
+</span> 0.9.6 beta is here <span aria-hidden="true">↗</span>
 </a>
 <h1>Turn your old<br>Android phone<br>into a <em>home server.</em>
 </h1>
@@ -326,7 +366,7 @@
 <a class="button" href="#tour">Explore the dashboard <span aria-hidden="true">↗</span>
 </a>
 </div>
-<p class="fine">Android 10+ · Free &amp; open source · No Termux needed</p>
+<p class="fine">Android 10+ · Free &amp; open source · No Termux needed · <a href="#privacy">No telemetry</a></p>
 </div>
 <div class="hero-visual">
 <div class="browser-frame">
@@ -338,7 +378,7 @@
 <img src="/media/dashboard-overview.webp" alt="Homedroid web dashboard managing an old Android phone as a home server" width="1440" height="900" class="" fetchpriority="high">
 </div>
 <div class="phone-frame">
-<img src="/media/phone-overview-oled.webp" alt="Homedroid 0.9.5 Android app with OLED black theme and server vitals" width="540" height="1200" class="" fetchpriority="high">
+<img src="/media/phone-overview-oled.webp" alt="Homedroid 0.9.6 Android app with OLED black theme and server vitals" width="540" height="1200" class="" fetchpriority="high">
 </div>
 <div class="visual-note">
 <span class="status-dot">
@@ -347,24 +387,47 @@
 </section>
 <div class="app-strip">
 <div class="wrap">
-<span>RUNS ON YOUR PHONE</span>
-<b>Jellyfin</b>
-<b>Immich</b>
-<b>qBittorrent</b>
-<b>Home Assistant</b>
-<b>AdGuard Home</b>
-<b>llama.cpp</b>
-<b>Caddy</b>
+<span id="runs-label">RUNS ON YOUR PHONE</span>
+<ul class="app-logos" aria-labelledby="runs-label">
+<li><img src="/img/apps/jellyfin.svg" alt="Jellyfin" title="Jellyfin" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/qbittorrent.svg" alt="qBittorrent" title="qBittorrent" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/prowlarr.svg" alt="Prowlarr" title="Prowlarr" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/radarr.svg" alt="Radarr" title="Radarr" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/sonarr.svg" alt="Sonarr" title="Sonarr" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/seerr.svg" alt="Jellyseerr (Seerr)" title="Jellyseerr (Seerr)" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/immich.svg" alt="Immich" title="Immich" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/homeassistant.svg" alt="Home Assistant" title="Home Assistant" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/adguard.svg" alt="AdGuard Home" title="AdGuard Home" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/stalwart.svg" alt="Stalwart mail server" title="Stalwart mail server" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/llamacpp.svg" alt="llama.cpp" title="llama.cpp" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/caddy.svg" alt="Caddy" title="Caddy" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/cloudflare.svg" alt="Cloudflare Tunnel" title="Cloudflare Tunnel" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/tailscale.svg" alt="Tailscale" title="Tailscale" width="28" height="28" loading="lazy" decoding="async"></li>
+<li><img src="/img/apps/alpinelinux.svg" alt="Alpine Linux" title="Alpine Linux" width="28" height="28" loading="lazy" decoding="async"></li>
+</ul>
 </div>
 </div>
+<section class="wrap privacy-band" id="privacy">
+<div>
+<span class="eyebrow">ZERO TELEMETRY</span>
+<h2>Your server reports<br>to you. Only you.</h2>
+</div>
+<div class="privacy-points">
+<p><strong>Nothing is collected.</strong> Homedroid has no analytics, no tracking, no crash reporting and no account to sign up for. It doesn’t send anything about you, your phone or your files to us or anyone else. There is no “us” server to send it to.</p>
+<p><strong>It only goes online for things you turn on.</strong> Downloading an app or an AI model you picked, your own Cloudflare Tunnel, Tailscale or dynamic DNS, notifications you set up, and checking GitHub for a newer version when the dashboard shows updates. That check is a plain request for the public release list, with no ID attached.</p>
+<p><strong>You can check.</strong> Homedroid is GPL-3.0 software with no third-party libraries in the app. Every connection it makes is in the <a href="https://github.com/sudiptacmd/homedroid">source code</a>. The apps you install keep their own settings: Homedroid turns off the usage reporting of Radarr, Sonarr and Prowlarr for you.</p>
+</div>
+</section>
 <section class="wrap new-band" id="new">
 <div>
-<span class="eyebrow">WHAT’S NEW / 0.9.5 BETA</span>
+<span class="eyebrow">WHAT’S NEW / 0.9.6 BETA</span>
 <h2>More useful on the desk.<br>More capable under it.</h2>
-<a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.5-beta.md">Read the release notes <span aria-hidden="true">↗</span>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.6-beta.md">Read the release notes <span aria-hidden="true">↗</span>
 </a>
 </div>
 <div class="new-items">
+<p>
+<strong>Movies and TV on autopilot.</strong> New in 0.9.6: Prowlarr, Radarr, Sonarr and Jellyseerr. Ask for a film or a show and the phone finds it, downloads it with qBittorrent and files it in Jellyfin. Homedroid connects the apps for you.</p>
 <p>
 <strong>A new app and dashboard.</strong> Material 3, wallpaper colours on Android 12+, OLED black and burn-in protection. Six dashboard layouts and 13 themes.</p>
 <p>
@@ -390,8 +453,8 @@
 <article class="feature">
 <span class="eyebrow">01 / MEDIA & STORAGE</span>
 <h3>Jellyfin on your Android phone</h3>
-<p>Stream your library with MediaCodec hardware encoding. Add qBittorrent to download into the same Media folder. Immich backs up photos, with machine learning disabled.</p>
-<span class="feature-meta">Jellyfin · Immich · qBittorrent</span>
+<p>Stream your library with MediaCodec hardware encoding. Add qBittorrent, Radarr and Sonarr and new films and episodes land in it on their own; Jellyseerr is the request page. Immich backs up photos, with machine learning disabled.</p>
+<span class="feature-meta">Jellyfin · Radarr · Sonarr · Immich</span>
 </article>
 <article class="feature">
 <span class="eyebrow">02 / YOUR FILES</span>
@@ -444,118 +507,333 @@
 </div>
 <p class="fine">Guides: <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/deploy-hooks.md">deploy hooks and pipelines</a>, <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mcp.md">MCP setup</a>, <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md">mail server</a> and <a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md">Wi-Fi repeater</a>.</p>
 </section>
-<section class="section tour-section" id="tour">
-<div class="wrap">
+<section class="wrap section" id="packages">
 <div class="section-head">
 <div>
-<span class="eyebrow">A LOOK INSIDE</span>
-<h2>Your server, in a browser.</h2>
+<span class="eyebrow">BEYOND THE APP LIBRARY</span>
+<h2>Need another tool?<br>apk add it.</h2>
 </div>
-<p>Use a laptop, phone or wall tablet. The dashboard ships inside the APK and works on your LAN without an internet connection.</p>
+<p>Homedroid runs a full Alpine Linux, so thousands of packages from Alpine’s repository are one command away: Python, Node.js, git, ffmpeg, rclone, htop. Open <strong>Terminal</strong> in the dashboard, choose <strong>Alpine Linux</strong> and install what you need. Over SSH, type <code>alpine</code> first. Packages stay installed through restarts and Homedroid updates.</p>
 </div>
+<figure class="packages-video">
+<video controls playsinline preload="none" poster="/media/dashboard-alpine-packages.webp" width="1280" height="800" aria-label="Installing git and htop from Alpine Linux in the Homedroid dashboard terminal">
+<source src="/media/dashboard-alpine-packages.webm" type="video/webm">
+</video>
+<figcaption>Installing git and htop with <code>apk add</code> in the dashboard terminal · recorded on a Homedroid emulator · silent</figcaption>
+</figure>
+<p class="fine">Find a package with <code>apk search name</code>, or browse <a href="https://pkgs.alpinelinux.org/packages">pkgs.alpinelinux.org</a>. Remove one with <code>apk del name</code>.</p>
+</section>
+<section class="wrap section" id="requirements">
+<div class="section-head">
+<div>
+<span class="eyebrow">WHAT IT NEEDS</span>
+<h2>How much phone<br>each module needs.</h2>
+</div>
+<p>A phone with 3 GB of RAM runs the file server, Jellyfin, qBittorrent and a few small services comfortably. The whole media automation set wants 4 GB; Immich or a local AI model want 6 GB or more. Modules you turn off use nothing.</p>
+</div>
+<div class="table-scroll">
+<table class="needs">
+<caption>Typical memory while running and CPU while busy. Idle figures measured on an emulator; Homedroid itself takes about 75 MB.</caption>
+<thead>
+<tr>
+<th scope="col">Module</th>
+<th scope="col">Memory</th>
+<th scope="col">CPU</th>
+<th scope="col">When it works hardest</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">SSH &amp; SFTP</th>
+<td>about 10 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>A little more while copying files over SFTP.</td>
+</tr>
+<tr>
+<th scope="row">Web hosting (Caddy)</th>
+<td>40–60 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Grows with traffic to your sites.</td>
+</tr>
+<tr>
+<th scope="row">Cloudflare Tunnel</th>
+<td>30–60 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Grows with the traffic it carries.</td>
+</tr>
+<tr>
+<th scope="row">Tailscale</th>
+<td>40–80 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Encrypts traffic in software, so large transfers keep a core busy.</td>
+</tr>
+<tr>
+<th scope="row">IPCam</th>
+<td>50–120 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Only while streaming or recording. Uses more battery and warms the phone.</td>
+</tr>
+<tr>
+<th scope="row">Local AI (llama.cpp)</th>
+<td>model size + 0.3–1 GB</td>
+<td><span class="cpu high">high</span></td>
+<td>Every core while it answers, nothing in between. A 1.5B model needs about 1.5 GB in all, a 3B model about 2.5 GB.</td>
+</tr>
+<tr>
+<th scope="row">Wake on LAN</th>
+<td>under 1 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Runs only while sending a wake-up packet.</td>
+</tr>
+<tr>
+<th scope="row">Wi-Fi repeater</th>
+<td>10–30 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Grows with the traffic of the devices on its network.</td>
+</tr>
+<tr>
+<th scope="row">Network tools</th>
+<td>about 5 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Scans and speed tests run only when you start them.</td>
+</tr>
+<tr>
+<th scope="row">Jellyfin</th>
+<td>200–450 MB</td>
+<td><span class="cpu high">high</span></td>
+<td>Light when your devices play files as they are. Converting video decodes it in software and can use every core.</td>
+</tr>
+<tr>
+<th scope="row">qBittorrent</th>
+<td>40–150 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Grows with the number of active torrents. Checking a finished download is busy for a moment.</td>
+</tr>
+<tr>
+<th scope="row">Prowlarr</th>
+<td>150–200 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Busy for a few seconds during each search.</td>
+</tr>
+<tr>
+<th scope="row">Radarr</th>
+<td>180–300 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Busier while importing downloads or rescanning a large library.</td>
+</tr>
+<tr>
+<th scope="row">Sonarr</th>
+<td>200–300 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Busier while importing downloads or rescanning a large library.</td>
+</tr>
+<tr>
+<th scope="row">Jellyseerr (Seerr)</th>
+<td>190–300 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Mostly idle; looks up movies and shows when you browse.</td>
+</tr>
+<tr>
+<th scope="row">Home Assistant</th>
+<td>300–500 MB</td>
+<td><span class="cpu medium">medium</span></td>
+<td>Depends on your integrations; low for most homes.</td>
+</tr>
+<tr>
+<th scope="row">Immich</th>
+<td>0.8–1.5 GB</td>
+<td><span class="cpu high">high</span></td>
+<td>Thumbnails and video conversion after uploads use every core, then it settles. Face and object recognition stay off.</td>
+</tr>
+<tr>
+<th scope="row">AdGuard Home</th>
+<td>40–100 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Bigger blocklists use more memory.</td>
+</tr>
+<tr>
+<th scope="row">Mail (Stalwart)</th>
+<td>80–200 MB</td>
+<td><span class="cpu low">low</span></td>
+<td>Spam checks add a little for each message.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="fine">The dashboard shows the same figures on each module card, and the phone app on each app.</p>
+</section>
+<section class="tour-section" id="tour">
+<div class="wrap section">
+<div class="section-head"><div><span class="eyebrow">THE WEB DASHBOARD</span><h2>Every page, from one browser.</h2></div><p>Check the phone, install apps and manage your server. Explore all 21 pages below, grouped like the sidebar, or follow a <a href="/guides/">video setup guide</a>.</p></div>
+<nav class="tour-jump" aria-label="Dashboard tour groups"><a href="#tour-overview">Overview</a><a href="#tour-apps">Apps &amp; services</a><a href="#tour-data">Files &amp; data</a><a href="#tour-network">Network &amp; access</a><a href="#tour-devices">Devices</a><a href="#tour-assistants">AI &amp; assistants</a><a href="#tour-settings">Settings</a></nav>
+<section class="tour-group" aria-labelledby="tour-overview"><h3 id="tour-overview">Overview</h3>
 <div class="gallery" data-gallery>
-<div class="tablist" aria-label="Dashboard screenshots" hidden>
+<div class="tablist" aria-label="Overview pages" hidden>
 <button type="button" data-tab="overview" aria-controls="panel-overview">Overview</button>
-<button type="button" data-tab="layouts" aria-controls="panel-layouts">Layouts & themes</button>
-<button type="button" data-tab="apps" aria-controls="panel-apps">Apps</button>
-<button type="button" data-tab="hosting" aria-controls="panel-hosting">Deployments</button>
-<button type="button" data-tab="databases" aria-controls="panel-databases">Databases</button>
-<button type="button" data-tab="domains" aria-controls="panel-domains">Domains</button>
-<button type="button" data-tab="mcp" aria-controls="panel-mcp">MCP</button>
-<button type="button" data-tab="mail" aria-controls="panel-mail">Mail</button>
-<button type="button" data-tab="desktop" aria-controls="panel-desktop">Desktop & MacroPads</button>
-<button type="button" data-tab="files" aria-controls="panel-files">Files & terminal</button>
-<button type="button" data-tab="customize" aria-controls="panel-customize">Customize</button>
 </div>
 <figure id="panel-overview" data-panel="overview">
-<picture>
-<source media="(max-width: 600px)" srcset="/media/dashboard-overview-mobile.webp">
-<img src="/media/dashboard-overview.webp" alt="Overview: Live server health, files and services in one browser." width="1440" height="900" class="" loading="lazy" decoding="async">
-</picture>
-<figcaption>
-<strong>Overview</strong> Live server health, files and services in one browser.</figcaption>
-</figure>
-<figure id="panel-layouts" data-panel="layouts">
-<picture>
-<source media="(max-width: 600px)" srcset="/media/dashboard-overview-light-mobile.webp">
-<img src="/media/dashboard-overview-light.webp" alt="Layouts & themes: Six layouts, 13 themes, font choices and a customizable overview. Ctrl/Cmd+K opens the command palette." width="1440" height="900" class="" loading="lazy" decoding="async">
-</picture>
-<figcaption>
-<strong>Layouts & themes</strong> Six layouts, 13 themes, font choices and a customizable overview. Ctrl/Cmd+K opens the command palette.</figcaption>
-</figure>
-<figure id="panel-apps" data-panel="apps">
-<picture>
-<source media="(max-width: 600px)" srcset="/media/dashboard-modules-mobile.webp">
-<img src="/media/dashboard-modules.webp" alt="Apps: Install only what you need. Update apps from the phone or dashboard." width="1440" height="900" class="" loading="lazy" decoding="async">
-</picture>
-<figcaption>
-<strong>Apps</strong> Install only what you need. Update apps from the phone or dashboard.</figcaption>
-</figure>
-<figure id="panel-hosting" data-panel="hosting">
-<picture>
-<source media="(max-width: 600px)" srcset="/media/dashboard-deploys-mobile.webp">
-<img src="/media/dashboard-deploys.webp" alt="Deployments: a build pipeline with install, test and lint steps and its recent runs." width="1440" height="900" class="" loading="lazy" decoding="async">
-</picture>
-<figcaption>
-<strong>Deployments</strong> Git repositories, build commands, environment variables, logs and a Pipelines tab with run history.</figcaption>
-</figure>
-<figure id="panel-databases" data-panel="databases">
-<picture>
-<source media="(max-width: 600px)" srcset="/media/dashboard-databases-mobile.webp">
-<img src="/media/dashboard-databases.webp" alt="Databases: SQLite schema diagram showing tables and foreign keys." width="1440" height="900" class="" loading="lazy" decoding="async">
-</picture>
-<figcaption>
-<strong>Databases</strong> Browse the SQLite files your apps keep, with a schema diagram, rows and a SQL console.</figcaption>
-</figure>
-<figure id="panel-domains" data-panel="domains">
-<picture>
-<source media="(max-width: 600px)" srcset="/media/dashboard-domains-mobile.webp">
-<img src="/media/dashboard-domains.webp" alt="Domains: custom domains with verification status." width="1440" height="900" class="" loading="lazy" decoding="async">
-</picture>
-<figcaption>
-<strong>Domains</strong> Add your own domain and verify it. Dynamic DNS, firewall and request logs sit beside it.</figcaption>
-</figure>
-<figure id="panel-mcp" data-panel="mcp">
-<picture>
-<source media="(max-width: 600px)" srcset="/media/dashboard-mcp-mobile.webp">
-<img src="/media/dashboard-mcp.webp" alt="MCP: server addresses, token and the allow-changes switch." width="1440" height="900" class="" loading="lazy" decoding="async">
-</picture>
-<figcaption>
-<strong>MCP</strong> Let Claude, Cursor or VS Code manage the server. Write tools stay off until you allow them.</figcaption>
-</figure>
-<figure id="panel-mail" data-panel="mail">
-<picture>
-<source media="(max-width: 600px)" srcset="/media/dashboard-mail-mobile.webp">
-<img src="/media/dashboard-mail.webp" alt="Mail: DNS records for a Stalwart mail server with copy buttons." width="1440" height="900" class="" loading="lazy" decoding="async">
-</picture>
-<figcaption>
-<strong>Mail</strong> Guided setup for Stalwart, the DNS records to copy, health checks and mail app settings.</figcaption>
-</figure>
-<figure id="panel-desktop" data-panel="desktop">
-<picture>
-<source media="(max-width: 600px)" srcset="/media/dashboard-desktop-mobile.webp">
-<img src="/media/dashboard-desktop.webp" alt="Desktop and MacroPads: the deck editor with media keys and shortcuts." width="1440" height="900" class="" loading="lazy" decoding="async">
-</picture>
-<figcaption>
-<strong>Desktop & MacroPads</strong> Pair computers, edit the MacroPads deck and start the phone webcam.</figcaption>
-</figure>
-<figure id="panel-files" data-panel="files">
-<picture>
-<source media="(max-width: 600px)" srcset="/media/dashboard-files-mobile.webp">
-<img src="/media/dashboard-files.webp" alt="Files & terminal: Browse the phone’s storage. The web terminal works even with SSH switched off." width="1440" height="900" class="" loading="lazy" decoding="async">
-</picture>
-<figcaption>
-<strong>Files & terminal</strong> Browse the phone’s storage. The web terminal works even with SSH switched off.</figcaption>
-</figure>
-<figure id="panel-customize" data-panel="customize">
-<picture>
-<source media="(max-width: 600px)" srcset="/media/dashboard-customize-mobile.webp">
-<img src="/media/dashboard-customize.webp" alt="Customize: Choose the shell, colours, type and overview widgets. Preferences are stored on the phone." width="1440" height="900" class="" loading="lazy" decoding="async">
-</picture>
-<figcaption>
-<strong>Customize</strong> Choose the shell, colours, type and overview widgets. Preferences are stored on the phone.</figcaption>
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-overview-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-overview.webp" alt="Homedroid dashboard: Overview page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Overview</strong><p>See CPU load, memory, storage, battery and temperature alongside service status. Use Customize to choose the layout, theme and overview widgets.</p><a href="/guides/getting-started/">Video guide: Overview</a></figcaption>
 </figure>
 </div>
+</section>
+<section class="tour-group" aria-labelledby="tour-apps"><h3 id="tour-apps">Apps &amp; services</h3>
+<div class="gallery" data-gallery>
+<div class="tablist" aria-label="Apps &amp; services pages" hidden>
+<button type="button" data-tab="modules" aria-controls="panel-modules">Modules</button>
+<button type="button" data-tab="deploys" aria-controls="panel-deploys">Deployments</button>
+<button type="button" data-tab="mail" aria-controls="panel-mail">Mail</button>
+</div>
+<figure id="panel-modules" data-panel="modules">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-modules-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-modules.webp" alt="Homedroid dashboard: Modules page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Modules</strong><p>See installed apps, running states, ports and typical memory and CPU use. Install or update apps, switch services on or off, and open their interfaces.</p><a href="/guides/apps/">Video guide: Modules</a></figcaption>
+</figure>
+<figure id="panel-deploys" data-panel="deploys">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-deploys-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-deploys.webp" alt="Homedroid dashboard: Deployments page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Deployments</strong><p>Create a deployment from Git or an uploaded archive and set its runtime, commands and environment. Open a deployment’s Pipelines tab for step output, or Deploy hooks for CI and webhook settings.</p><a href="/guides/deploy/">Video guide: Deployments</a></figcaption>
+</figure>
+<figure id="panel-mail" data-panel="mail">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-mail-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-mail.webp" alt="Homedroid dashboard: Mail page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Mail</strong><p>Follow Stalwart setup, copy DNS records and check delivery settings. Add mailboxes, replace a certificate and copy the IMAP and SMTP settings for a mail app.</p><a href="/guides/mail/">Video guide: Mail</a></figcaption>
+</figure>
+</div>
+</section>
+<section class="tour-group" aria-labelledby="tour-data"><h3 id="tour-data">Files &amp; data</h3>
+<div class="gallery" data-gallery>
+<div class="tablist" aria-label="Files &amp; data pages" hidden>
+<button type="button" data-tab="files" aria-controls="panel-files">Files</button>
+<button type="button" data-tab="databases" aria-controls="panel-databases">Databases</button>
+<button type="button" data-tab="documents" aria-controls="panel-documents">Documents</button>
+</div>
+<figure id="panel-files" data-panel="files">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-files-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-files.webp" alt="Homedroid dashboard: Files page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Files</strong><p>Browse the phone and accessible removable storage, preview files and see free space. Upload files or whole folders, create folders and download a folder as ZIP.</p><a href="/guides/files/">Video guide: Files</a></figcaption>
+</figure>
+<figure id="panel-databases" data-panel="databases">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-databases-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-databases.webp" alt="Homedroid dashboard: Databases page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Databases</strong><p>Inspect SQLite tables, rows and schema relationships, or query them in the SQL console. Writes need confirmation and are refused while the owning app is running.</p></figcaption>
+</figure>
+<figure id="panel-documents" data-panel="documents">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-documents-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-documents.webp" alt="Homedroid dashboard: Documents page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Documents</strong><p>Browse JSON document collections and inspect their contents. Create collections, add or edit documents, and remove records you no longer need.</p></figcaption>
+</figure>
+</div>
+</section>
+<section class="tour-group" aria-labelledby="tour-network"><h3 id="tour-network">Network &amp; access</h3>
+<div class="gallery" data-gallery>
+<div class="tablist" aria-label="Network &amp; access pages" hidden>
+<button type="button" data-tab="network" aria-controls="panel-network">Network</button>
+<button type="button" data-tab="wol" aria-controls="panel-wol">Wake on LAN</button>
+<button type="button" data-tab="domains" aria-controls="panel-domains">Domains</button>
+<button type="button" data-tab="request-logs" aria-controls="panel-request-logs">Request logs</button>
+<button type="button" data-tab="ddns" aria-controls="panel-ddns">Dynamic DNS</button>
+<button type="button" data-tab="firewall" aria-controls="panel-firewall">Firewall</button>
+<button type="button" data-tab="repeater" aria-controls="panel-repeater">Wi-Fi repeater</button>
+</div>
+<figure id="panel-network" data-panel="network">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-network-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-network.webp" alt="Homedroid dashboard: Network page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Network</strong><p>Inspect network interfaces and scan for devices on the LAN. Run connection tests or a speed test when you need to diagnose a slow link.</p></figcaption>
+</figure>
+<figure id="panel-wol" data-panel="wol">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-wol-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-wol.webp" alt="Homedroid dashboard: Wake on LAN page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Wake on LAN</strong><p>See saved computers and whether they answer on the network. Add a device’s MAC and network details, then send it a wake-up packet.</p></figcaption>
+</figure>
+<figure id="panel-domains" data-panel="domains">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-domains-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-domains.webp" alt="Homedroid dashboard: Domains page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Domains</strong><p>See which custom hostnames are verified and where they send visitors. Add a name, select its app, deployment, folder or port, and edit path routes or headers.</p><a href="/guides/domains/">Video guide: Domains</a></figcaption>
+</figure>
+<figure id="panel-request-logs" data-panel="request-logs">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-request-logs-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-request-logs.webp" alt="Homedroid dashboard: Request logs page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Request logs</strong><p>Inspect web requests with their paths and response status. Filter the entries to narrow down errors or traffic to a particular site.</p></figcaption>
+</figure>
+<figure id="panel-ddns" data-panel="ddns">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-ddns-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-ddns.webp" alt="Homedroid dashboard: Dynamic DNS page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Dynamic DNS</strong><p>See the last update result for each DuckDNS or Cloudflare entry. Add a record and provider token so its address can follow changes to your public IP.</p><a href="/guides/domains/">Video guide: Dynamic DNS</a></figcaption>
+</figure>
+<figure id="panel-firewall" data-panel="firewall">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-firewall-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-firewall.webp" alt="Homedroid dashboard: Firewall page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Firewall</strong><p>Review Allow and Deny rules for the listed services and test how an address would be treated. Edit the rules and save them; a warning catches changes that would block your dashboard access.</p><a href="/guides/domains/">Video guide: Firewall</a></figcaption>
+</figure>
+<figure id="panel-repeater" data-panel="repeater">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-repeater-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-repeater.webp" alt="Homedroid dashboard: Wi-Fi repeater page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Wi-Fi repeater</strong><p>See the network QR code, proxy settings, connected clients and traffic totals. Change the network settings and use the displayed proxy address on joining devices.</p><a href="/guides/wifi-repeater/">Video guide: Wi-Fi repeater</a></figcaption>
+</figure>
+</div>
+</section>
+<section class="tour-group" aria-labelledby="tour-devices"><h3 id="tour-devices">Devices</h3>
+<div class="gallery" data-gallery>
+<div class="tablist" aria-label="Devices pages" hidden>
+<button type="button" data-tab="camera" aria-controls="panel-camera">IPCam</button>
+<button type="button" data-tab="cluster" aria-controls="panel-cluster">Cluster</button>
+<button type="button" data-tab="desktop" aria-controls="panel-desktop">Desktop &amp; MacroPads</button>
+</div>
+<figure id="panel-camera" data-panel="camera">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-camera-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-camera.webp" alt="Homedroid dashboard: IPCam page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>IPCam</strong><p>View the phone camera and inspect captures, recordings and monitoring state. Adjust supported camera controls, monitoring settings and capture storage limits after enabling camera access on the phone.</p></figcaption>
+</figure>
+<figure id="panel-cluster" data-panel="cluster">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-cluster-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-cluster.webp" alt="Homedroid dashboard: Cluster page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Cluster</strong><p>See paired phones and where apps are running. Pair another phone, select a phone to manage, or move an app and optionally its library between phones.</p></figcaption>
+</figure>
+<figure id="panel-desktop" data-panel="desktop">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-desktop-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-desktop.webp" alt="Homedroid dashboard: Desktop &amp; MacroPads page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Desktop &amp; MacroPads</strong><p>See paired computers and their connection state, or generate a pairing code. Edit profiles, pages, key actions and the look of the MacroPads deck, then save it to the phone.</p><a href="/guides/desktop/">Video guide: Desktop &amp; MacroPads</a></figcaption>
+</figure>
+</div>
+</section>
+<section class="tour-group" aria-labelledby="tour-assistants"><h3 id="tour-assistants">AI &amp; assistants</h3>
+<div class="gallery" data-gallery>
+<div class="tablist" aria-label="AI &amp; assistants pages" hidden>
+<button type="button" data-tab="ai" aria-controls="panel-ai">AI</button>
+<button type="button" data-tab="mcp" aria-controls="panel-mcp">MCP</button>
+</div>
+<figure id="panel-ai" data-panel="ai">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-ai-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-ai.webp" alt="Homedroid dashboard: AI page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>AI</strong><p>Chat with a local or configured cloud model and see the local runtime’s status. Download models, change context and thread settings, or copy the API connection details for another app.</p><a href="/guides/ai/">Video guide: AI</a></figcaption>
+</figure>
+<figure id="panel-mcp" data-panel="mcp">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-mcp-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-mcp.webp" alt="Homedroid dashboard: MCP page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>MCP</strong><p>Copy assistant connection settings and review available tools and audit entries. Turn the server on, rotate its token or allow changes; the dashboard agent holds its own write actions for approval.</p><a href="/guides/mcp/">Video guide: MCP</a></figcaption>
+</figure>
+</div>
+</section>
+<section class="tour-group" aria-labelledby="tour-settings"><h3 id="tour-settings">Settings</h3>
+<div class="gallery" data-gallery>
+<div class="tablist" aria-label="Settings pages" hidden>
+<button type="button" data-tab="ssh" aria-controls="panel-ssh">Terminal &amp; SSH</button>
+<button type="button" data-tab="settings" aria-controls="panel-settings">Settings</button>
+</div>
+<figure id="panel-ssh" data-panel="ssh">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-terminal-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-terminal.webp" alt="Homedroid dashboard: Terminal &amp; SSH page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Terminal &amp; SSH</strong><p>Open a Phone shell or Alpine Linux session in the browser, and see session history. Add or remove SSH public keys for access from your computer.</p><a href="/guides/alpine-packages/">Video guide: Terminal &amp; SSH</a></figcaption>
+</figure>
+<figure id="panel-settings" data-panel="settings">
+<picture><source media="(max-width:600px)" srcset="/media/dashboard-settings-mobile.webp" width="390" height="844">
+<img src="/media/dashboard-settings.webp" alt="Homedroid dashboard: Settings page" width="1440" height="900" loading="lazy" decoding="async"></picture>
+<figcaption><strong>Settings</strong><p>Review server settings and app update availability. Change configuration values and save them, or check for a newer Homedroid release.</p><a href="/guides/getting-started/">Video guide: Settings</a></figcaption>
+</figure>
+</div>
+</section>
 <div class="clip-grid">
 <figure>
 <video controls playsinline preload="none" poster="/media/dashboard-overview.webp" width="1280" height="800" aria-label="Dashboard walkthrough: overview, apps, deployments, files and terminal">
@@ -564,14 +842,19 @@
 <figcaption>Dashboard tour · demo data · silent screen recording</figcaption>
 </figure>
 <figure>
-<video controls playsinline preload="none" poster="/media/dashboard-overview-light.webp" width="1280" height="800" aria-label="Dashboard layout and theme walkthrough">
-<source src="/media/dashboard-layouts.webm" type="video/webm">
+<video controls playsinline preload="none" poster="/media/guide-customize.webp" width="1280" height="800" aria-label="Every dashboard layout and preset">
+<source src="/media/guide-customize.webm" type="video/webm">
 </video>
-<figcaption>Switch layouts and themes · silent screen recording</figcaption>
+<figcaption>All six layouts and five presets · <a href="/guides/customize/">themes, fonts and how-to</a></figcaption>
+</figure>
+<figure>
+<video controls playsinline preload="none" poster="/media/guide-customize-themes.webp" width="1280" height="800" aria-label="All 13 dashboard themes and the interface fonts">
+<source src="/media/guide-customize-themes.webm" type="video/webm">
+</video>
+<figcaption>All 13 themes, then the interface fonts · silent screen recording</figcaption>
 </figure>
 </div>
-<p class="fine">More screenshots: <a href="/media/dashboard-overview-rail.webp">Midnight / rail layout</a> · <a href="/media/dashboard-terminal.webp">web terminal</a> · <a href="/media/dashboard-ai.webp">local AI</a> · <a href="/media/dashboard-cluster.webp">phone cluster</a> · <a href="/media/dashboard-overview-mobile.webp">mobile dashboard</a>
-</p>
+<p class="fine">Dashboard screenshots use demo data. Video guides include written steps and requirements.</p>
 </div>
 </section>
 <section class="wrap section">
@@ -588,7 +871,7 @@
 <figcaption>Overview / wallpaper colours</figcaption>
 </figure>
 <figure>
-<img src="/media/phone-apps-light.webp" alt="Homedroid app library with Jellyfin and Immich" width="540" height="1200" class="" loading="lazy" decoding="async">
+<img src="/media/phone-apps-light.webp" alt="Homedroid app library: Jellyfin and qBittorrent running, with typical memory and CPU use on each app" width="540" height="1200" class="" loading="lazy" decoding="async">
 <figcaption>Apps / install and update</figcaption>
 </figure>
 <figure>
@@ -665,38 +948,38 @@
 </div>
 <p>Linux uses v4l2loopback. Windows 11 virtual camera support is experimental. On macOS and Windows 10, use the local stream in OBS and start OBS Virtual Camera. macOS input is experimental and has not been tested on hardware.</p>
 <div class="downloads">
-<a class="download" data-os="linux" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-linux-x86_64.tar.gz">
+<a class="download" data-os="linux" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-desktop-v0.9.6-beta-linux-x86_64.tar.gz">
 <span>Linux</span>
 <strong>x86_64 <span aria-hidden="true">↗</span>
 </strong>
-<small>tar.gz · <span class="os-hint">0.9.5 beta</span>
+<small>tar.gz · <span class="os-hint">0.9.6 beta</span>
 </small>
 </a>
-<a class="download" data-os="linux" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-linux-aarch64.tar.gz">
+<a class="download" data-os="linux" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-desktop-v0.9.6-beta-linux-aarch64.tar.gz">
 <span>Linux</span>
 <strong>ARM64 <span aria-hidden="true">↗</span>
 </strong>
-<small>tar.gz · <span class="os-hint">0.9.5 beta</span>
+<small>tar.gz · <span class="os-hint">0.9.6 beta</span>
 </small>
 </a>
-<a class="download" data-os="windows" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-windows-x86_64.zip">
+<a class="download" data-os="windows" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-desktop-v0.9.6-beta-windows-x86_64.zip">
 <span>Windows</span>
 <strong>x86_64 <span aria-hidden="true">↗</span>
 </strong>
-<small>zip · <span class="os-hint">0.9.5 beta</span>
+<small>zip · <span class="os-hint">0.9.6 beta</span>
 </small>
 </a>
-<a class="download" data-os="macos" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-desktop-v0.9.5-beta-macos-universal.tar.gz">
+<a class="download" data-os="macos" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-desktop-v0.9.6-beta-macos-universal.tar.gz">
 <span>macOS</span>
 <strong>Universal <span aria-hidden="true">↗</span>
 </strong>
-<small>tar.gz · <span class="os-hint">0.9.5 beta</span>
+<small>tar.gz · <span class="os-hint">0.9.6 beta</span>
 </small>
 </a>
 </div>
 <p class="fine" id="os-note">Choose your operating system and CPU. All four downloads stay available.</p>
 <div class="actions">
-<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">Get Homedroid Desktop <span aria-hidden="true">↓</span>
+<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">Get Homedroid Desktop <span aria-hidden="true">↓</span>
 </a>
 <a href="/desktop/">Webcam setup and platform notes <span aria-hidden="true">↗</span>
 </a>
@@ -766,7 +1049,7 @@
 <li>
 <span>01</span>
 <h3>Install the APK</h3>
-<p>Download the 0.9.5 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.</p>
+<p>Download the 0.9.6 beta APK for your phone. Allow installation from your browser or file manager, then open Homedroid.</p>
 </li>
 <li>
 <span>02</span>
@@ -792,23 +1075,23 @@
 </div>
 </section>
 <section class="wrap section download-section" id="download">
-<span class="eyebrow">HOMEDROID 0.9.5 BETA</span>
+<span class="eyebrow">HOMEDROID 0.9.6 BETA</span>
 <h2>Give the old phone<br>something to do.</h2>
 <p>Android 10+, no root. Per-ABI APKs are about 50 to 60 MB and the universal APK is larger. Apps and AI models download separately.</p>
 <div class="actions">
-<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-arm64-v8a.apk">Download APK · ARM64 <span aria-hidden="true">↓</span>
+<a class="button primary" href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-0.9.6-beta-arm64-v8a.apk">Download APK · ARM64 <span aria-hidden="true">↓</span>
 </a>
 <a class="button star-button" href="https://github.com/sudiptacmd/homedroid">★ Star on GitHub<span class="star-count" data-stars hidden></span>
 </a>
 </div>
 <div class="apk-alternatives">
-<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-armeabi-v7a.apk">32-bit ARM</a>
-<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-x86_64.apk">x86_64 / emulators</a>
-<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/homedroid-0.9.5-beta-universal.apk">Universal APK</a>
-<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.5-beta/SHA256SUMS">SHA256SUMS</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-0.9.6-beta-armeabi-v7a.apk">32-bit ARM</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-0.9.6-beta-x86_64.apk">x86_64 / emulators</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/homedroid-0.9.6-beta-universal.apk">Universal APK</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/download/v0.9.6-beta/SHA256SUMS">SHA256SUMS</a>
 </div>
 <p class="fine star-ask">Homedroid is free and open source. If it gave your old phone a new job, a star on GitHub helps other people find it.</p>
-<p class="fine">Already installed? Use Settings → App updates in the dashboard. Check <a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">the beta release</a> for availability and release notes.</p>
+<p class="fine">Already installed? Use Settings → App updates in the dashboard. Check <a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">the beta release</a> for availability and release notes.</p>
 </section>
 <section class="wrap section faq-section" id="faq">
 <div>
@@ -828,8 +1111,20 @@
 <p>No. Homedroid runs as an ordinary Android app. It bundles its own tools and uses proot for apps that need Alpine Linux. You do not need root, Termux or a replacement Android ROM.</p>
 </details>
 <details>
+<summary>Does Homedroid collect any data?</summary>
+<p>No. Homedroid has no analytics, tracking, crash reporting or accounts, and sends nothing about you, your phone or your files anywhere. It only connects to the internet for features you turn on, such as downloading apps or models, your own tunnel, Tailscale or dynamic DNS, and checking GitHub’s public release list for updates. The source code is open, so you can verify every connection. <a href="#privacy">More about privacy</a>.</p>
+</details>
+<details>
 <summary>Which phones can run Homedroid?</summary>
 <p>Android 10 or newer is required. APKs are available for arm64-v8a, armeabi-v7a and x86_64, plus a universal build. A 64-bit phone is recommended; Immich and local llama.cpp models need one. Leave storage for the apps and media you install.</p>
+</details>
+<details>
+<summary>How much RAM does Homedroid need?</summary>
+<p>Homedroid itself uses about 75 MB. Each module adds its own share: SSH about 10 MB, Jellyfin 200–450 MB, Radarr and Sonarr about 200–300 MB each, Immich 0.8–1.5 GB. A 3 GB phone runs the file server, Jellyfin, qBittorrent and a few small services; the media automation set wants 4 GB, and Immich or a local AI model 6 GB or more. Modules you turn off use nothing. <a href="/#requirements">See every module</a>.</p>
+</details>
+<details>
+<summary>Can I install other Linux software?</summary>
+<p>Yes. Homedroid includes Alpine Linux, so you can install packages from Alpine’s repository with <code>apk</code>. Open Terminal in the dashboard, choose Alpine Linux and run, for example, <code>apk add python3 git</code>. Over SSH, type <code>alpine</code> first. Packages stay installed through restarts and Homedroid updates. <a href="/#packages">Watch it</a>.</p>
 </details>
 <details>
 <summary>Can I leave an old phone plugged in as a server?</summary>
@@ -885,8 +1180,9 @@
 <p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
 </div>
 <nav aria-label="Footer">
+<a href="/guides/">Guides</a>
 <a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
-<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.5-beta">0.9.5 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">0.9.6 release notes</a>
 <a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
 <a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
 <a href="/dock/">Dock mode</a>
@@ -895,7 +1191,7 @@
 <a href="/compare/">Phone vs Raspberry Pi</a>
 <a href="/llms.txt">llms.txt</a>
 </nav>
-<p class="fine">Last updated <time datetime="2026-11-25">25 November 2026</time> · 0.9.5-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+<p class="fine">Last updated <time datetime="2026-11-26">26 November 2026</time> · 0.9.6-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
 </footer>
 </body>
 </html>

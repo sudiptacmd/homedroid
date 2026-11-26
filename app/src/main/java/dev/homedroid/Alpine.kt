@@ -40,7 +40,7 @@ class Alpine(private val ctx: Context, private val paths: Paths) {
         if (sysvipc) add("--sysvipc")
         for (bind in BINDS) addAll(listOf("-b", bind))
         // Android hides these from apps; programs that read them get plausible stand-ins.
-        for (name in FAKE_PROC.keys) addAll(listOf("-b", "${File(meta, "proc/$name").path}:/proc/$name"))
+        for (name in FAKE_PROC.keys + "meminfo") addAll(listOf("-b", "${File(meta, "proc/$name").path}:/proc/$name"))
         addAll(listOf("-b", "${paths.home.path}:/mnt/homedroid"))
         // Android's own userland, so bionic programs (the MediaCodec FFmpeg) run in Alpine
         // too. The lib dir keeps its real path: the linker picks its namespace from it. Not in
@@ -141,7 +141,28 @@ class Alpine(private val ctx: Context, private val paths: Paths) {
         prepareRootfs(root)
         File(meta, "proc").mkdirs()
         for ((name, content) in FAKE_PROC) File(meta, "proc/$name").writeText(content)
+        File(meta, "proc/meminfo").writeText(meminfo())
         writeFfmpegShim()
+        writeMediaStack()
+    }
+
+    /** The helper the media automation apps (Prowlarr, Radarr, Sonarr, Seerr) install and run with. */
+    private fun writeMediaStack() {
+        val f = File(root, MEDIA_STACK.removePrefix("/"))
+        f.parentFile!!.mkdirs()
+        ctx.assets.open("media-stack.sh").use { input -> f.outputStream().use { input.copyTo(it) } }
+        f.setExecutable(true, false)
+    }
+
+    /**
+     * The phone's real memory size, which Android hides from apps in /proc/meminfo. Some programs
+     * can't start without it: .NET 6 (Sonarr) fails with "Failed to create CoreCLR". Available
+     * memory is as of the last start.
+     */
+    private fun meminfo(): String {
+        val m = android.app.ActivityManager.MemoryInfo()
+        (ctx.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).getMemoryInfo(m)
+        return meminfoText(m.totalMem, m.availMem)
     }
 
     /** Deletes a host directory tree (such as an unpacked image) without following symlinks. */
@@ -269,6 +290,7 @@ class Alpine(private val ctx: Context, private val paths: Paths) {
 
         /** Path of the FFmpeg shim inside Alpine; see [writeFfmpegShim]. */
         const val FFMPEG_SHIM = "/usr/local/lib/homedroid/ffmpeg"
+        const val MEDIA_STACK = "/usr/local/lib/homedroid/media-stack"
 
         val BASE_ENV = mapOf(
             "HOME" to "/root",
@@ -278,6 +300,16 @@ class Alpine(private val ctx: Context, private val paths: Paths) {
             "TMPDIR" to "/tmp",
             "PATH" to "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
         )
+
+        /** /proc/meminfo for [total] and [available] bytes. */
+        fun meminfoText(total: Long, available: Long): String {
+            val t = total / 1024
+            val a = available.coerceIn(0, total) / 1024
+            return listOf(
+                "MemTotal" to t, "MemFree" to a, "MemAvailable" to a, "Buffers" to 0L, "Cached" to 0L,
+                "SwapCached" to 0L, "SwapTotal" to 0L, "SwapFree" to 0L,
+            ).joinToString("") { (k, v) -> "%-16s%8d kB\n".format("$k:", v) }
+        }
 
         private val FAKE_PROC = mapOf(
             "loadavg" to "0.12 0.07 0.02 2/165 765\n",

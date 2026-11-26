@@ -1,5 +1,7 @@
 # Wi-Fi repeater
 
+**Video:** [Watch the setup on the Homedroid website](https://homedroid.seltiv.com/guides/wifi-repeater/)
+
 The phone can share its internet connection with other devices through its own Wi-Fi
 network, without root. It does this with a Wi-Fi Direct group and a built-in proxy, so it
 is not a true repeater or hotspot: devices that join the network must be told to use the

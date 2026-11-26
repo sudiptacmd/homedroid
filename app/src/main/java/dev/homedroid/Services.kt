@@ -60,7 +60,7 @@ object Services {
                     "-authorized-keys", p.authorizedKeys.path,
                     "-home", p.home.path,
                     "-session-log", p.sessionLog.path,
-                    "-terminal-listen", "127.0.0.1:${Terminal.port}",
+                    "-terminal-listen", "127.0.0.1:${Terminal.port(c.sshPort)}",
                 ),
                 mapOf("HOMEDROID_TERMINAL_TOKEN" to Terminal.token),
             )

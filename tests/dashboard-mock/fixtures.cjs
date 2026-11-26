@@ -239,9 +239,9 @@ function startJob(p, title, lines, {stepMs = 450, fail = null, onDone} = {}) {
   }, stepMs);
   return null;
 }
-const installLines = name => [`==> Installing ${name}`, 'Alpine: up to date', 'fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/APKINDEX.tar.gz',
+const installLines = title => { const name = String(title).replace(/^(Installing|Updating|Removing|Clearing|Moving)\s+/, ''); return [`==> ${/^Removing/.test(title) ? 'Removing' : 'Installing'} ${name}`, 'Alpine: up to date', 'fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/APKINDEX.tar.gz',
   `Downloading ${name}…`, '  12% ━━━━━━━━━━━━━━━━━━', '  47% ━━━━━━━━━━━━━━━━━━', '  83% ━━━━━━━━━━━━━━━━━━', ' 100% ━━━━━━━━━━━━━━━━━━',
-  'Unpacking', 'Writing configuration', `Starting ${name}`, 'Done'];
+  'Unpacking', 'Writing configuration', `Starting ${name}`, 'Done']; };
 
 /** A service just (re)started: "starting" for a couple of seconds, then running. */
 function bump(p, name, restart = false) {
@@ -329,6 +329,9 @@ function modules(p) {
     const worst = ds.reduce((w, x) => order.indexOf(x.state) > order.indexOf(w.state) ? x : w);
     return {...o, state: worst.state, restarts: ds.reduce((s, x) => s + x.restarts, 0)};
   });
+  // Typical memory and CPU use, as Dashboard.kt adds it from assets/resources.json.
+  const res = JSON.parse(fs.readFileSync(path.join(ASSETS, 'resources.json'), 'utf8'));
+  for (const m of [...core, ...apps]) if (res[m.id]) m.resources = res[m.id];
   return {core, apps, job: job(p)};
 }
 const job = p => ({title: p.job.title, running: p.job.running, error: p.job.error, log: p.job.log.slice(-200)});

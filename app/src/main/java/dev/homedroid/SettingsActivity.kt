@@ -49,9 +49,9 @@ class SettingsActivity : MobileActivity() {
         // Display
         val look = design.group(page, "Display")
         look.item(design.column().apply {
-            setPadding(design.dp(Space.LG), design.dp(Space.MD), design.dp(Space.LG), design.dp(Space.MD))
+            setPadding(design.dp(Space.MD), design.dp(Space.SM), design.dp(Space.MD), design.dp(Space.SM))
             val head = design.row()
-            head.addView(design.iconBadge(Icon.Contrast), design.lp(design.dp(40), design.dp(40), end = Space.LG))
+            head.addView(design.iconBadge(Icon.Contrast, sizeDp = 32), design.lp(design.dp(32), design.dp(32), end = Space.MD))
             val words = design.column()
             words.addView(design.text("Theme", TypeStyle.BodyLarge))
             words.addView(design.text("OLED black saves power and is gentlest on OLED screens", TypeStyle.BodyMedium, p.onSurfaceVariant))
@@ -175,7 +175,7 @@ class SettingsActivity : MobileActivity() {
         val version = packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
         page.addView(design.text("Homedroid $version\nYour old phone, now a home server.", TypeStyle.BodySmall, p.onSurfaceVariant).apply {
             gravity = android.view.Gravity.CENTER
-        }, design.lp(top = Space.XXL))
+        }, design.lp(top = Space.MD))
 
         bind()
         if (savedInstanceState == null) design.enter(page)

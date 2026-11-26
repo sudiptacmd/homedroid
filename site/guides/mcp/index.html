@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to connect Claude, Cursor or VS Code to Homedroid with MCP | Homedroid</title>
+<meta name="description" content="Connect Claude, Cursor or VS Code to Homedroid through MCP. Copy the endpoint and token, test read-only tools and choose whether assistants may make changes.">
+<link rel="canonical" href="https://homedroid.seltiv.com/guides/mcp/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="How to connect Claude, Cursor or VS Code to Homedroid with MCP | Homedroid">
+<meta property="og:description" content="Connect Claude, Cursor or VS Code to Homedroid through MCP. Copy the endpoint and token, test read-only tools and choose whether assistants may make changes.">
+<meta property="og:url" content="https://homedroid.seltiv.com/guides/mcp/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.6 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to connect Claude, Cursor or VS Code to Homedroid with MCP | Homedroid">
+<meta name="twitter:description" content="Connect Claude, Cursor or VS Code to Homedroid through MCP. Copy the endpoint and token, test read-only tools and choose whether assistants may make changes.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to connect Claude, Cursor or VS Code to Homedroid with MCP",
+  "description": "Connect Claude, Cursor or VS Code to your Android home server through Homedroid’s MCP page. Assistants can read status and logs with a separate token; you decide whether to let them restart services or redeploy apps.",
+  "url": "https://homedroid.seltiv.com/guides/mcp/",
+  "video": {
+    "@id": "https://homedroid.seltiv.com/guides/mcp/#video"
+  },
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Enable MCP",
+      "text": "Open MCP in the dashboard and turn on MCP server. It starts off. Leave Allow changes off for an initial read-only connection.",
+      "url": "https://homedroid.seltiv.com/guides/mcp/#step-1"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Copy the endpoint and token",
+      "text": "Choose the address the assistant can reach. Copy the MCP token; it is separate from the dashboard password. The local endpoint is http://<phone-ip>:8800/mcp.",
+      "url": "https://homedroid.seltiv.com/guides/mcp/#step-2"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Choose your client instructions",
+      "text": "Select Claude Code, Claude Desktop, Cursor or VS Code on the MCP page. Reveal the token to fill it into the displayed snippet, then copy the command or configuration to the client as directed.",
+      "url": "https://homedroid.seltiv.com/guides/mcp/#step-3"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Test a read-only request",
+      "text": "Connect the client and ask which services are running. Check the tool list and audit entries in MCP to see what it called.",
+      "url": "https://homedroid.seltiv.com/guides/mcp/#step-4"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Allow changes only when needed",
+      "text": "Turn on Allow changes if the external assistant should restart services, redeploy or wake computers. The dashboard’s own agent asks for approval before changes even when this option is on.",
+      "url": "https://homedroid.seltiv.com/guides/mcp/#step-5"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "@id": "https://homedroid.seltiv.com/guides/mcp/#video",
+  "name": "Let Claude, Cursor or VS Code manage the server",
+  "description": "Turn on the MCP server, copy the connection settings, and decide which tools assistants may use.",
+  "thumbnailUrl": "https://homedroid.seltiv.com/media/guide-mcp.webp",
+  "contentUrl": "https://homedroid.seltiv.com/media/guide-mcp.webm",
+  "uploadDate": "2026-11-26T00:00:00+06:00",
+  "embedUrl": "https://homedroid.seltiv.com/guides/mcp/#video"
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/guides/">Guides</a>
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-star" href="https://github.com/sudiptacmd/homedroid" aria-label="Star Homedroid on GitHub"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M8 .6l2.3 4.7 5.1.7-3.7 3.6.9 5.1L8 12.3l-4.6 2.4.9-5.1L.6 6l5.1-.7z"/></svg><span class="star-label">Star</span><span class="star-count" data-stars hidden></span></a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article guide-article">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Homedroid</a><span>/</span><a href="/guides/">Guides</a><span>/</span>Let Claude, Cursor or VS Code manage the server</nav>
+<span class="eyebrow">VIDEO GUIDE / DASHBOARD</span>
+<h1>How to connect Claude, Cursor or VS Code to Homedroid with MCP</h1>
+<p class="lead">Connect Claude, Cursor or VS Code to your Android home server through Homedroid’s MCP page. Assistants can read status and logs with a separate token; you decide whether to let them restart services or redeploy apps.</p>
+<figure class="guide-video" id="video">
+<video controls playsinline preload="none" poster="/media/guide-mcp.webp" width="1280" height="800" aria-label="Let Claude, Cursor or VS Code manage the server">
+<source src="/media/guide-mcp.webm" type="video/webm">
+<p><a href="/media/guide-mcp.webm">Download the setup video</a>, or follow the written steps below.</p>
+</video>
+<figcaption>Dashboard setup · silent screen recording · demo data. The steps below explain the actions.</figcaption>
+</figure>
+<h2>Before you start</h2>
+<ul><li>A running Homedroid server and an MCP client that can reach its dashboard address.</li><li>For access away from home, a private Tailscale connection or a suitable HTTPS tunnel. MCP is built in; no model download is needed just to connect an external assistant.</li></ul>
+<h2>How to connect Claude, Cursor or VS Code to Homedroid with MCP: step by step</h2>
+<ol class="guide-steps">
+<li id="step-1"><h3>Enable MCP</h3><p>Open MCP in the dashboard and turn on MCP server. It starts off. Leave Allow changes off for an initial read-only connection.</p></li>
+<li id="step-2"><h3>Copy the endpoint and token</h3><p>Choose the address the assistant can reach. Copy the MCP token; it is separate from the dashboard password. The local endpoint is http://&lt;phone-ip&gt;:8800/mcp.</p></li>
+<li id="step-3"><h3>Choose your client instructions</h3><p>Select Claude Code, Claude Desktop, Cursor or VS Code on the MCP page. Reveal the token to fill it into the displayed snippet, then copy the command or configuration to the client as directed.</p></li>
+<li id="step-4"><h3>Test a read-only request</h3><p>Connect the client and ask which services are running. Check the tool list and audit entries in MCP to see what it called.</p></li>
+<li id="step-5"><h3>Allow changes only when needed</h3><p>Turn on Allow changes if the external assistant should restart services, redeploy or wake computers. The dashboard’s own agent asks for approval before changes even when this option is on.</p></li>
+</ol>
+<h2>Good to know and troubleshooting</h2>
+<ul><li>The older written guide calls the control Allow write and places MCP in Settings. The current dashboard has a separate MCP page and labels the control Allow changes.</li><li>Regenerate… replaces the token and disconnects clients using the old one. Update their configuration afterwards.</li><li>Homedroid does not publish a separate memory or CPU estimate for MCP. An optional local model used by the dashboard agent has its own AI memory cost.</li></ul>
+<p><a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mcp.md">Read the written guide on GitHub</a> for more detail.</p>
+<aside class="article-cta"><h2>Related guides</h2><ul><li><a href="/guides/ai/">Run a local AI model on the phone</a></li>
+<li><a href="/guides/remote-access/">Reach your server from anywhere</a></li>
+<li><a href="/guides/deploy/">Deploy a website or app from GitHub</a></li></ul><a href="/guides/">All video guides</a></aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="/guides/">Guides</a>
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">0.9.6 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-26">26 November 2026</time> · 0.9.6-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>

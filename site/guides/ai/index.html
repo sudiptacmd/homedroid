@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to run a local AI model on an Android phone | Homedroid</title>
+<meta name="description" content="Run a local AI model on an Android phone with Homedroid. Install llama.cpp, download a GGUF model, chat and connect an API client. Includes memory estimates.">
+<link rel="canonical" href="https://homedroid.seltiv.com/guides/ai/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="How to run a local AI model on an Android phone | Homedroid">
+<meta property="og:description" content="Run a local AI model on an Android phone with Homedroid. Install llama.cpp, download a GGUF model, chat and connect an API client. Includes memory estimates.">
+<meta property="og:url" content="https://homedroid.seltiv.com/guides/ai/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.6 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to run a local AI model on an Android phone | Homedroid">
+<meta name="twitter:description" content="Run a local AI model on an Android phone with Homedroid. Install llama.cpp, download a GGUF model, chat and connect an API client. Includes memory estimates.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to run a local AI model on an Android phone",
+  "description": "Run a local AI model on an Android phone with Homedroid’s AI page. Download a GGUF model, choose it under Model to run and chat in the dashboard, or connect another app to the OpenAI-compatible API.",
+  "url": "https://homedroid.seltiv.com/guides/ai/",
+  "video": {
+    "@id": "https://homedroid.seltiv.com/guides/ai/#video"
+  },
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Install the local runtime",
+      "text": "Enable AI in Modules and open AI. Under On this phone, select Install if llama.cpp is not installed yet. If the page says local models are unsupported, this build cannot run them on that phone.",
+      "url": "https://homedroid.seltiv.com/guides/ai/#step-1"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Download a model",
+      "text": "Choose a model from the catalog and select Download. Start with a small model that fits the phone. You can also supply a GGUF download URL or upload a .gguf file to AI models in Files.",
+      "url": "https://homedroid.seltiv.com/guides/ai/#step-2"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Choose what runs",
+      "text": "Under Model to run, select the downloaded file. Choose Context and CPU threads, leaving conservative settings for the first attempt, then Save. Wait for Ready.",
+      "url": "https://homedroid.seltiv.com/guides/ai/#step-3"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Try local chat",
+      "text": "Choose the model under On this phone in the chat model picker. Send a short prompt and watch the phone’s memory and temperature while it answers.",
+      "url": "https://homedroid.seltiv.com/guides/ai/#step-4"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Connect another app",
+      "text": "Scroll to Use from other apps. Copy the API address and connection details shown there into an OpenAI-compatible client. Use the model identifier shown by Homedroid.",
+      "url": "https://homedroid.seltiv.com/guides/ai/#step-5"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "@id": "https://homedroid.seltiv.com/guides/ai/#video",
+  "name": "Run a local AI model on the phone",
+  "description": "Download a model, chat with it, and use the OpenAI-compatible API from your other apps.",
+  "thumbnailUrl": "https://homedroid.seltiv.com/media/guide-ai.webp",
+  "contentUrl": "https://homedroid.seltiv.com/media/guide-ai.webm",
+  "uploadDate": "2026-11-26T00:00:00+06:00",
+  "embedUrl": "https://homedroid.seltiv.com/guides/ai/#video"
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/guides/">Guides</a>
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-star" href="https://github.com/sudiptacmd/homedroid" aria-label="Star Homedroid on GitHub"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M8 .6l2.3 4.7 5.1.7-3.7 3.6.9 5.1L8 12.3l-4.6 2.4.9-5.1L.6 6l5.1-.7z"/></svg><span class="star-label">Star</span><span class="star-count" data-stars hidden></span></a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article guide-article">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Homedroid</a><span>/</span><a href="/guides/">Guides</a><span>/</span>Run a local AI model on the phone</nav>
+<span class="eyebrow">VIDEO GUIDE / DASHBOARD</span>
+<h1>How to run a local AI model on an Android phone</h1>
+<p class="lead">Run a local AI model on an Android phone with Homedroid’s AI page. Download a GGUF model, choose it under Model to run and chat in the dashboard, or connect another app to the OpenAI-compatible API.</p>
+<figure class="guide-video" id="video">
+<video controls playsinline preload="none" poster="/media/guide-ai.webp" width="1280" height="800" aria-label="Run a local AI model on the phone">
+<source src="/media/guide-ai.webm" type="video/webm">
+<p><a href="/media/guide-ai.webm">Download the setup video</a>, or follow the written steps below.</p>
+</video>
+<figcaption>Dashboard setup · silent screen recording · demo data. The steps below explain the actions.</figcaption>
+</figure>
+<h2>Before you start</h2>
+<ul><li>A supported 64-bit phone, free storage for a model and enough available RAM. A phone with 6 GB or more gives you more room alongside other services.</li><li>A running Homedroid server and internet for the runtime and model downloads. No cloud account is needed for local inference.</li></ul>
+<h2>How to run a local AI model on an Android phone: step by step</h2>
+<ol class="guide-steps">
+<li id="step-1"><h3>Install the local runtime</h3><p>Enable AI in Modules and open AI. Under On this phone, select Install if llama.cpp is not installed yet. If the page says local models are unsupported, this build cannot run them on that phone.</p></li>
+<li id="step-2"><h3>Download a model</h3><p>Choose a model from the catalog and select Download. Start with a small model that fits the phone. You can also supply a GGUF download URL or upload a .gguf file to AI models in Files.</p></li>
+<li id="step-3"><h3>Choose what runs</h3><p>Under Model to run, select the downloaded file. Choose Context and CPU threads, leaving conservative settings for the first attempt, then Save. Wait for Ready.</p></li>
+<li id="step-4"><h3>Try local chat</h3><p>Choose the model under On this phone in the chat model picker. Send a short prompt and watch the phone’s memory and temperature while it answers.</p></li>
+<li id="step-5"><h3>Connect another app</h3><p>Scroll to Use from other apps. Copy the API address and connection details shown there into an OpenAI-compatible client. Use the model identifier shown by Homedroid.</p></li>
+</ol>
+<h2>Typical memory and CPU</h2>
+<p>These are the estimates shown by Homedroid, from its module resource data. Memory is resident process memory; CPU describes use while busy. Actual use depends on the phone and workload.</p>
+<div class="table-scroll"><table class="needs"><caption>Typical running resources, not download or disk sizes</caption><thead><tr><th scope="col">Module</th><th scope="col">Memory</th><th scope="col">CPU</th><th scope="col">What affects it</th></tr></thead><tbody><tr><th scope="row">Local AI</th><td>model size + 0.3–1 GB</td><td><span class="cpu high">high</span></td><td>Every core while it answers, nothing in between. A 1.5B model needs about 1.5 GB in all, a 3B model about 2.5 GB.</td></tr></tbody></table></div>
+<h2>Good to know and troubleshooting</h2>
+<ul><li>A larger context also needs memory. If the model repeatedly crashes, try a smaller model or context and inspect Logs.</li><li>The current page offers Run on and Benchmark to compare supported CPU/GPU paths. GPU availability depends on the phone and runtime; do not assume it will be faster.</li><li>Cloud services are optional and send messages to their provider. Review the fallback setting if you want requests to stay local when the phone cannot answer.</li></ul>
+<aside class="article-cta"><h2>Related guides</h2><ul><li><a href="/guides/mcp/">Let Claude, Cursor or VS Code manage the server</a></li>
+<li><a href="/guides/apps/">Install apps and choose where their data lives</a></li>
+<li><a href="/guides/alpine-packages/">Install other Linux software with apk</a></li></ul><a href="/guides/">All video guides</a></aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="/guides/">Guides</a>
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">0.9.6 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-26">26 November 2026</time> · 0.9.6-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>

@@ -5,7 +5,7 @@
     "description": "Stream your movies, shows and music to any device. Uses the phone's hardware video encoder.",
     "port": 8096,
     "size": "≈ 420 MB",
-    "install": "apk add --no-cache jellyfin jellyfin-web\n# Hardware encoding: Jellyfin's V4L2 option is routed to Android's MediaCodec by the\n# ffmpeg shim. Only on first install, so a user's own choice is kept.\nmkdir -p /var/lib/jellyfin/config\n[ -e /var/lib/jellyfin/config/encoding.xml ] || cat > /var/lib/jellyfin/config/encoding.xml <<'XML'\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<EncodingOptions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n  <HardwareAccelerationType>v4l2m2m</HardwareAccelerationType>\n  <EnableHardwareEncoding>true</EnableHardwareEncoding>\n</EncodingOptions>\nXML\n# Torrent downloads show up in Jellyfin: a \"Downloads\" library (mixed movies and shows,\n# watched for new files) once both apps are installed. Only once, so a user who\n# removes the library in Jellyfin keeps it removed.\nif [ -x /usr/bin/jellyfin ] && [ -x /usr/bin/qbittorrent-nox ] && [ ! -e /var/lib/jellyfin/.downloads-library ]; then\n  mkdir -p /media/Downloads /var/lib/jellyfin/root/default/Downloads\n  cd /var/lib/jellyfin/root/default/Downloads\n  printf /media/Downloads > Downloads.mblink\n  cat > options.xml <<'XML'\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<LibraryOptions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n  <Enabled>true</Enabled>\n  <EnablePhotos>true</EnablePhotos>\n  <EnableRealtimeMonitor>true</EnableRealtimeMonitor>\n  <EnableLUFSScan>false</EnableLUFSScan>\n  <EnableChapterImageExtraction>false</EnableChapterImageExtraction>\n  <ExtractChapterImagesDuringLibraryScan>false</ExtractChapterImagesDuringLibraryScan>\n  <EnableTrickplayImageExtraction>false</EnableTrickplayImageExtraction>\n  <ExtractTrickplayImagesDuringLibraryScan>false</ExtractTrickplayImagesDuringLibraryScan>\n  <PathInfos>\n    <MediaPathInfo>\n      <Path>/media/Downloads</Path>\n    </MediaPathInfo>\n  </PathInfos>\n  <SaveLocalMetadata>false</SaveLocalMetadata>\n  <EnableAutomaticSeriesGrouping>true</EnableAutomaticSeriesGrouping>\n  <EnableEmbeddedTitles>false</EnableEmbeddedTitles>\n  <EnableEmbeddedExtrasTitles>false</EnableEmbeddedExtrasTitles>\n  <EnableEmbeddedEpisodeInfos>false</EnableEmbeddedEpisodeInfos>\n  <AutomaticRefreshIntervalDays>0</AutomaticRefreshIntervalDays>\n  <SeasonZeroDisplayName>Specials</SeasonZeroDisplayName>\n  <DisabledLocalMetadataReaders />\n  <DisabledSubtitleFetchers />\n  <SubtitleFetcherOrder />\n  <DisabledMediaSegmentProviders />\n  <MediaSegmentProviderOrder />\n  <SkipSubtitlesIfEmbeddedSubtitlesPresent>false</SkipSubtitlesIfEmbeddedSubtitlesPresent>\n  <SkipSubtitlesIfAudioTrackMatches>true</SkipSubtitlesIfAudioTrackMatches>\n  <RequirePerfectSubtitleMatch>true</RequirePerfectSubtitleMatch>\n  <SaveSubtitlesWithMedia>true</SaveSubtitlesWithMedia>\n  <DisabledLyricFetchers />\n  <LyricFetcherOrder />\n  <CustomTagDelimiters>\n    <string>/</string>\n    <string>|</string>\n    <string>;</string>\n    <string>\\</string>\n  </CustomTagDelimiters>\n  <DelimiterWhitelist />\n  <AutomaticallyAddToCollection>false</AutomaticallyAddToCollection>\n  <AllowEmbeddedSubtitles>AllowAll</AllowEmbeddedSubtitles>\n  <TypeOptions />\n</LibraryOptions>\nXML\n  touch /var/lib/jellyfin/.downloads-library\nfi",
+    "install": "apk add --no-cache jellyfin jellyfin-web\n# Hardware encoding: Jellyfin's V4L2 option is routed to Android's MediaCodec by the\n# ffmpeg shim. Only on first install, so a user's own choice is kept.\nmkdir -p /var/lib/jellyfin/config\n[ -e /var/lib/jellyfin/config/encoding.xml ] || cat > /var/lib/jellyfin/config/encoding.xml <<'XML'\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<EncodingOptions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n  <HardwareAccelerationType>v4l2m2m</HardwareAccelerationType>\n  <EnableHardwareEncoding>true</EnableHardwareEncoding>\n</EncodingOptions>\nXML\n# Torrent downloads show up in Jellyfin: a \"Downloads\" library (mixed movies and shows,\n# watched for new files) once both apps are installed. Only once, so a user who\n# removes the library in Jellyfin keeps it removed.\nif [ -x /usr/bin/jellyfin ] && [ -x /usr/bin/qbittorrent-nox ] && [ ! -e /var/lib/jellyfin/.downloads-library ]; then\n  mkdir -p /media/Downloads /var/lib/jellyfin/root/default/Downloads\n  cd /var/lib/jellyfin/root/default/Downloads\n  printf /media/Downloads > Downloads.mblink\n  cat > options.xml <<'XML'\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<LibraryOptions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n  <Enabled>true</Enabled>\n  <EnablePhotos>true</EnablePhotos>\n  <EnableRealtimeMonitor>true</EnableRealtimeMonitor>\n  <EnableLUFSScan>false</EnableLUFSScan>\n  <EnableChapterImageExtraction>false</EnableChapterImageExtraction>\n  <ExtractChapterImagesDuringLibraryScan>false</ExtractChapterImagesDuringLibraryScan>\n  <EnableTrickplayImageExtraction>false</EnableTrickplayImageExtraction>\n  <ExtractTrickplayImagesDuringLibraryScan>false</ExtractTrickplayImagesDuringLibraryScan>\n  <PathInfos>\n    <MediaPathInfo>\n      <Path>/media/Downloads</Path>\n    </MediaPathInfo>\n  </PathInfos>\n  <SaveLocalMetadata>false</SaveLocalMetadata>\n  <EnableAutomaticSeriesGrouping>true</EnableAutomaticSeriesGrouping>\n  <EnableEmbeddedTitles>false</EnableEmbeddedTitles>\n  <EnableEmbeddedExtrasTitles>false</EnableEmbeddedExtrasTitles>\n  <EnableEmbeddedEpisodeInfos>false</EnableEmbeddedEpisodeInfos>\n  <AutomaticRefreshIntervalDays>0</AutomaticRefreshIntervalDays>\n  <SeasonZeroDisplayName>Specials</SeasonZeroDisplayName>\n  <DisabledLocalMetadataReaders />\n  <DisabledSubtitleFetchers />\n  <SubtitleFetcherOrder />\n  <DisabledMediaSegmentProviders />\n  <MediaSegmentProviderOrder />\n  <SkipSubtitlesIfEmbeddedSubtitlesPresent>false</SkipSubtitlesIfEmbeddedSubtitlesPresent>\n  <SkipSubtitlesIfAudioTrackMatches>true</SkipSubtitlesIfAudioTrackMatches>\n  <RequirePerfectSubtitleMatch>true</RequirePerfectSubtitleMatch>\n  <SaveSubtitlesWithMedia>true</SaveSubtitlesWithMedia>\n  <DisabledLyricFetchers />\n  <LyricFetcherOrder />\n  <CustomTagDelimiters>\n    <string>/</string>\n    <string>|</string>\n    <string>;</string>\n    <string>\\</string>\n  </CustomTagDelimiters>\n  <DelimiterWhitelist />\n  <AutomaticallyAddToCollection>false</AutomaticallyAddToCollection>\n  <AllowEmbeddedSubtitles>AllowAll</AllowEmbeddedSubtitles>\n  <TypeOptions />\n</LibraryOptions>\nXML\n  touch /var/lib/jellyfin/.downloads-library\nfi\n# Movies and Shows libraries when Radarr or Sonarr is installed (see media-stack).\n[ ! -x /usr/local/lib/homedroid/media-stack ] || /usr/local/lib/homedroid/media-stack libraries",
     "uninstall": "apk del jellyfin jellyfin-web",
     "data": [
       "/var/lib/jellyfin",
@@ -57,6 +57,159 @@
     "notice": {
       "pattern": "temporary password is provided for this session: (\\S+)",
       "text": "Web UI login: admin / $1 (temporary; set your own under Tools → Options → Web UI)"
+    }
+  },
+  {
+    "id": "prowlarr",
+    "name": "Prowlarr",
+    "description": "Keeps your torrent indexers in one place and hands them to Radarr and Sonarr, so you add each site once. Connected to Radarr, Sonarr and qBittorrent automatically.",
+    "port": 9696,
+    "size": "≈ 230 MB",
+    "install": "/usr/local/lib/homedroid/media-stack install prowlarr",
+    "uninstall": "rm -rf /opt/Prowlarr",
+    "data": [
+      "/var/lib/prowlarr"
+    ],
+    "run": [
+      "/usr/local/lib/homedroid/media-stack",
+      "run",
+      "prowlarr"
+    ],
+    "env": {
+      "DOTNET_gcServer": "0",
+      "DOTNET_GCHeapHardLimitPercent": "0x19",
+      "TMPDIR": "/tmp"
+    },
+    "storage": {
+      "path": "/media",
+      "label": "Media library",
+      "shared": "Media"
+    },
+    "notice": {
+      "pattern": "^Homedroid media stack: (.+)$",
+      "text": "$1"
+    }
+  },
+  {
+    "id": "radarr",
+    "name": "Radarr",
+    "description": "Finds, downloads and files movies for you. Sends downloads to qBittorrent and files finished movies in Movies, which Jellyfin shows as its own library.",
+    "port": 7878,
+    "size": "≈ 250 MB",
+    "install": "/usr/local/lib/homedroid/media-stack install radarr",
+    "uninstall": "rm -rf /opt/Radarr",
+    "data": [
+      "/var/lib/radarr"
+    ],
+    "run": [
+      "/usr/local/lib/homedroid/media-stack",
+      "run",
+      "radarr"
+    ],
+    "env": {
+      "DOTNET_gcServer": "0",
+      "DOTNET_GCHeapHardLimitPercent": "0x19",
+      "TMPDIR": "/tmp"
+    },
+    "storage": {
+      "path": "/media",
+      "label": "Media library",
+      "shared": "Media"
+    },
+    "notice": {
+      "pattern": "^Homedroid media stack: (.+)$",
+      "text": "$1"
+    }
+  },
+  {
+    "id": "sonarr",
+    "name": "Sonarr",
+    "description": "Does the same for TV: watches for new episodes, downloads them with qBittorrent and files them by show and season in Shows, a Jellyfin library. This is Sonarr 5, Sonarr's test release: version 4 can't run on Android.",
+    "port": 8989,
+    "size": "≈ 260 MB",
+    "arches": [
+      "arm64",
+      "amd64"
+    ],
+    "install": "/usr/local/lib/homedroid/media-stack install sonarr",
+    "uninstall": "rm -rf /opt/Sonarr",
+    "data": [
+      "/var/lib/sonarr"
+    ],
+    "run": [
+      "/usr/local/lib/homedroid/media-stack",
+      "run",
+      "sonarr"
+    ],
+    "env": {
+      "DOTNET_gcServer": "0",
+      "DOTNET_GCHeapHardLimitPercent": "0x19",
+      "TMPDIR": "/tmp"
+    },
+    "storage": {
+      "path": "/media",
+      "label": "Media library",
+      "shared": "Media"
+    },
+    "notice": {
+      "pattern": "^Homedroid media stack: (.+)$",
+      "text": "$1"
+    }
+  },
+  {
+    "id": "seerr",
+    "name": "Jellyseerr (Seerr)",
+    "description": "A friendly page for finding movies and shows and asking for them; requests go to Radarr and Sonarr. Jellyseerr is now called Seerr. Sign in with your Jellyfin account; Radarr and Sonarr are added for you after that.",
+    "port": 5055,
+    "size": "≈ 400 MB",
+    "arches": [
+      "arm64",
+      "amd64"
+    ],
+    "images": {
+      "server": "ghcr.io/seerr-team/seerr:v3.5.2"
+    },
+    "install": "apk add --no-cache curl jq",
+    "uninstall": "true",
+    "data": [],
+    "run": [],
+    "services": [
+      {
+        "name": "server",
+        "image": "server",
+        "run": [
+          "/usr/local/bin/node",
+          "dist/index.js"
+        ],
+        "env": {
+          "NODE_ENV": "production",
+          "PORT": "5055",
+          "NODE_OPTIONS": "--max-old-space-size=384"
+        },
+        "binds": [
+          [
+            "@data/config",
+            "/app/config"
+          ]
+        ]
+      },
+      {
+        "name": "link",
+        "run": [
+          "/usr/local/lib/homedroid/media-stack",
+          "seerr-link"
+        ],
+        "binds": [
+          [
+            "@data/config",
+            "/var/lib/seerr"
+          ]
+        ]
+      }
+    ],
+    "notice": {
+      "pattern": "^Homedroid media stack: (.+)$",
+      "text": "$1"
     }
   },
   {

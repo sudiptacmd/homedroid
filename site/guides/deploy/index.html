@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to deploy a GitHub website on an Android phone | Homedroid</title>
+<meta name="description" content="Deploy a GitHub website on an Android phone with Homedroid. Set build commands, inspect pipelines and connect deploy hooks. Video guide with written steps.">
+<link rel="canonical" href="https://homedroid.seltiv.com/guides/deploy/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="How to deploy a GitHub website on an Android phone | Homedroid">
+<meta property="og:description" content="Deploy a GitHub website on an Android phone with Homedroid. Set build commands, inspect pipelines and connect deploy hooks. Video guide with written steps.">
+<meta property="og:url" content="https://homedroid.seltiv.com/guides/deploy/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.6 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to deploy a GitHub website on an Android phone | Homedroid">
+<meta name="twitter:description" content="Deploy a GitHub website on an Android phone with Homedroid. Set build commands, inspect pipelines and connect deploy hooks. Video guide with written steps.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to deploy a GitHub website on an Android phone",
+  "description": "Deploy a website from GitHub to an old Android phone with Homedroid. Enter the repository and build commands, follow the deployment log, then use a deploy hook to publish later pushes.",
+  "url": "https://homedroid.seltiv.com/guides/deploy/",
+  "video": {
+    "@id": "https://homedroid.seltiv.com/guides/deploy/#video"
+  },
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Create the deployment",
+      "text": "Open Deployments → New deployment. Select From Git. Enter Name, Port, Repository URL and Branch.",
+      "url": "https://homedroid.seltiv.com/guides/deploy/#step-1"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Set the runtime and commands",
+      "text": "Choose Runtime and enter the project’s Build command, Start command and Environment variables as needed. Select Create to start deployment.",
+      "url": "https://homedroid.seltiv.com/guides/deploy/#step-2"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Save the one-time secrets",
+      "text": "Copy the Deploy token and GitHub webhook secret to a safe place when shown. They are shown once; you can replace them from the deployment’s Deploy hooks tab.",
+      "url": "https://homedroid.seltiv.com/guides/deploy/#step-3"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Check the build and pipeline",
+      "text": "Open the deployment and follow its log. The Pipelines tab shows step results and output. Define any checks your project needs before relying on an automatic deployment.",
+      "url": "https://homedroid.seltiv.com/guides/deploy/#step-4"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Connect GitHub pushes",
+      "text": "Open Deploy hooks to find the webhook address. In the GitHub repository, add a webhook with that URL, application/json, the saved webhook secret and push events. Pushes to the configured branch redeploy it.",
+      "url": "https://homedroid.seltiv.com/guides/deploy/#step-5"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Test a change",
+      "text": "Push a small change, watch the deployment finish, then open the site at its port or configured domain. For a CI script, the token-authenticated deploy hook with ?wait=1 waits for the result.",
+      "url": "https://homedroid.seltiv.com/guides/deploy/#step-6"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "@id": "https://homedroid.seltiv.com/guides/deploy/#video",
+  "name": "Deploy a website or app from GitHub",
+  "description": "Point a deployment at a repository, watch the build pipeline, and redeploy on every push with a deploy hook.",
+  "thumbnailUrl": "https://homedroid.seltiv.com/media/guide-deploy.webp",
+  "contentUrl": "https://homedroid.seltiv.com/media/guide-deploy.webm",
+  "uploadDate": "2026-11-26T00:00:00+06:00",
+  "embedUrl": "https://homedroid.seltiv.com/guides/deploy/#video"
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/guides/">Guides</a>
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-star" href="https://github.com/sudiptacmd/homedroid" aria-label="Star Homedroid on GitHub"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M8 .6l2.3 4.7 5.1.7-3.7 3.6.9 5.1L8 12.3l-4.6 2.4.9-5.1L.6 6l5.1-.7z"/></svg><span class="star-label">Star</span><span class="star-count" data-stars hidden></span></a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article guide-article">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Homedroid</a><span>/</span><a href="/guides/">Guides</a><span>/</span>Deploy a website or app from GitHub</nav>
+<span class="eyebrow">VIDEO GUIDE / DASHBOARD</span>
+<h1>How to deploy a GitHub website on an Android phone</h1>
+<p class="lead">Deploy a website from GitHub to an old Android phone with Homedroid. Enter the repository and build commands, follow the deployment log, then use a deploy hook to publish later pushes.</p>
+<figure class="guide-video" id="video">
+<video controls playsinline preload="none" poster="/media/guide-deploy.webp" width="1280" height="800" aria-label="Deploy a website or app from GitHub">
+<source src="/media/guide-deploy.webm" type="video/webm">
+<p><a href="/media/guide-deploy.webm">Download the setup video</a>, or follow the written steps below.</p>
+</video>
+<figcaption>Dashboard setup · silent screen recording · demo data. The steps below explain the actions.</figcaption>
+</figure>
+<h2>Before you start</h2>
+<ul><li>A running Homedroid server, internet access and a repository that builds with a supported runtime.</li><li>A free port at or above 1024. For CI or GitHub webhooks, the runner or GitHub must be able to reach the phone through the access route you set up.</li></ul>
+<h2>How to deploy a GitHub website on an Android phone: step by step</h2>
+<ol class="guide-steps">
+<li id="step-1"><h3>Create the deployment</h3><p>Open Deployments → New deployment. Select From Git. Enter Name, Port, Repository URL and Branch.</p></li>
+<li id="step-2"><h3>Set the runtime and commands</h3><p>Choose Runtime and enter the project’s Build command, Start command and Environment variables as needed. Select Create to start deployment.</p></li>
+<li id="step-3"><h3>Save the one-time secrets</h3><p>Copy the Deploy token and GitHub webhook secret to a safe place when shown. They are shown once; you can replace them from the deployment’s Deploy hooks tab.</p></li>
+<li id="step-4"><h3>Check the build and pipeline</h3><p>Open the deployment and follow its log. The Pipelines tab shows step results and output. Define any checks your project needs before relying on an automatic deployment.</p></li>
+<li id="step-5"><h3>Connect GitHub pushes</h3><p>Open Deploy hooks to find the webhook address. In the GitHub repository, add a webhook with that URL, application/json, the saved webhook secret and push events. Pushes to the configured branch redeploy it.</p></li>
+<li id="step-6"><h3>Test a change</h3><p>Push a small change, watch the deployment finish, then open the site at its port or configured domain. For a CI script, the token-authenticated deploy hook with ?wait=1 waits for the result.</p></li>
+</ol>
+<h2>Typical memory and CPU</h2>
+<p>These are the estimates shown by Homedroid, from its module resource data. Memory is resident process memory; CPU describes use while busy. Actual use depends on the phone and workload.</p>
+<div class="table-scroll"><table class="needs"><caption>Typical running resources, not download or disk sizes</caption><thead><tr><th scope="col">Module</th><th scope="col">Memory</th><th scope="col">CPU</th><th scope="col">What affects it</th></tr></thead><tbody><tr><th scope="row">Web hosting</th><td>40–60 MB</td><td><span class="cpu low">low</span></td><td>Grows with traffic to your sites.</td></tr></tbody></table></div>
+<h2>Good to know and troubleshooting</h2>
+<ul><li>The Web hosting estimate below covers the web server; your build tools and running application need additional memory and CPU.</li><li>A pipeline step that fails stops the deployment and leaves the previous version running. Check the failed step’s output before retrying.</li><li>Redeploy when the branch changes polls every five minutes; a GitHub webhook is a separate trigger. Private Tailscale access works for a connected CI runner, but a GitHub webhook needs a publicly reachable endpoint.</li></ul>
+<p><a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/deploy-hooks.md">Read the written guide on GitHub</a> for more detail.</p>
+<aside class="article-cta"><h2>Related guides</h2><ul><li><a href="/guides/domains/">Use your own domain</a></li>
+<li><a href="/guides/remote-access/">Reach your server from anywhere</a></li>
+<li><a href="/guides/alpine-packages/">Install other Linux software with apk</a></li></ul><a href="/guides/">All video guides</a></aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="/guides/">Guides</a>
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">0.9.6 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-26">26 November 2026</time> · 0.9.6-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>

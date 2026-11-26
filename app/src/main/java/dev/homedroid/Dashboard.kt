@@ -382,6 +382,12 @@ class Dashboard(private val ctx: Context) {
             .put("port", RepeaterCore.HTTP_PORT).put("kind", "core").put("installed", true).put("enabled", cfg.repeaterEnabled)
             .put("state", repeater.json().getString("state")))
         core.put(network.module())
+        // Typical memory and CPU use, shown on each module card.
+        val resources = ModuleResources.all(ctx)
+        for (list in listOf(core, catalog)) for (i in 0 until list.length()) {
+            val m = list.getJSONObject(i)
+            resources[m.getString("id")]?.let { m.put("resources", it.json()) }
+        }
         return JSONObject().put("core", core).put("apps", catalog).put("job", job())
     }
 

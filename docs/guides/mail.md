@@ -1,5 +1,7 @@
 # Your own mail server
 
+**Video:** [Watch the setup on the Homedroid website](https://homedroid.seltiv.com/guides/mail/)
+
 Homedroid can run [Stalwart](https://stalw.art), a mail server with SMTP (sending and
 receiving between servers), IMAP and JMAP (for your mail apps) and a web admin. Install it
 from **Modules → Mail server (Stalwart)**, then open **Mail** in the dashboard: a setup

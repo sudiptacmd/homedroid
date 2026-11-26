@@ -66,7 +66,7 @@ svg.i { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none;
 .hidden { display: none !important; }
 .muted { color: var(--muted); }
 .mono { font-family: var(--font-mono); font-size: calc(12.5px * var(--fs)); }
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 :focus { outline-color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 
@@ -211,6 +211,13 @@ pre { margin: 0; background: var(--code); border-radius: var(--r-sm); padding: 1
 .avatar { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; font-size: calc(15px * var(--fs)); color: #fff; flex: none; }
 .mod .title { font-weight: 650; font-size: calc(15px * var(--fs)); line-height: 1.3; margin-bottom: 2px; }
 .mod .desc { color: var(--text-2); font-size: calc(13px * var(--fs)); }
+.mod-res { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: calc(12px * var(--fs)); color: var(--text-2); }
+.mod-res > span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.mod-res .i { width: 14px; height: 14px; opacity: .75; }
+.mod-res b { color: var(--text); font-weight: 600; }
+.mod-res .lvl.medium { color: var(--warn, #d97706); }
+.mod-res .lvl.high { color: var(--bad, #dc2626); }
+.mod-res small { flex-basis: 100%; color: var(--muted); font-size: calc(11.5px * var(--fs)); line-height: 1.45; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 5px; font-size: calc(12px * var(--fs)); color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; max-width: 100%; }
 .chip svg.i { width: 13px; height: 13px; }
@@ -387,7 +394,18 @@ body { font-family: var(--font-sans); }
 .side > .brand { padding: 0 10px 20px; }
 .brand-name { letter-spacing: -.04em; }
 .side > .nodesel { display: none; }
-.nav { overflow-y: auto; min-height: 0; padding: 0 4px 16px; scrollbar-width: thin; }
+/* The menu scrolls without a visible scrollbar (the classic one is heavy next to a slim rail). A soft fade on the cut-off edge plus a chevron say "more", see syncNavScroll. */
+.nav { overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 0 4px 16px; scrollbar-width: none; -ms-overflow-style: none; }
+.nav::-webkit-scrollbar { display: none; }
+.side[data-more] .nav { --fade-t: 0px; --fade-b: 0px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-t), #000 calc(100% - var(--fade-b)), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-t), #000 calc(100% - var(--fade-b)), transparent 100%); }
+.side[data-more~="up"] .nav { --fade-t: 28px; }
+.side[data-more~="down"] .nav { --fade-b: 44px; }
+.nav-more { display: none; flex: none; align-self: center; width: 30px; height: 30px; padding: 0; margin: -38px 0 8px; position: relative; z-index: 1; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); box-shadow: var(--elevation-1); cursor: pointer; place-items: center; }
+.nav-more:hover { color: var(--text); border-color: var(--line-2); }
+.nav-more svg.i { width: 16px; height: 16px; }
+.side[data-more~="down"] .nav-more:not([hidden]) { display: grid; }
+@media (prefers-reduced-motion: no-preference) { .side[data-more~="down"] .nav-more svg { animation: navnudge 2.4s ease-in-out 3; } }
+@keyframes navnudge { 0%, 70%, 100% { transform: translateY(0); } 80% { transform: translateY(3px); } }
 .nav-group { margin: 20px 10px 6px; font-size: calc(10px * var(--fs)); line-height: 16px; color: var(--muted); font-weight: 650; letter-spacing: .09em; text-transform: uppercase; }
 .nav a { min-height: 36px; padding: 8px 10px; font-size: var(--text-sm); border: 1px solid transparent; }
 .nav a[aria-current="page"] { border-color: var(--line); background: var(--surface); color: var(--text); box-shadow: var(--elevation-1); }
@@ -402,7 +420,7 @@ body { font-family: var(--font-sans); }
 .context-label b { color: var(--text); font-weight: 550; }
 .command-trigger { color: var(--muted); gap: 24px; }
 kbd { font: calc(11px * var(--fs)) var(--font-sans); padding: 2px 5px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); }
-main { grid-column: 2; padding: 36px clamp(20px, 3vw, 48px) 64px; max-width: 1440px; }
+main { grid-column: 2; padding: 36px clamp(20px, 3vw, 48px) 64px; max-width: 1640px; margin-inline: auto; }
 .page-head { margin-bottom: var(--space-8); gap: 16px; }
 .page-head h1 { font-size: var(--text-2xl); font-weight: 650; letter-spacing: -.045em; line-height: 1.25; }
 .page-head .sub { margin-top: 8px; font-size: var(--text-sm); max-width: 760px; line-height: 1.65; }
@@ -690,14 +708,23 @@ html[data-width="full"] main { max-width: none; }
 }
 @media (min-width: 861px) { .wcard[data-size="S"] { --span: 4; } .wcard[data-size="M"] { --span: 6; } .wcard[data-size="L"] { --span: 8; } .wcard[data-size="XL"] { --span: 12; } }
 @media (min-width: 861px) and (max-width: 1100px) { .wcard[data-size="S"] { --span: 6; } .wcard[data-size="L"] { --span: 12; } }
+/* Wide screens: services flow into columns instead of one stretched row each */
+#ovServices { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); overflow: hidden; }
+#ovServices > .item { border-top: 0; box-shadow: inset 0 -1px 0 var(--line), inset -1px 0 0 var(--line); min-width: 0; }
+#ovServices > .empty, #ovServices > .item:only-child { grid-column: 1 / -1; box-shadow: none; }
 /* Overview arrangements */
-html[data-ov="list"] .wgrid { grid-template-columns: minmax(0, 1fr); max-width: 820px; }
+html[data-ov="list"] .wgrid { grid-template-columns: minmax(0, 1fr); }
 html[data-ov="list"] .wcard { grid-column: 1 !important; }
 html[data-ov="list"] .stats { grid-template-columns: minmax(0, 1fr); gap: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
 html[data-ov="list"] .stat { flex-direction: row; align-items: center; gap: 16px; padding: 10px 16px; border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; }
 html[data-ov="list"] .stat:first-child { border-top: 0; }
 html[data-ov="list"] .stat .k { width: 150px; flex: none; } html[data-ov="list"] .stat .v { font-size: var(--text-xl); width: 140px; flex: none; }
-html[data-ov="list"] .stat .meter, html[data-ov="list"] .stat .spark { flex: 1; min-width: 60px; } html[data-ov="list"] .stat .s { flex: 1.2; }
+html[data-ov="list"] .stat .meter, html[data-ov="list"] .stat .spark { flex: 1 1 0; min-width: 60px; max-width: 480px; } html[data-ov="list"] .stat .s { flex: 1 1 0; min-width: 0; }
+@media (min-width: 1560px) {
+  html[data-ov="list"] .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html[data-ov="list"] .stat:nth-child(-n+2) { border-top: 0; }
+  html[data-ov="list"] .stat:nth-child(odd) { border-right: 1px solid var(--line); }
+}
 html[data-ov="big"] .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 html[data-ov="big"] .stat .v { font-size: clamp(40px, 7vw, 84px); letter-spacing: -.05em; line-height: 1; }
 html[data-ov="big"] .stat .v small { font-size: .3em; }
@@ -1151,6 +1178,7 @@ textarea.pem { min-height: 130px; resize: vertical; white-space: pre; overflow: 
         <a title="Settings" href="#settings" data-tab="settings"><svg class="i"><use href="#i-settings"/></svg><span class="nav-label">Settings</span></a>
       </div></div>
     </nav>
+    <button class="nav-more" id="navMore" type="button" aria-label="Scroll the menu down" tabindex="-1" hidden><svg class="i"><use href="#i-chev-down"/></svg></button>
     <div class="side-foot">
       <a href="#settings" class="update-pill hidden" data-update-pill><svg class="i"><use href="#i-sparkle"/></svg><span></span></a>
       <div class="hint ellipsis" id="sideDevice"></div>
@@ -1559,7 +1587,7 @@ textarea.pem { min-height: 130px; resize: vertical; white-space: pre; overflow: 
     </section>
 
     <section data-view="mcp" class="hidden">
-      <div class="page-head"><div class="grow"><h1>MCP</h1><div class="sub">Let AI assistants such as Claude, Cursor and VS Code look after this phone through the Model Context Protocol, or ask the built-in agent yourself.</div></div></div>
+      <div class="page-head"><div class="grow"><h1>MCP</h1><div class="sub">Let AI assistants such as Claude, Cursor and VS Code look after this phone through the Model Context Protocol, or ask the built-in agent yourself.</div></div><a class="btn ghost sm" href="https://homedroid.seltiv.com/guides/mcp/" target="_blank" rel="noopener">Video guide</a></div>
       <div id="mcpSettings"><div class="grid"><div class="card pad"><div class="skeleton" style="height:18px;width:50%"></div><div class="skeleton" style="height:14px;width:80%;margin-top:12px"></div></div><div class="card pad"><div class="skeleton" style="height:18px;width:50%"></div><div class="skeleton" style="height:14px;width:80%;margin-top:12px"></div></div></div></div>
       <div id="mcpSetup">
         <h2>Server addresses</h2><div id="mcpEndpoints"></div>
@@ -1580,7 +1608,7 @@ textarea.pem { min-height: 130px; resize: vertical; white-space: pre; overflow: 
     </section>
 
     <section data-view="desktop" class="hidden">
-      <div class="page-head"><div class="grow"><h1>Desktop &amp; MacroPads</h1><div class="sub">Pair your computers with the phone: run MacroPads keys on them, and use the phone’s camera as a webcam.</div></div>
+      <div class="page-head"><div class="grow"><h1>Desktop &amp; MacroPads</h1><div class="sub">Pair your computers with the phone: run MacroPads keys on them, and use the phone’s camera as a webcam.</div></div><a class="btn ghost sm" href="https://homedroid.seltiv.com/guides/desktop/" target="_blank" rel="noopener">Video guide</a>
         <button class="btn primary" data-act="dkPair"><svg class="i"><use href="#i-plus"/></svg>Pair a computer</button></div>
       <div id="dkPair" style="margin-bottom:16px"></div>
       <h2 style="margin-top:0">Your computers</h2>
@@ -1592,13 +1620,13 @@ textarea.pem { min-height: 130px; resize: vertical; white-space: pre; overflow: 
     </section>
 
     <section data-view="mail" class="hidden">
-      <div class="page-head"><div class="grow"><h1>Mail</h1><div class="sub">Your own email on this phone: a mail server for your domain, with the DNS records, accounts and mail app settings to go with it.</div></div>
+      <div class="page-head"><div class="grow"><h1>Mail</h1><div class="sub">Your own email on this phone: a mail server for your domain, with the DNS records, accounts and mail app settings to go with it.</div></div><a class="btn ghost sm" href="https://homedroid.seltiv.com/guides/mail/" target="_blank" rel="noopener">Video guide</a>
         <a class="btn" href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg>Guide</a></div>
       <div id="mailBody"><div class="grid"><div class="card pad"><div class="skeleton" style="height:18px;width:50%"></div><div class="skeleton" style="height:14px;width:80%;margin-top:12px"></div></div></div></div>
     </section>
 
     <section data-view="repeater" class="hidden">
-      <div class="page-head"><div class="grow"><h1>Wi-Fi repeater</h1><div class="sub">Share this phone’s internet with other devices through its own Wi-Fi network and a built-in proxy. No root needed.</div></div>
+      <div class="page-head"><div class="grow"><h1>Wi-Fi repeater</h1><div class="sub">Share this phone’s internet with other devices through its own Wi-Fi network and a built-in proxy. No root needed.</div></div><a class="btn ghost sm" href="https://homedroid.seltiv.com/guides/wifi-repeater/" target="_blank" rel="noopener">Video guide</a>
         <a class="btn" href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg>Guide</a></div>
       <div class="stack"><div id="rpHead"><div class="card pad"><div class="skeleton" style="height:18px;width:50%"></div></div></div>
         <div class="rpgrid"><div class="stack"><div id="rpNet"></div><div id="rpProxy"></div></div><div class="stack"><div id="rpQr"></div><div id="rpClients"></div></div></div>
@@ -2166,6 +2194,7 @@ function route() {
   tab = t in POLL ? t : 'overview';
   if (tab === 'settings') { settingsLoaded = false; settingsDirty.clear(); $('#settingsMessage').textContent = ''; }
   $$('[data-tab]').forEach(a => a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+  $('.nav a[aria-current="page"]')?.scrollIntoView({block: 'nearest'});
   $$('[data-view]').forEach(s => s.classList.toggle('hidden', s.dataset.view !== tab));
   if (tab === 'files') { files.root = rest[0] || files.root; files.path = rest.slice(1).join('/'); }
   closeMenu();
@@ -2270,7 +2299,9 @@ function spark(series, max, cls = ['']) {
 }
 const rate = b => b < 1024 ? b + ' B/s' : b < 1048576 ? (b / 1024).toFixed(b < 10240 ? 1 : 0) + ' KB/s' : (b / 1048576).toFixed(1) + ' MB/s';
 // ---- Modules ---------------------------------------------------------------------------
-const COLORS = {ai: '#9333ea', camera: '#0f766e', ssh: '#475569', web: '#0f766e', tunnel: '#c2410c', tailscale: '#1f2937', jellyfin: '#7c3aed', qbittorrent: '#4f46e5', homeassistant: '#0e7490', immich: '#db2777'};
+const COLORS = {ai: '#9333ea', camera: '#0f766e', ssh: '#475569', web: '#0f766e', tunnel: '#c2410c', tailscale: '#1f2937', jellyfin: '#7c3aed', qbittorrent: '#4f46e5', prowlarr: '#c2410c', radarr: '#b45309', sonarr: '#0369a1', seerr: '#6d28d9', homeassistant: '#0e7490', immich: '#db2777'};
+const VIDEO_GUIDES = {tailscale: 'remote-access', tunnel: 'remote-access', adguard: 'adguard', mail: 'mail', stalwart: 'mail', prowlarr: 'media-automation', radarr: 'media-automation', sonarr: 'media-automation', seerr: 'media-automation', ai: 'ai', repeater: 'wifi-repeater', mcp: 'mcp', desktop: 'desktop'};
+const videoGuideLink = id => VIDEO_GUIDES[id] ? `<a class="btn ghost sm" href="https://homedroid.seltiv.com/guides/${VIDEO_GUIDES[id]}/" target="_blank" rel="noopener">Video guide</a>` : '';
 let modules = null;
 function modCard(x) {
   const busy = modules.job.running;
@@ -2288,6 +2319,7 @@ function modCard(x) {
     </div>
     <div class="desc">${esc(x.description)}</div>
     ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}
+    ${modResources(x.resources)}
     ${x.notice ? `<div class="notice">${icon('alert')}<span>${esc(x.notice)}</span></div>` : ''}
     ${x.id === 'tailscale' && x.enabled ? tailscaleInfo(x.tailscale) : ''}
     <div class="mod-foot">
@@ -2299,11 +2331,20 @@ function modCard(x) {
       ${x.id === 'tailscale' && x.enabled ? `<button class="btn sm" data-act="tsSettings">${icon('settings')}Settings</button>` : ''}
       ${x.id === 'tailscale' && x.tailscale?.status?.state === 'Running' ? `<button class="btn ghost sm" data-act="tsLogout">Log out</button>` : ''}
       ${GUIDES[x.id] ? `<button class="btn ghost sm" data-act="guide" data-id="${esc(x.id)}">${icon('book')}Setup guide</button>` : ''}
+      ${videoGuideLink(x.id)}
       ${x.kind === 'app' && x.installed ? `
         <button class="btn sm" data-act="updateMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('sync')}Update</button>
         <button class="btn ghost sm" style="margin-left:auto" data-act="clearMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>Clear data</button>
         <button class="btn ghost sm danger" data-act="removeMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('trash')}Remove</button>` : ''}
     </div></div>`;
+}
+// Typical memory and CPU use (assets/resources.json): one quiet line plus what drives it.
+function modResources(r) {
+  if (!r) return '';
+  return `<div class="mod-res" aria-label="Typical use: memory ${esc(r.ram)}, CPU ${esc(r.cpu)}">
+    <span>${icon('memory')}Memory <b>${esc(r.ram)}</b></span>
+    <span>${icon('cpu')}CPU <b class="lvl ${esc(r.cpu)}">${esc(r.cpu)}</b></span>
+    ${r.note ? `<small>${esc(r.note)}</small>` : ''}</div>`;
 }
 async function renderModules() {
   modules = await api('modules');
@@ -2530,7 +2571,7 @@ function showGuide(id, i = 0) {
   const g = GUIDES[id]; guide.id = id; guide.i = Math.max(0, Math.min(i, g.steps.length - 1));
   const st = g.steps[guide.i], dlg = $('#guide');
   $('#guideTitle').textContent = g.title;
-  $('#guideBody').innerHTML = `<div class="guide-step">Step ${guide.i + 1} of ${g.steps.length}</div><h4>${esc(st.title)}</h4>${st.html()}
+  $('#guideBody').innerHTML = `<div class="guide-step">Step ${guide.i + 1} of ${g.steps.length} ${videoGuideLink(id)}</div><h4>${esc(st.title)}</h4>${st.html()}
     ${st.img ? `<img class="guide-shot" src="/guides/${st.img}" alt="${esc(st.title)}" loading="lazy">` : ''}`;
   $('#guideDots').innerHTML = g.steps.map((x, j) => `<button data-act="guideGo" data-i="${j}" title="${esc(x.title)}" aria-label="Step ${j + 1}: ${esc(x.title)}" ${j === guide.i ? 'aria-current="step"' : ''}></button>`).join('');
   $('#guidePrev').disabled = guide.i === 0;
@@ -4013,6 +4054,21 @@ function buildDock() {
 }
 function markDock() { $$('#dock a').forEach(a => a.dataset.dock === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')); }
 new MutationObserver(() => { if (prefs.layout.shell === 'kiosk') buildDock(); }).observe($('.nav'), {attributes: true, attributeFilter: ['class'], subtree: true});
+// Show that the menu scrolls: fade the cut-off edges and offer a chevron (hidden scrollbar, see .nav).
+const navEl = $('.nav'), sideEl = $('#sidebar'), navMore = $('#navMore');
+function syncNavScroll() {
+  const scrolls = navEl.scrollHeight - navEl.clientHeight > 4 && getComputedStyle(navEl).overflowY !== 'visible', more = [];
+  if (scrolls && navEl.scrollTop > 4) more.push('up');
+  if (scrolls && navEl.scrollHeight - navEl.clientHeight - navEl.scrollTop > 4) more.push('down');
+  more.length ? sideEl.dataset.more = more.join(' ') : sideEl.removeAttribute('data-more');
+  navMore.hidden = !more.includes('down');
+}
+navEl.addEventListener('scroll', syncNavScroll, {passive: true});
+new ResizeObserver(syncNavScroll).observe(navEl);
+new MutationObserver(syncNavScroll).observe(navEl, {childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden']});
+addEventListener('resize', syncNavScroll);
+navMore.addEventListener('click', () => navEl.scrollBy({top: Math.max(120, navEl.clientHeight * .7), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'}));
+syncNavScroll();
 const railTip = $('#railTip');
 document.addEventListener('mouseover', e => { const a = prefs.layout.shell === 'rail' && e.target.closest?.('.nav a'); if (!a || !innerWidth || innerWidth < 861) { railTip.hidden = true; return; } const r = a.getBoundingClientRect(); railTip.textContent = a.title; railTip.style.left = r.right + 10 + 'px'; railTip.style.top = r.top + r.height / 2 - 14 + 'px'; railTip.hidden = false; });
 document.addEventListener('mouseout', e => { if (e.target.closest?.('.nav a')) railTip.hidden = true; });

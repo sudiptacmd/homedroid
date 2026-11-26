@@ -429,7 +429,7 @@ function assetKind(kind, raw) {
   if (kind === 'font') return at(0, 0, 1, 0, 0) || text(0, 'true') ? 'font/ttf' : text(0, 'OTTO') ? 'font/otf' : null;
   return null;
 }
-function macroRoute(x, H, route, method, b, res, send, raw, url) {
+function macroRoute(x, H, route, method, b, res, send, raw, url, ctx = {}) {
   const dk = x.desktop;
   if (route === 'macropads' && method === 'GET') return send(res, {...JSON.parse(JSON.stringify(dk.deck)), computers: dk.computers});
   if (route === 'macropads' && method === 'PUT') {
@@ -470,7 +470,15 @@ function macroRoute(x, H, route, method, b, res, send, raw, url) {
     if (k.action.kind === 'command') fail(409, 'Commands are turned off in Homedroid Desktop (Allow commands)');
     return send(res, {ok: true});
   }
-  if (route === 'desktop/pair' && method === 'POST') { dk.code = {code: String(Math.floor(Math.random() * 1e6)).padStart(6, '0'), expires: Date.now() + 300000}; return send(res, dk.code); }
+  if (route === 'desktop/pair' && method === 'POST') {
+    const code = dk.code = {code: String(Math.floor(Math.random() * 1e6)).padStart(6, '0'), expires: Date.now() + 300000};
+    // Demo behaviour: someone types the code into Homedroid Desktop a few seconds later and the computer appears (once per code).
+    if (ctx.later) ctx.later(() => {
+      if (dk.code !== code || dk.computers.some(c => c.id === 'c-demo-pair')) return;
+      dk.computers.push({id: 'c-demo-pair', name: 'MacBook Air', os: 'macos', online: true, lastSeen: Date.now()}); dk.code = null;
+    }, 9000);
+    return send(res, dk.code);
+  }
   if (route === 'desktop/computers' && method === 'GET') return send(res, dk.computers);
   if (/^desktop\/computers\/[^/]+$/.test(route) && method === 'DELETE') {
     const id = route.split('/')[2]; if (!dk.computers.some(c => c.id === id)) fail(404, 'Unknown computer');
@@ -739,7 +747,7 @@ function route(x, p, s, method, b, raw, url, res, send, ctx) {
   if (area === 'deploys' && s.length >= 3 && ['settings', 'token', 'upload', 'pipeline', 'runs'].includes(s[2])) return deployExtras(x, p, s, method, b, raw, url, res, send, ctx.later, ctx.stepMs);
   if (area === 'mail') return mailRoute(x, p, rest, method, b, res, send, {...ctx, url});
   if (area === 'repeater') return repeaterRoute(x, rest, method, b, res, send, ctx);
-  if (area === 'macropads' || area === 'desktop') return macroRoute(x, x.helpers, s.join('/'), method, b, res, send, raw, url);
+  if (area === 'macropads' || area === 'desktop') return macroRoute(x, x.helpers, s.join('/'), method, b, res, send, raw, url, ctx);
   return false;
 }
 module.exports = {createExtras, route, DB_SPECS, starterDeck};

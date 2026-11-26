@@ -65,10 +65,20 @@ time. `dashboard-deploys` now shows the Pipelines tab.
 Windows 11 virtual camera and macOS input remain experimental; release notes also limit
 physical multi-phone load-balancing verification. Per-ABI APKs are about 50 to 60 MB and the
 universal APK is larger.
-Desktop's approximately 1 MB figure applies to Linux. Every download link points at the v0.9.5-beta tag, because /releases/latest skips pre-releases. Asset names follow
+Desktop's approximately 1 MB figure applies to Linux. Every download link points at the v0.9.6-beta tag, because /releases/latest skips pre-releases. Asset names follow
 the Desktop and release workflows.
 
 The final copy pass rewrote the hero, release band, grouped features, phone/dashboard tour,
 Dock/MacroPads/Desktop sections, comparison, setup/downloads, FAQ, all six topic pages (including /mail/),
 README and both llms files. It removed broad speed/heat claims and distinguished local AI
 from optional cloud requests. The banned-phrase checker runs over all public copy.
+
+## Service logos
+
+`site/img/apps/*.svg` are the logos in the homepage's "Runs on your phone" strip, shown in one
+colour by CSS. Jellyfin, qBittorrent, Radarr, Sonarr, Immich, Home Assistant, AdGuard, Caddy,
+Cloudflare, Tailscale and Alpine Linux come from [Simple Icons](https://simpleicons.org/)
+16.38.1 (CC0). Prowlarr (its Safari pinned-tab icon), Seerr (`public/os_icon.svg`), Stalwart
+(`img/logo-red.svg`, cropped to the mark) and llama.cpp (its web UI favicon) come from the
+projects' own repositories. The marks belong to their projects; they identify software that
+Homedroid installs and runs.

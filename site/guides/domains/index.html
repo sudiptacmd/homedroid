@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to use a custom domain with an Android home server | Homedroid</title>
+<meta name="description" content="Use a custom domain with an Android home server. Set up routing, verify the hostname, keep dynamic DNS current and review Homedroid firewall rules.">
+<link rel="canonical" href="https://homedroid.seltiv.com/guides/domains/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="How to use a custom domain with an Android home server | Homedroid">
+<meta property="og:description" content="Use a custom domain with an Android home server. Set up routing, verify the hostname, keep dynamic DNS current and review Homedroid firewall rules.">
+<meta property="og:url" content="https://homedroid.seltiv.com/guides/domains/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.6 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to use a custom domain with an Android home server | Homedroid">
+<meta name="twitter:description" content="Use a custom domain with an Android home server. Set up routing, verify the hostname, keep dynamic DNS current and review Homedroid firewall rules.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to use a custom domain with an Android home server",
+  "description": "Point your own domain at a website on your Android home server. Homedroid’s Domains page routes names to apps or deployments and checks that the name reaches the phone; Dynamic DNS and Firewall handle address updates and access rules.",
+  "url": "https://homedroid.seltiv.com/guides/domains/",
+  "video": {
+    "@id": "https://homedroid.seltiv.com/guides/domains/#video"
+  },
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Choose how the name reaches the phone",
+      "text": "For Cloudflare Tunnel, enable it and add your hostname with service http://localhost:8080. For direct access, point an A record at your public IP and forward router port 80 to phone port 8080.",
+      "url": "https://homedroid.seltiv.com/guides/domains/#step-1"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Add the domain",
+      "text": "Open Domains → Add a domain. Enter the full Domain, such as blog.example.com. Under Send visitors to, choose the deployment, app, folder or port, then select Add domain.",
+      "url": "https://homedroid.seltiv.com/guides/domains/#step-2"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Verify the route",
+      "text": "Select Verify on the domain card and follow the verification dialog, then Check now. If it fails, check the DNS or tunnel route and the selected destination before trying again.",
+      "url": "https://homedroid.seltiv.com/guides/domains/#step-3"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Keep a changing public IP current",
+      "text": "If using direct DNS with a changing address, open Dynamic DNS and add a DuckDNS or Cloudflare entry. Enter the domain or record and the provider token. Check its update result.",
+      "url": "https://homedroid.seltiv.com/guides/domains/#step-4"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Set access rules if needed",
+      "text": "In Firewall, add Allow or Deny rules for the intended addresses and scope. Test an address before saving. Keep your own dashboard address allowed; the page flags rules that would lock you out.",
+      "url": "https://homedroid.seltiv.com/guides/domains/#step-5"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "@id": "https://homedroid.seltiv.com/guides/domains/#video",
+  "name": "Use your own domain",
+  "description": "Add a domain and prove you own it, keep dynamic DNS up to date, and limit who can reach your sites with the firewall.",
+  "thumbnailUrl": "https://homedroid.seltiv.com/media/guide-domains.webp",
+  "contentUrl": "https://homedroid.seltiv.com/media/guide-domains.webm",
+  "uploadDate": "2026-11-26T00:00:00+06:00",
+  "embedUrl": "https://homedroid.seltiv.com/guides/domains/#video"
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/guides/">Guides</a>
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-star" href="https://github.com/sudiptacmd/homedroid" aria-label="Star Homedroid on GitHub"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M8 .6l2.3 4.7 5.1.7-3.7 3.6.9 5.1L8 12.3l-4.6 2.4.9-5.1L.6 6l5.1-.7z"/></svg><span class="star-label">Star</span><span class="star-count" data-stars hidden></span></a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article guide-article">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Homedroid</a><span>/</span><a href="/guides/">Guides</a><span>/</span>Use your own domain</nav>
+<span class="eyebrow">VIDEO GUIDE / DASHBOARD</span>
+<h1>How to use a custom domain with an Android home server</h1>
+<p class="lead">Point your own domain at a website on your Android home server. Homedroid’s Domains page routes names to apps or deployments and checks that the name reaches the phone; Dynamic DNS and Firewall handle address updates and access rules.</p>
+<figure class="guide-video" id="video">
+<video controls playsinline preload="none" poster="/media/guide-domains.webp" width="1280" height="800" aria-label="Use your own domain">
+<source src="/media/guide-domains.webm" type="video/webm">
+<p><a href="/media/guide-domains.webm">Download the setup video</a>, or follow the written steps below.</p>
+</video>
+<figcaption>Dashboard setup · silent screen recording · demo data. The steps below explain the actions.</figcaption>
+</figure>
+<h2>Before you start</h2>
+<ul><li>A domain whose DNS you can edit, a running Homedroid server and an app, deployment or folder to serve.</li><li>Web hosting enabled in Modules. Use Cloudflare Tunnel for public HTTPS without port forwarding, or arrange direct DNS and router forwarding.</li></ul>
+<h2>How to use a custom domain with an Android home server: step by step</h2>
+<ol class="guide-steps">
+<li id="step-1"><h3>Choose how the name reaches the phone</h3><p>For Cloudflare Tunnel, enable it and add your hostname with service http://localhost:8080. For direct access, point an A record at your public IP and forward router port 80 to phone port 8080.</p></li>
+<li id="step-2"><h3>Add the domain</h3><p>Open Domains → Add a domain. Enter the full Domain, such as blog.example.com. Under Send visitors to, choose the deployment, app, folder or port, then select Add domain.</p></li>
+<li id="step-3"><h3>Verify the route</h3><p>Select Verify on the domain card and follow the verification dialog, then Check now. If it fails, check the DNS or tunnel route and the selected destination before trying again.</p></li>
+<li id="step-4"><h3>Keep a changing public IP current</h3><p>If using direct DNS with a changing address, open Dynamic DNS and add a DuckDNS or Cloudflare entry. Enter the domain or record and the provider token. Check its update result.</p></li>
+<li id="step-5"><h3>Set access rules if needed</h3><p>In Firewall, add Allow or Deny rules for the intended addresses and scope. Test an address before saving. Keep your own dashboard address allowed; the page flags rules that would lock you out.</p></li>
+</ol>
+<h2>Typical memory and CPU</h2>
+<p>These are the estimates shown by Homedroid, from its module resource data. Memory is resident process memory; CPU describes use while busy. Actual use depends on the phone and workload.</p>
+<div class="table-scroll"><table class="needs"><caption>Typical running resources, not download or disk sizes</caption><thead><tr><th scope="col">Module</th><th scope="col">Memory</th><th scope="col">CPU</th><th scope="col">What affects it</th></tr></thead><tbody><tr><th scope="row">Web hosting</th><td>40–60 MB</td><td><span class="cpu low">low</span></td><td>Grows with traffic to your sites.</td></tr><tr><th scope="row">Cloudflare Tunnel</th><td>30–60 MB</td><td><span class="cpu low">low</span></td><td>Grows with the traffic it carries.</td></tr></tbody></table></div>
+<h2>Good to know and troubleshooting</h2>
+<ul><li>Direct forwarding to port 8080 reaches the phone over HTTP. Use a tunnel or a separate TLS endpoint for HTTPS.</li><li>Dynamic DNS does not remove CGNAT or open a blocked port. A tunnel is the alternative when inbound connections cannot reach home.</li><li>Firewall rules cover the dashboard and Caddy web sites, not all Android traffic. A tunnel running on the phone is always allowed, so use Cloudflare Access to restrict visitors coming through that tunnel. Verify checks that the domain reaches the phone.</li></ul>
+<aside class="article-cta"><h2>Related guides</h2><ul><li><a href="/guides/deploy/">Deploy a website or app from GitHub</a></li>
+<li><a href="/guides/remote-access/">Reach your server from anywhere</a></li>
+<li><a href="/guides/mail/">Run your own mail server</a></li></ul><a href="/guides/">All video guides</a></aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="/guides/">Guides</a>
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">0.9.6 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-26">26 November 2026</time> · 0.9.6-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>
