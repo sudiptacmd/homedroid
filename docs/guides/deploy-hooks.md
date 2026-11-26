@@ -1,5 +1,7 @@
 # Deploying from CI
 
+**Video:** [Watch the setup on the Homedroid website](https://homedroid.seltiv.com/guides/deploy/)
+
 Every deployment has its own deploy token and GitHub webhook secret. They're shown once, when
 the deployment is created or when you make new ones (`POST /api/deploys/<id>/token`); the
 phone keeps only a hash of the token. With them, CI can deploy without the dashboard password:

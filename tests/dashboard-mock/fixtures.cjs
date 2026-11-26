@@ -239,9 +239,9 @@ function startJob(p, title, lines, {stepMs = 450, fail = null, onDone} = {}) {
   }, stepMs);
   return null;
 }
-const installLines = name => [`==> Installing ${name}`, 'Alpine: up to date', 'fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/APKINDEX.tar.gz',
+const installLines = title => { const name = String(title).replace(/^(Installing|Updating|Removing|Clearing|Moving)\s+/, ''); return [`==> ${/^Removing/.test(title) ? 'Removing' : 'Installing'} ${name}`, 'Alpine: up to date', 'fetch https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/APKINDEX.tar.gz',
   `Downloading ${name}…`, '  12% ━━━━━━━━━━━━━━━━━━', '  47% ━━━━━━━━━━━━━━━━━━', '  83% ━━━━━━━━━━━━━━━━━━', ' 100% ━━━━━━━━━━━━━━━━━━',
-  'Unpacking', 'Writing configuration', `Starting ${name}`, 'Done'];
+  'Unpacking', 'Writing configuration', `Starting ${name}`, 'Done']; };
 
 /** A service just (re)started: "starting" for a couple of seconds, then running. */
 function bump(p, name, restart = false) {

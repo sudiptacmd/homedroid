@@ -8,6 +8,7 @@ const errors=[];let schemas=0,links=0;
 const contents=new Map(pages.map(p=>[p,fs.readFileSync(p,'utf8')]));
 const ids=new Map([...contents].map(([p,s])=>[p,new Set([...s.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]))]));
 const fail=(file,msg)=>errors.push(`${path.relative(root,file)}: ${msg}`);
+const guideManifest=JSON.parse(fs.readFileSync('tools/marketing/guides.json','utf8'));
 function resolveLink(file,raw){
  if(!raw||/^(?:mailto|tel|data|javascript):/.test(raw))return;
  const base=origin+'/'+path.relative(root,file).replaceAll(path.sep,'/');
@@ -57,6 +58,26 @@ for(const m of readme.matchAll(/(?:\]\(([^)]+)\)|src="([^"]+)")/g)){
  const raw=m[1]||m[2];if(/^(?:https?:|#)/.test(raw))continue;
  if(!fs.existsSync(raw.split('#')[0]))errors.push('README missing local target: '+raw);
 }
-for(const f of files.filter(f=>/dashboard-.*\.webm$/.test(f)))if(fs.statSync(f).size>=3_000_000)fail(f,'video exceeds 3 MB');
+for(const g of guideManifest.guides){
+ const file=path.join(root,'guides',g.slug,'index.html');
+ for(const target of [file,path.join(root,'media',g.video),path.join(root,'media',g.poster)]){
+  if(!fs.existsSync(target))fail(file,`missing guide file ${path.relative(root,target)}`);
+ }
+ const s=contents.get(file);
+ if(!s)continue;
+ const data=[...s.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].flatMap(m=>{
+  try{const value=JSON.parse(m[1]);return value['@graph']||[value];}catch{return [];}
+ });
+ for(const type of ['HowTo','VideoObject']){
+  const item=data.find(d=>d['@type']===type);
+  if(!item)fail(file,`missing ${type} JSON-LD`);
+  else if(type==='HowTo'&&(!Array.isArray(item.step)||!item.step.length||item.step.some(step=>!step.name||!step.text)))fail(file,'HowTo must include named steps with instructions');
+  else if(type==='VideoObject'){
+   for(const field of ['name','description','thumbnailUrl','contentUrl','uploadDate','embedUrl'])if(!item[field])fail(file,`VideoObject missing ${field}`);
+   if(item.contentUrl!==`${origin}/media/${g.video}`||item.thumbnailUrl!==`${origin}/media/${g.poster}`)fail(file,'VideoObject media does not match guides.json');
+  }
+ }
+}
+for(const f of files.filter(f=>/(?:dashboard|guide)-.*\.webm$/.test(path.basename(f))))if(fs.statSync(f).size>=3_000_000)fail(f,'video exceeds 3 MB');
 if(errors.length){console.error(errors.join('\n'));process.exit(1)}
 console.log(`PASS: ${pages.length} HTML pages, ${schemas} JSON-LD blocks parsed, ${links} local links/assets/fragments; metadata, README targets, media budgets and copy checks.`);

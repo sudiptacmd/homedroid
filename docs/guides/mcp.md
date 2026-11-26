@@ -1,5 +1,7 @@
 # Connecting AI assistants (MCP)
 
+**Video:** [Watch the setup on the Homedroid website](https://homedroid.seltiv.com/guides/mcp/)
+
 Homedroid has a built-in [Model Context Protocol](https://modelcontextprotocol.io) server, so
 assistants such as Claude, Cursor and VS Code can check on the phone and, if you allow it,
 manage it: status, services and their logs, modules, deployments, files, the network, and

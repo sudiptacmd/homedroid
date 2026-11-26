@@ -1566,7 +1566,7 @@ textarea.pem { min-height: 130px; resize: vertical; white-space: pre; overflow: 
     </section>
 
     <section data-view="mcp" class="hidden">
-      <div class="page-head"><div class="grow"><h1>MCP</h1><div class="sub">Let AI assistants such as Claude, Cursor and VS Code look after this phone through the Model Context Protocol, or ask the built-in agent yourself.</div></div></div>
+      <div class="page-head"><div class="grow"><h1>MCP</h1><div class="sub">Let AI assistants such as Claude, Cursor and VS Code look after this phone through the Model Context Protocol, or ask the built-in agent yourself.</div></div><a class="btn ghost sm" href="https://homedroid.seltiv.com/guides/mcp/" target="_blank" rel="noopener">Video guide</a></div>
       <div id="mcpSettings"><div class="grid"><div class="card pad"><div class="skeleton" style="height:18px;width:50%"></div><div class="skeleton" style="height:14px;width:80%;margin-top:12px"></div></div><div class="card pad"><div class="skeleton" style="height:18px;width:50%"></div><div class="skeleton" style="height:14px;width:80%;margin-top:12px"></div></div></div></div>
       <div id="mcpSetup">
         <h2>Server addresses</h2><div id="mcpEndpoints"></div>
@@ -1587,7 +1587,7 @@ textarea.pem { min-height: 130px; resize: vertical; white-space: pre; overflow: 
     </section>
 
     <section data-view="desktop" class="hidden">
-      <div class="page-head"><div class="grow"><h1>Desktop &amp; MacroPads</h1><div class="sub">Pair your computers with the phone: run MacroPads keys on them, and use the phone’s camera as a webcam.</div></div>
+      <div class="page-head"><div class="grow"><h1>Desktop &amp; MacroPads</h1><div class="sub">Pair your computers with the phone: run MacroPads keys on them, and use the phone’s camera as a webcam.</div></div><a class="btn ghost sm" href="https://homedroid.seltiv.com/guides/desktop/" target="_blank" rel="noopener">Video guide</a>
         <button class="btn primary" data-act="dkPair"><svg class="i"><use href="#i-plus"/></svg>Pair a computer</button></div>
       <div id="dkPair" style="margin-bottom:16px"></div>
       <h2 style="margin-top:0">Your computers</h2>
@@ -1599,13 +1599,13 @@ textarea.pem { min-height: 130px; resize: vertical; white-space: pre; overflow: 
     </section>
 
     <section data-view="mail" class="hidden">
-      <div class="page-head"><div class="grow"><h1>Mail</h1><div class="sub">Your own email on this phone: a mail server for your domain, with the DNS records, accounts and mail app settings to go with it.</div></div>
+      <div class="page-head"><div class="grow"><h1>Mail</h1><div class="sub">Your own email on this phone: a mail server for your domain, with the DNS records, accounts and mail app settings to go with it.</div></div><a class="btn ghost sm" href="https://homedroid.seltiv.com/guides/mail/" target="_blank" rel="noopener">Video guide</a>
         <a class="btn" href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg>Guide</a></div>
       <div id="mailBody"><div class="grid"><div class="card pad"><div class="skeleton" style="height:18px;width:50%"></div><div class="skeleton" style="height:14px;width:80%;margin-top:12px"></div></div></div></div>
     </section>
 
     <section data-view="repeater" class="hidden">
-      <div class="page-head"><div class="grow"><h1>Wi-Fi repeater</h1><div class="sub">Share this phone’s internet with other devices through its own Wi-Fi network and a built-in proxy. No root needed.</div></div>
+      <div class="page-head"><div class="grow"><h1>Wi-Fi repeater</h1><div class="sub">Share this phone’s internet with other devices through its own Wi-Fi network and a built-in proxy. No root needed.</div></div><a class="btn ghost sm" href="https://homedroid.seltiv.com/guides/wifi-repeater/" target="_blank" rel="noopener">Video guide</a>
         <a class="btn" href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/wifi-repeater.md" target="_blank" rel="noopener"><svg class="i"><use href="#i-book"/></svg>Guide</a></div>
       <div class="stack"><div id="rpHead"><div class="card pad"><div class="skeleton" style="height:18px;width:50%"></div></div></div>
         <div class="rpgrid"><div class="stack"><div id="rpNet"></div><div id="rpProxy"></div></div><div class="stack"><div id="rpQr"></div><div id="rpClients"></div></div></div>
@@ -2278,6 +2278,8 @@ function spark(series, max, cls = ['']) {
 const rate = b => b < 1024 ? b + ' B/s' : b < 1048576 ? (b / 1024).toFixed(b < 10240 ? 1 : 0) + ' KB/s' : (b / 1048576).toFixed(1) + ' MB/s';
 // ---- Modules ---------------------------------------------------------------------------
 const COLORS = {ai: '#9333ea', camera: '#0f766e', ssh: '#475569', web: '#0f766e', tunnel: '#c2410c', tailscale: '#1f2937', jellyfin: '#7c3aed', qbittorrent: '#4f46e5', prowlarr: '#c2410c', radarr: '#b45309', sonarr: '#0369a1', seerr: '#6d28d9', homeassistant: '#0e7490', immich: '#db2777'};
+const VIDEO_GUIDES = {tailscale: 'remote-access', tunnel: 'remote-access', adguard: 'adguard', mail: 'mail', stalwart: 'mail', prowlarr: 'media-automation', radarr: 'media-automation', sonarr: 'media-automation', seerr: 'media-automation', ai: 'ai', repeater: 'wifi-repeater', mcp: 'mcp', desktop: 'desktop'};
+const videoGuideLink = id => VIDEO_GUIDES[id] ? `<a class="btn ghost sm" href="https://homedroid.seltiv.com/guides/${VIDEO_GUIDES[id]}/" target="_blank" rel="noopener">Video guide</a>` : '';
 let modules = null;
 function modCard(x) {
   const busy = modules.job.running;
@@ -2307,6 +2309,7 @@ function modCard(x) {
       ${x.id === 'tailscale' && x.enabled ? `<button class="btn sm" data-act="tsSettings">${icon('settings')}Settings</button>` : ''}
       ${x.id === 'tailscale' && x.tailscale?.status?.state === 'Running' ? `<button class="btn ghost sm" data-act="tsLogout">Log out</button>` : ''}
       ${GUIDES[x.id] ? `<button class="btn ghost sm" data-act="guide" data-id="${esc(x.id)}">${icon('book')}Setup guide</button>` : ''}
+      ${videoGuideLink(x.id)}
       ${x.kind === 'app' && x.installed ? `
         <button class="btn sm" data-act="updateMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>${icon('sync')}Update</button>
         <button class="btn ghost sm" style="margin-left:auto" data-act="clearMod" data-id="${esc(x.id)}" ${busy ? 'disabled' : ''}>Clear data</button>
@@ -2546,7 +2549,7 @@ function showGuide(id, i = 0) {
   const g = GUIDES[id]; guide.id = id; guide.i = Math.max(0, Math.min(i, g.steps.length - 1));
   const st = g.steps[guide.i], dlg = $('#guide');
   $('#guideTitle').textContent = g.title;
-  $('#guideBody').innerHTML = `<div class="guide-step">Step ${guide.i + 1} of ${g.steps.length}</div><h4>${esc(st.title)}</h4>${st.html()}
+  $('#guideBody').innerHTML = `<div class="guide-step">Step ${guide.i + 1} of ${g.steps.length} ${videoGuideLink(id)}</div><h4>${esc(st.title)}</h4>${st.html()}
     ${st.img ? `<img class="guide-shot" src="/guides/${st.img}" alt="${esc(st.title)}" loading="lazy">` : ''}`;
   $('#guideDots').innerHTML = g.steps.map((x, j) => `<button data-act="guideGo" data-i="${j}" title="${esc(x.title)}" aria-label="Step ${j + 1}: ${esc(x.title)}" ${j === guide.i ? 'aria-current="step"' : ''}></button>`).join('');
   $('#guidePrev').disabled = guide.i === 0;

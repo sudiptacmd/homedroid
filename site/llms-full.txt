@@ -143,3 +143,22 @@ https://github.com/sudiptacmd/homedroid/blob/main/docs/desktop-protocol.md
 https://github.com/sudiptacmd/homedroid/blob/main/docs/releases/v0.9.6-beta.md
 
 Screenshots: phone captures from an emulator and actual dashboard UI with mock API data. They are demonstrations, not hardware benchmarks.
+
+## Video guides
+
+- [All video guides](https://homedroid.seltiv.com/guides/): Browse setup videos by task, with written steps and requirements.
+- [Set up Homedroid on an old phone](https://homedroid.seltiv.com/guides/getting-started/): Install the APK, start the server, and open the dashboard from your computer.
+- [Install apps and choose where their data lives](https://homedroid.seltiv.com/guides/apps/): Install Jellyfin or any app from the library, see what it needs in memory and CPU, and move its library to an SD card or USB drive.
+- [Reach your server from anywhere](https://homedroid.seltiv.com/guides/remote-access/): Private access with Tailscale, or publish a site to the internet with a Cloudflare Tunnel, without opening ports on your router.
+- [Automate movies and TV with Radarr, Sonarr and Jellyseerr](https://homedroid.seltiv.com/guides/media-automation/): Install the media apps, request a movie in Jellyseerr, and watch it reach Radarr, qBittorrent and Jellyfin.
+- [Use the phone as a NAS](https://homedroid.seltiv.com/guides/files/): Browse, upload, download and share files in the browser, and reach them over SFTP.
+- [Install other Linux software with apk](https://homedroid.seltiv.com/guides/alpine-packages/): Open the terminal, choose Alpine Linux and install packages such as git, Python or ffmpeg.
+- [Deploy a website or app from GitHub](https://homedroid.seltiv.com/guides/deploy/): Point a deployment at a repository, watch the build pipeline, and redeploy on every push with a deploy hook.
+- [Use your own domain](https://homedroid.seltiv.com/guides/domains/): Add a domain and prove you own it, keep dynamic DNS up to date, and limit who can reach your sites with the firewall.
+- [Run your own mail server](https://homedroid.seltiv.com/guides/mail/): Install Stalwart, follow the setup, copy the DNS records it shows, and add mailboxes.
+- [Run a local AI model on the phone](https://homedroid.seltiv.com/guides/ai/): Download a model, chat with it, and use the OpenAI-compatible API from your other apps.
+- [Customize the dashboard: layouts, themes and fonts](https://homedroid.seltiv.com/guides/customize/): all six layouts, 13 themes, fonts and presets, in two videos.
+- [Let Claude, Cursor or VS Code manage the server](https://homedroid.seltiv.com/guides/mcp/): Turn on the MCP server, copy the connection settings, and decide which tools assistants may use.
+- [Pair Homedroid Desktop: MacroPads and the phone webcam](https://homedroid.seltiv.com/guides/desktop/): Pair your computer with a six-digit code, build a button deck, and use the phone as a webcam.
+- [Share the phone's internet with a Wi-Fi repeater](https://homedroid.seltiv.com/guides/wifi-repeater/): Start the repeater network, then join it from a laptop or phone with the QR code and proxy settings.
+- [Block ads on every device with AdGuard Home](https://homedroid.seltiv.com/guides/adguard/): Install AdGuard Home, sign in, and point your devices or tailnet at the phone for DNS.

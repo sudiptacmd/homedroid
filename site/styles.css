@@ -280,3 +280,50 @@ table{min-width:560px}
 .needs td:nth-child(2){color:#d6e5db}
 .needs td:nth-child(4){grid-column:1/-1;font-size:13px;line-height:1.5}
 }
+
+/* Guide cards and recordings share the topic pages' typography and colours. */
+.guide-jump,.tour-jump{display:flex;flex-wrap:wrap;gap:10px 24px;margin:25px 0 40px;font-size:14px}
+.guides-hub{max-width:1280px}
+.guide-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.guide-card{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);text-decoration:none}
+.guide-card:hover{border-color:var(--green)}
+.guide-card>img{width:100%;aspect-ratio:8/5;object-fit:contain;background:var(--bg)}
+.guide-card>div{display:flex;flex-direction:column;flex:1;padding:24px}
+.guide-card .eyebrow{margin-bottom:12px}
+.guide-card h3{font-size:22px;color:var(--text);margin-bottom:16px}
+.guide-card p{font-size:14px}
+.guide-card-link{font-size:13px;margin-top:auto;padding-top:8px}
+.guide-video{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.guide-video video{width:100%;background:#000}
+.guide-video figcaption{padding:16px 20px}
+.guide-video-phone{max-width:320px;margin-inline:auto}
+.guide-steps{padding-left:28px}
+.guide-steps li{padding:12px 0 20px}
+.guide-steps li::marker{color:var(--green);font-weight:600}
+.guide-steps h3{font-size:23px;margin:0 0 12px}
+.guide-steps p{margin-bottom:0}
+.guide-article{overflow-wrap:anywhere}
+.tour-group{margin-top:44px;scroll-margin-top:100px}
+.tour-group>h3{font-size:28px}
+.tour-group figcaption{font-size:15px}
+.tour-group figcaption strong{display:block;margin:0 0 8px;font-size:19px}
+.tour-group figcaption p{max-width:850px;margin-bottom:10px}
+.tour-group figcaption a{font-size:14px}
+@media(max-width:1050px){.nav nav{gap:18px}.nav nav .nav-download{padding-left:18px}.guide-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:850px) and (min-width:721px){.nav .beta{display:none}.nav nav{gap:12px}.nav nav .nav-download{padding-left:12px}}
+@media(max-width:720px){
+.nav nav{gap:8px;flex-wrap:wrap;justify-content:space-between}
+.nav nav a[href="/#features"],.nav nav a[href="#features"],.nav nav a[href="/desktop/"]{display:none}
+.nav nav .nav-download{padding-left:10px;white-space:nowrap}
+.guide-grid{grid-template-columns:1fr}
+.guide-card>div{padding:22px}
+.guide-jump,.tour-jump{gap:10px 20px;font-size:13px}
+.tour-group{margin-top:35px}
+.tour-group figcaption{font-size:14px}
+}
+.privacy-band{padding-block:64px;display:grid;grid-template-columns:1fr 1.1fr;gap:90px;border-bottom:1px solid var(--line)}
+.privacy-band h2{font-size:37px}
+.privacy-points p{margin:0 0 18px;color:var(--muted);font-size:15px;line-height:1.65}
+.privacy-points strong{color:var(--text);font-weight:600}
+@media(max-width:1050px){.privacy-band{grid-template-columns:1fr;gap:28px}}
+@media(max-width:720px){.privacy-band{padding-block:44px}.privacy-band h2{font-size:29px}}

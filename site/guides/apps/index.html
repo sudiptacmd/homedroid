@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to install Jellyfin and other server apps on Android | Homedroid</title>
+<meta name="description" content="Install Jellyfin and other server apps on Android with Homedroid. Check memory and CPU needs, choose a media storage location and manage apps from the dashboard.">
+<link rel="canonical" href="https://homedroid.seltiv.com/guides/apps/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="How to install Jellyfin and other server apps on Android | Homedroid">
+<meta property="og:description" content="Install Jellyfin and other server apps on Android with Homedroid. Check memory and CPU needs, choose a media storage location and manage apps from the dashboard.">
+<meta property="og:url" content="https://homedroid.seltiv.com/guides/apps/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.6 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to install Jellyfin and other server apps on Android | Homedroid">
+<meta name="twitter:description" content="Install Jellyfin and other server apps on Android with Homedroid. Check memory and CPU needs, choose a media storage location and manage apps from the dashboard.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to install Jellyfin and other server apps on Android",
+  "description": "Install Jellyfin and other server apps on an old Android phone from Homedroid’s Modules page. Check the memory estimate first, then choose where the app’s media lives.",
+  "url": "https://homedroid.seltiv.com/guides/apps/",
+  "video": {
+    "@id": "https://homedroid.seltiv.com/guides/apps/#video"
+  },
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Choose an app in Modules",
+      "text": "Open Modules. Each card shows the app’s state, port and typical memory and CPU use. Jellyfin is a useful first choice for a media library.",
+      "url": "https://homedroid.seltiv.com/guides/apps/#step-1"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Install and open it",
+      "text": "Select Install on the app’s card. Wait for it to show running, then select Open. Finish the app’s own first-run setup and create its login.",
+      "url": "https://homedroid.seltiv.com/guides/apps/#step-2"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Choose the library location on the phone",
+      "text": "Use the app’s storage location picker in the phone app to select internal storage, a microSD card or a USB drive. Follow the picker’s explanation of what moves and the permissions it needs.",
+      "url": "https://homedroid.seltiv.com/guides/apps/#step-3"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Check the location and add files",
+      "text": "Back in the dashboard, check the storage location shown on the module card. Open Files to upload media to that location. Jellyfin and qBittorrent share the Media folder.",
+      "url": "https://homedroid.seltiv.com/guides/apps/#step-4"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Manage the app",
+      "text": "Use the card’s switch to turn the app off or on. Use Update when a newer app version is supplied by Homedroid. Clear data and Remove are destructive; read their confirmation before proceeding.",
+      "url": "https://homedroid.seltiv.com/guides/apps/#step-5"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "@id": "https://homedroid.seltiv.com/guides/apps/#video",
+  "name": "Install apps and choose where their data lives",
+  "description": "Install Jellyfin or any app from the library, see what it needs in memory and CPU, and move its library to an SD card or USB drive.",
+  "thumbnailUrl": "https://homedroid.seltiv.com/media/guide-apps.webp",
+  "contentUrl": "https://homedroid.seltiv.com/media/guide-apps.webm",
+  "uploadDate": "2026-11-26T00:00:00+06:00",
+  "embedUrl": "https://homedroid.seltiv.com/guides/apps/#video"
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/guides/">Guides</a>
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-star" href="https://github.com/sudiptacmd/homedroid" aria-label="Star Homedroid on GitHub"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M8 .6l2.3 4.7 5.1.7-3.7 3.6.9 5.1L8 12.3l-4.6 2.4.9-5.1L.6 6l5.1-.7z"/></svg><span class="star-label">Star</span><span class="star-count" data-stars hidden></span></a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article guide-article">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Homedroid</a><span>/</span><a href="/guides/">Guides</a><span>/</span>Install apps and choose where their data lives</nav>
+<span class="eyebrow">VIDEO GUIDE / DASHBOARD</span>
+<h1>How to install Jellyfin and other server apps on Android</h1>
+<p class="lead">Install Jellyfin and other server apps on an old Android phone from Homedroid’s Modules page. Check the memory estimate first, then choose where the app’s media lives.</p>
+<figure class="guide-video" id="video">
+<video controls playsinline preload="none" poster="/media/guide-apps.webp" width="1280" height="800" aria-label="Install apps and choose where their data lives">
+<source src="/media/guide-apps.webm" type="video/webm">
+<p><a href="/media/guide-apps.webm">Download the setup video</a>, or follow the written steps below.</p>
+</video>
+<figcaption>Dashboard setup · silent screen recording · demo data. The steps below explain the actions.</figcaption>
+</figure>
+<h2>Before you start</h2>
+<ul><li>A running Homedroid server and dashboard login.</li><li>Space for the app download and its library. For removable storage, connect a supported USB OTG drive or insert a microSD card.</li></ul>
+<h2>How to install Jellyfin and other server apps on Android: step by step</h2>
+<ol class="guide-steps">
+<li id="step-1"><h3>Choose an app in Modules</h3><p>Open Modules. Each card shows the app’s state, port and typical memory and CPU use. Jellyfin is a useful first choice for a media library.</p></li>
+<li id="step-2"><h3>Install and open it</h3><p>Select Install on the app’s card. Wait for it to show running, then select Open. Finish the app’s own first-run setup and create its login.</p></li>
+<li id="step-3"><h3>Choose the library location on the phone</h3><p>Use the app’s storage location picker in the phone app to select internal storage, a microSD card or a USB drive. Follow the picker’s explanation of what moves and the permissions it needs.</p></li>
+<li id="step-4"><h3>Check the location and add files</h3><p>Back in the dashboard, check the storage location shown on the module card. Open Files to upload media to that location. Jellyfin and qBittorrent share the Media folder.</p></li>
+<li id="step-5"><h3>Manage the app</h3><p>Use the card’s switch to turn the app off or on. Use Update when a newer app version is supplied by Homedroid. Clear data and Remove are destructive; read their confirmation before proceeding.</p></li>
+</ol>
+<h2>Typical memory and CPU</h2>
+<p>These are the estimates shown by Homedroid, from its module resource data. Memory is resident process memory; CPU describes use while busy. Actual use depends on the phone and workload.</p>
+<div class="table-scroll"><table class="needs"><caption>Typical running resources, not download or disk sizes</caption><thead><tr><th scope="col">Module</th><th scope="col">Memory</th><th scope="col">CPU</th><th scope="col">What affects it</th></tr></thead><tbody><tr><th scope="row">Jellyfin</th><td>200–450 MB</td><td><span class="cpu high">high</span></td><td>Light when your devices play files as they are. Converting video decodes it in software and can use every core.</td></tr><tr><th scope="row">qBittorrent</th><td>40–150 MB</td><td><span class="cpu medium">medium</span></td><td>Grows with the number of active torrents. Checking a finished download is busy for a moment.</td></tr></tbody></table></div>
+<h2>Good to know and troubleshooting</h2>
+<ul><li>The dashboard displays the library location; this guide uses the phone’s picker to change it. Settings and databases generally stay internal when media moves to removable storage.</li><li>FAT32 cannot hold files over 4 GB. On Android 10, app-owned folders on removable storage are deleted when Homedroid is uninstalled.</li><li>If a drive disappears, affected apps wait for it. Reconnect it before troubleshooting the app itself.</li></ul>
+<p><a href="https://github.com/sudiptacmd/homedroid/blob/main/README.md#usb-drives-and-sd-cards-as-a-nas">Read the written guide on GitHub</a> for more detail.</p>
+<aside class="article-cta"><h2>Related guides</h2><ul><li><a href="/guides/media-automation/">Automate movies and TV with Radarr, Sonarr and Jellyseerr</a></li>
+<li><a href="/guides/files/">Use the phone as a NAS</a></li>
+<li><a href="/guides/alpine-packages/">Install other Linux software with apk</a></li></ul><a href="/guides/">All video guides</a></aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="/guides/">Guides</a>
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">0.9.6 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-26">26 November 2026</time> · 0.9.6-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>

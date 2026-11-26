@@ -13,7 +13,7 @@
 ![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84)
 ![No root](https://img.shields.io/badge/root-not%20needed-00e5ff)
 
-**[Website](https://homedroid.seltiv.com/) · [Download 0.9.6 beta](https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta) · [Desktop companion](#homedroid-desktop) · [Send feedback](https://github.com/sudiptacmd/homedroid/issues/new/choose)**
+**[Website](https://homedroid.seltiv.com/) · [Video guides](https://homedroid.seltiv.com/guides/) · [Download 0.9.6 beta](https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta) · [Desktop companion](#homedroid-desktop) · [Send feedback](https://github.com/sudiptacmd/homedroid/issues/new/choose)**
 
 That phone in your drawer still has a CPU, a camera, Wi-Fi and storage. It can do more than
 hold a charge badly. **Homedroid turns an old Android phone into a self-hosted home server**:
@@ -453,6 +453,12 @@ its child servers behind.
 <img src="docs/architecture.svg" width="900" alt="Homedroid architecture: Android app, native services, Alpine apps and web dashboard">
 
 ## Security
+
+**No telemetry.** Homedroid has no analytics, tracking, crash reporting or accounts, and sends
+nothing about you, your phone or your files anywhere. It connects to the internet only for
+features you use: downloading apps and AI models, your own tunnel, Tailscale or dynamic DNS,
+notifications you set up, and checking GitHub's public release list for updates (a plain
+request with no identifier). It turns off the usage reporting of Radarr, Sonarr and Prowlarr.
 
 SSH accepts public keys only. The dashboard has a generated password and expiring
 HttpOnly/SameSite sessions. That password also opens the web terminal, so treat it like an

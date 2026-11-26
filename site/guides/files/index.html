@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to use an old Android phone as a NAS | Homedroid</title>
+<meta name="description" content="Use an old Android phone as a NAS with Homedroid. Browse and upload files, connect USB or SD storage, and set up SFTP. Includes a video and written steps.">
+<link rel="canonical" href="https://homedroid.seltiv.com/guides/files/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="How to use an old Android phone as a NAS | Homedroid">
+<meta property="og:description" content="Use an old Android phone as a NAS with Homedroid. Browse and upload files, connect USB or SD storage, and set up SFTP. Includes a video and written steps.">
+<meta property="og:url" content="https://homedroid.seltiv.com/guides/files/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.6 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to use an old Android phone as a NAS | Homedroid">
+<meta name="twitter:description" content="Use an old Android phone as a NAS with Homedroid. Browse and upload files, connect USB or SD storage, and set up SFTP. Includes a video and written steps.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to use an old Android phone as a NAS",
+  "description": "Use an old Android phone as a NAS with Homedroid’s file browser and SFTP. Upload folders from your browser, preview media and reach supported USB drives or microSD cards through the phone.",
+  "url": "https://homedroid.seltiv.com/guides/files/",
+  "video": {
+    "@id": "https://homedroid.seltiv.com/guides/files/#video"
+  },
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Choose a location",
+      "text": "Open Files and select the storage location from Location. The page shows free space and the files in the current folder.",
+      "url": "https://homedroid.seltiv.com/guides/files/#step-1"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Upload files or a folder",
+      "text": "Select Upload or Upload folder, or drop files onto the list. Use New folder to make a destination before uploading.",
+      "url": "https://homedroid.seltiv.com/guides/files/#step-2"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Preview or download",
+      "text": "Open a supported image, PDF or media file to preview it. Use Download to save a file; a folder downloads as a ZIP. Share that downloaded copy with the intended recipient.",
+      "url": "https://homedroid.seltiv.com/guides/files/#step-3"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Set up SFTP",
+      "text": "Enable SSH in Modules. Open Terminal & SSH, paste your public key under Add a public key and select Add key. Keep the private key on your computer.",
+      "url": "https://homedroid.seltiv.com/guides/files/#step-4"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Connect from your computer",
+      "text": "Use sftp -P 8022 <phone-ip>, or the SSH port shown if you changed it. Accessible external volumes appear under /storage/<volume-id>. Use an SFTP client such as WinSCP or Cyberduck to browse them.",
+      "url": "https://homedroid.seltiv.com/guides/files/#step-5"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "@id": "https://homedroid.seltiv.com/guides/files/#video",
+  "name": "Use the phone as a NAS",
+  "description": "Browse, upload, download and share files in the browser, and reach them over SFTP.",
+  "thumbnailUrl": "https://homedroid.seltiv.com/media/guide-files.webp",
+  "contentUrl": "https://homedroid.seltiv.com/media/guide-files.webm",
+  "uploadDate": "2026-11-26T00:00:00+06:00",
+  "embedUrl": "https://homedroid.seltiv.com/guides/files/#video"
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/guides/">Guides</a>
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-star" href="https://github.com/sudiptacmd/homedroid" aria-label="Star Homedroid on GitHub"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M8 .6l2.3 4.7 5.1.7-3.7 3.6.9 5.1L8 12.3l-4.6 2.4.9-5.1L.6 6l5.1-.7z"/></svg><span class="star-label">Star</span><span class="star-count" data-stars hidden></span></a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article guide-article">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Homedroid</a><span>/</span><a href="/guides/">Guides</a><span>/</span>Use the phone as a NAS</nav>
+<span class="eyebrow">VIDEO GUIDE / DASHBOARD</span>
+<h1>How to use an old Android phone as a NAS</h1>
+<p class="lead">Use an old Android phone as a NAS with Homedroid’s file browser and SFTP. Upload folders from your browser, preview media and reach supported USB drives or microSD cards through the phone.</p>
+<figure class="guide-video" id="video">
+<video controls playsinline preload="none" poster="/media/guide-files.webp" width="1280" height="800" aria-label="Use the phone as a NAS">
+<source src="/media/guide-files.webm" type="video/webm">
+<p><a href="/media/guide-files.webm">Download the setup video</a>, or follow the written steps below.</p>
+</video>
+<figcaption>Dashboard setup · silent screen recording · demo data. The steps below explain the actions.</figcaption>
+</figure>
+<h2>Before you start</h2>
+<ul><li>A running Homedroid server and a dashboard login.</li><li>For USB or SD storage, a supported drive attached to the phone and the storage access requested by Homedroid. For SFTP, your computer’s SSH public key.</li></ul>
+<h2>How to use an old Android phone as a NAS: step by step</h2>
+<ol class="guide-steps">
+<li id="step-1"><h3>Choose a location</h3><p>Open Files and select the storage location from Location. The page shows free space and the files in the current folder.</p></li>
+<li id="step-2"><h3>Upload files or a folder</h3><p>Select Upload or Upload folder, or drop files onto the list. Use New folder to make a destination before uploading.</p></li>
+<li id="step-3"><h3>Preview or download</h3><p>Open a supported image, PDF or media file to preview it. Use Download to save a file; a folder downloads as a ZIP. Share that downloaded copy with the intended recipient.</p></li>
+<li id="step-4"><h3>Set up SFTP</h3><p>Enable SSH in Modules. Open Terminal &amp; SSH, paste your public key under Add a public key and select Add key. Keep the private key on your computer.</p></li>
+<li id="step-5"><h3>Connect from your computer</h3><p>Use sftp -P 8022 &lt;phone-ip&gt;, or the SSH port shown if you changed it. Accessible external volumes appear under /storage/&lt;volume-id&gt;. Use an SFTP client such as WinSCP or Cyberduck to browse them.</p></li>
+</ol>
+<h2>Typical memory and CPU</h2>
+<p>These are the estimates shown by Homedroid, from its module resource data. Memory is resident process memory; CPU describes use while busy. Actual use depends on the phone and workload.</p>
+<div class="table-scroll"><table class="needs"><caption>Typical running resources, not download or disk sizes</caption><thead><tr><th scope="col">Module</th><th scope="col">Memory</th><th scope="col">CPU</th><th scope="col">What affects it</th></tr></thead><tbody><tr><th scope="row">SSH / SFTP</th><td>about 10 MB</td><td><span class="cpu low">low</span></td><td>A little more while copying files over SFTP.</td></tr></tbody></table></div>
+<h2>Good to know and troubleshooting</h2>
+<ul><li>This is browser and SFTP access; do not assume the phone advertises a Windows SMB share or anonymous public file links.</li><li>FAT32 has a 4 GB per-file limit. On Android 11+, All files access allows visible Homedroid folders; on Android 10, app-owned external folders are removed when the app is uninstalled.</li><li>If a volume is absent, check that Android sees it and that Homedroid has access. Keep another copy of files you cannot replace.</li></ul>
+<p><a href="https://github.com/sudiptacmd/homedroid/blob/main/README.md#usb-drives-and-sd-cards-as-a-nas">Read the written guide on GitHub</a> for more detail.</p>
+<aside class="article-cta"><h2>Related guides</h2><ul><li><a href="/guides/apps/">Install apps and choose where their data lives</a></li>
+<li><a href="/guides/alpine-packages/">Install other Linux software with apk</a></li>
+<li><a href="/guides/remote-access/">Reach your server from anywhere</a></li></ul><a href="/guides/">All video guides</a></aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="/guides/">Guides</a>
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">0.9.6 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-26">26 November 2026</time> · 0.9.6-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>

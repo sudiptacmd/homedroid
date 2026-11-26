@@ -1,0 +1,181 @@
+{
+  "_about": "Video setup guides on the website (site/guides/<slug>/). Each video is site/media/guide-<slug>.webm (dashboard, 1280x800) or .mp4 (phone, 1080x2400 screen recording), with a poster guide-<slug>.webp. source says how it is recorded: mock = tests/dashboard-mock with demo data (tools/marketing/capture-guides.mjs), emulator = a real Homedroid on the Android emulator, existing = already recorded. doc is the written guide it accompanies, if any.",
+  "guides": [
+    {
+      "slug": "getting-started",
+      "title": "Set up Homedroid on an old phone",
+      "summary": "Install the APK, start the server, and open the dashboard from your computer.",
+      "video": "guide-getting-started.mp4",
+      "poster": "guide-getting-started.webp",
+      "kind": "phone",
+      "source": "emulator",
+      "doc": "README.md#getting-started"
+    },
+    {
+      "slug": "apps",
+      "title": "Install apps and choose where their data lives",
+      "summary": "Install Jellyfin or any app from the library, see what it needs in memory and CPU, and move its library to an SD card or USB drive.",
+      "video": "guide-apps.webm",
+      "poster": "guide-apps.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": "README.md#usb-drives-and-sd-cards-as-a-nas"
+    },
+    {
+      "slug": "remote-access",
+      "title": "Reach your server from anywhere",
+      "summary": "Private access with Tailscale, or publish a site to the internet with a Cloudflare Tunnel, without opening ports on your router.",
+      "video": "guide-remote-access.webm",
+      "poster": "guide-remote-access.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": null
+    },
+    {
+      "slug": "media-automation",
+      "title": "Automate movies and TV with Radarr, Sonarr and Jellyseerr",
+      "summary": "Install the media apps, request a movie in Jellyseerr, and watch it reach Radarr, qBittorrent and Jellyfin.",
+      "video": "guide-media-automation.webm",
+      "poster": "guide-media-automation.webp",
+      "kind": "dashboard",
+      "source": "emulator",
+      "doc": "docs/guides/media-automation.md"
+    },
+    {
+      "slug": "files",
+      "title": "Use the phone as a NAS",
+      "summary": "Browse, upload, download and share files in the browser, and reach them over SFTP.",
+      "video": "guide-files.webm",
+      "poster": "guide-files.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": "README.md#usb-drives-and-sd-cards-as-a-nas"
+    },
+    {
+      "slug": "customize",
+      "title": "Customize the dashboard: layouts, themes and fonts",
+      "summary": "Try all six layouts and 13 themes, change the fonts, or start from a preset. Saved on the phone, so it follows you to every browser.",
+      "video": "guide-customize.webm",
+      "poster": "guide-customize.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": null,
+      "extraVideos": [
+        "guide-customize-themes.webm"
+      ]
+    },
+    {
+      "slug": "alpine-packages",
+      "title": "Install other Linux software with apk",
+      "summary": "Open the terminal, choose Alpine Linux and install packages such as git, Python or ffmpeg.",
+      "video": "dashboard-alpine-packages.webm",
+      "poster": "dashboard-alpine-packages.webp",
+      "kind": "dashboard",
+      "source": "existing",
+      "doc": null
+    },
+    {
+      "slug": "deploy",
+      "title": "Deploy a website or app from GitHub",
+      "summary": "Point a deployment at a repository, watch the build pipeline, and redeploy on every push with a deploy hook.",
+      "video": "guide-deploy.webm",
+      "poster": "guide-deploy.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": "docs/guides/deploy-hooks.md"
+    },
+    {
+      "slug": "domains",
+      "title": "Use your own domain",
+      "summary": "Add a domain and prove you own it, keep dynamic DNS up to date, and limit who can reach your sites with the firewall.",
+      "video": "guide-domains.webm",
+      "poster": "guide-domains.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": null
+    },
+    {
+      "slug": "mail",
+      "title": "Run your own mail server",
+      "summary": "Install Stalwart, follow the setup, copy the DNS records it shows, and add mailboxes.",
+      "video": "guide-mail.webm",
+      "poster": "guide-mail.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": "docs/guides/mail.md"
+    },
+    {
+      "slug": "ai",
+      "title": "Run a local AI model on the phone",
+      "summary": "Download a model, chat with it, and use the OpenAI-compatible API from your other apps.",
+      "video": "guide-ai.webm",
+      "poster": "guide-ai.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": null
+    },
+    {
+      "slug": "mcp",
+      "title": "Let Claude, Cursor or VS Code manage the server",
+      "summary": "Turn on the MCP server, copy the connection settings, and decide which tools assistants may use.",
+      "video": "guide-mcp.webm",
+      "poster": "guide-mcp.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": "docs/guides/mcp.md"
+    },
+    {
+      "slug": "desktop",
+      "title": "Pair Homedroid Desktop: MacroPads and the phone webcam",
+      "summary": "Pair your computer with a six-digit code, build a button deck, and use the phone as a webcam.",
+      "video": "guide-desktop.webm",
+      "poster": "guide-desktop.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": "docs/guides/macropads.md"
+    },
+    {
+      "slug": "wifi-repeater",
+      "title": "Share the phone's internet with a Wi-Fi repeater",
+      "summary": "Start the repeater network, then join it from a laptop or phone with the QR code and proxy settings.",
+      "video": "guide-wifi-repeater.webm",
+      "poster": "guide-wifi-repeater.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": "docs/guides/wifi-repeater.md"
+    },
+    {
+      "slug": "adguard",
+      "title": "Block ads on every device with AdGuard Home",
+      "summary": "Install AdGuard Home, sign in, and point your devices or tailnet at the phone for DNS.",
+      "video": "guide-adguard.webm",
+      "poster": "guide-adguard.webp",
+      "kind": "dashboard",
+      "source": "mock",
+      "doc": null
+    }
+  ],
+  "tourPages": [
+    "overview",
+    "modules",
+    "deploys",
+    "files",
+    "ssh",
+    "databases",
+    "documents",
+    "domains",
+    "request-logs",
+    "ddns",
+    "firewall",
+    "mail",
+    "repeater",
+    "network",
+    "wol",
+    "camera",
+    "ai",
+    "mcp",
+    "cluster",
+    "desktop",
+    "settings"
+  ]
+}

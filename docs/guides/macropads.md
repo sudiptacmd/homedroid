@@ -1,5 +1,7 @@
 # MacroPads and Desktop webcam
 
+**Video:** [Watch the setup on the Homedroid website](https://homedroid.seltiv.com/guides/desktop/)
+
 MacroPads turns your phone into a deck of custom buttons for your computers. Open
 **Tools → MacroPads** in Homedroid. The deck fills the screen, works in portrait or
 landscape, and keeps the display awake while open. It follows Homedroid's theme,

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to run a mail server on an old Android phone | Homedroid</title>
+<meta name="description" content="Run a mail server on an old Android phone with Homedroid and Stalwart. Install, copy DNS records, check delivery and add mailboxes, with port-25 limits explained.">
+<link rel="canonical" href="https://homedroid.seltiv.com/guides/mail/">
+<meta name="theme-color" content="#0a100f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Homedroid">
+<meta property="og:title" content="How to run a mail server on an old Android phone | Homedroid">
+<meta property="og:description" content="Run a mail server on an old Android phone with Homedroid and Stalwart. Install, copy DNS records, check delivery and add mailboxes, with port-25 limits explained.">
+<meta property="og:url" content="https://homedroid.seltiv.com/guides/mail/">
+<meta property="og:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="Homedroid 0.9.6 beta: an old Android phone running a home server and web dashboard">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to run a mail server on an old Android phone | Homedroid">
+<meta name="twitter:description" content="Run a mail server on an old Android phone with Homedroid and Stalwart. Install, copy DNS records, check delivery and add mailboxes, with port-25 limits explained.">
+<meta name="twitter:image" content="https://homedroid.seltiv.com/img/social-preview.png">
+<meta name="twitter:image:alt" content="Homedroid phone app and web dashboard">
+<link rel="icon" type="image/svg+xml" href="/img/homedroid-mark.svg">
+<link rel="icon" sizes="32x32" href="/img/favicon-32.png">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<link rel="stylesheet" href="/styles.css">
+<script src="/main.js" defer>
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to run a mail server on an old Android phone",
+  "description": "Run a mail server on an old Android phone with Homedroid and Stalwart. Install the app, answer the Mail setup questions, copy the DNS records and add a mailbox. Check your internet provider’s port-25 restrictions before choosing how mail reaches you.",
+  "url": "https://homedroid.seltiv.com/guides/mail/",
+  "video": {
+    "@id": "https://homedroid.seltiv.com/guides/mail/#video"
+  },
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Install Stalwart",
+      "text": "Open Modules → Mail server (Stalwart) → Install. The download is about 70 MB and installation needs about 230 MB of disk space before your mail. Setup must finish before it runs.",
+      "url": "https://homedroid.seltiv.com/guides/mail/#step-1"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Answer the Mail setup questions",
+      "text": "Open Mail. Enter Domain, Hostname and how mail reaches the phone. Use your public address or the VPS address as appropriate. For a relay, enter its server, port, credentials and SPF include value. Save and allow a few minutes for first startup.",
+      "url": "https://homedroid.seltiv.com/guides/mail/#step-2"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Arrange incoming delivery",
+      "text": "For direct or relay sending setups that receive at home, forward public port 25 to the phone’s 2525. If using a VPS, arrange its private forwarding link instead. A sending relay alone does not solve blocked inbound port 25.",
+      "url": "https://homedroid.seltiv.com/guides/mail/#step-3"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Copy the DNS records",
+      "text": "Use the Mail page’s copy buttons to add its exact A or CNAME, MX, SPF, DKIM and DMARC values at your DNS provider. Wait for records to propagate; DKIM may be pending until Stalwart starts.",
+      "url": "https://homedroid.seltiv.com/guides/mail/#step-4"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Check the configuration",
+      "text": "Select Check. Review DNS, ports, certificate and delivery checks. The check runs from the phone, so also send a message from an outside provider to test incoming delivery.",
+      "url": "https://homedroid.seltiv.com/guides/mail/#step-5"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Add a mailbox and connect a mail app",
+      "text": "Add an account on Mail and save its password. Use the client settings the page shows. At home, IMAP uses 9930 with TLS; SMTP submission uses 4650 with TLS or 2587 with STARTTLS. Test sending a reply.",
+      "url": "https://homedroid.seltiv.com/guides/mail/#step-6"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "@id": "https://homedroid.seltiv.com/guides/mail/#video",
+  "name": "Run your own mail server",
+  "description": "Install Stalwart, follow the setup, copy the DNS records it shows, and add mailboxes.",
+  "thumbnailUrl": "https://homedroid.seltiv.com/media/guide-mail.webp",
+  "contentUrl": "https://homedroid.seltiv.com/media/guide-mail.webm",
+  "uploadDate": "2026-11-26T00:00:00+06:00",
+  "embedUrl": "https://homedroid.seltiv.com/guides/mail/#video"
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="header">
+<div class="nav wrap">
+<a class="brand" href="/" aria-label="Homedroid home">
+<img src="/img/homedroid-mark.svg" width="32" height="32" alt="">Homedroid<span class="beta">BETA</span>
+</a>
+<nav aria-label="Main">
+<a href="/guides/">Guides</a>
+<a href="/#features">Features</a>
+<a href="/#tour">Tour</a>
+<a href="/desktop/">Desktop</a>
+<a href="/faq/">FAQ</a>
+<a class="nav-star" href="https://github.com/sudiptacmd/homedroid" aria-label="Star Homedroid on GitHub"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16"><path fill="currentColor" d="M8 .6l2.3 4.7 5.1.7-3.7 3.6.9 5.1L8 12.3l-4.6 2.4.9-5.1L.6 6l5.1-.7z"/></svg><span class="star-label">Star</span><span class="star-count" data-stars hidden></span></a>
+<a class="nav-download" href="/#download">Get the APK <span aria-hidden="true">↗</span>
+</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<article class="wrap article guide-article">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Homedroid</a><span>/</span><a href="/guides/">Guides</a><span>/</span>Run your own mail server</nav>
+<span class="eyebrow">VIDEO GUIDE / DASHBOARD</span>
+<h1>How to run a mail server on an old Android phone</h1>
+<p class="lead">Run a mail server on an old Android phone with Homedroid and Stalwart. Install the app, answer the Mail setup questions, copy the DNS records and add a mailbox. Check your internet provider’s port-25 restrictions before choosing how mail reaches you.</p>
+<figure class="guide-video" id="video">
+<video controls playsinline preload="none" poster="/media/guide-mail.webp" width="1280" height="800" aria-label="Run your own mail server">
+<source src="/media/guide-mail.webm" type="video/webm">
+<p><a href="/media/guide-mail.webm">Download the setup video</a>, or follow the written steps below.</p>
+</video>
+<figcaption>Dashboard setup · silent screen recording · demo data. The steps below explain the actions.</figcaption>
+</figure>
+<h2>Before you start</h2>
+<ul><li>A domain you can edit DNS for, a running Homedroid server and storage for mail. Phones with 2 GB of RAM or less may struggle.</li><li>A route for incoming mail: a public IP with inbound port 25 available, or a VPS that forwards mail to the phone. For sending, you may need SMTP relay credentials.</li></ul>
+<h2>How to run a mail server on an old Android phone: step by step</h2>
+<ol class="guide-steps">
+<li id="step-1"><h3>Install Stalwart</h3><p>Open Modules → Mail server (Stalwart) → Install. The download is about 70 MB and installation needs about 230 MB of disk space before your mail. Setup must finish before it runs.</p></li>
+<li id="step-2"><h3>Answer the Mail setup questions</h3><p>Open Mail. Enter Domain, Hostname and how mail reaches the phone. Use your public address or the VPS address as appropriate. For a relay, enter its server, port, credentials and SPF include value. Save and allow a few minutes for first startup.</p></li>
+<li id="step-3"><h3>Arrange incoming delivery</h3><p>For direct or relay sending setups that receive at home, forward public port 25 to the phone’s 2525. If using a VPS, arrange its private forwarding link instead. A sending relay alone does not solve blocked inbound port 25.</p></li>
+<li id="step-4"><h3>Copy the DNS records</h3><p>Use the Mail page’s copy buttons to add its exact A or CNAME, MX, SPF, DKIM and DMARC values at your DNS provider. Wait for records to propagate; DKIM may be pending until Stalwart starts.</p></li>
+<li id="step-5"><h3>Check the configuration</h3><p>Select Check. Review DNS, ports, certificate and delivery checks. The check runs from the phone, so also send a message from an outside provider to test incoming delivery.</p></li>
+<li id="step-6"><h3>Add a mailbox and connect a mail app</h3><p>Add an account on Mail and save its password. Use the client settings the page shows. At home, IMAP uses 9930 with TLS; SMTP submission uses 4650 with TLS or 2587 with STARTTLS. Test sending a reply.</p></li>
+</ol>
+<h2>Typical memory and CPU</h2>
+<p>These are the estimates shown by Homedroid, from its module resource data. Memory is resident process memory; CPU describes use while busy. Actual use depends on the phone and workload.</p>
+<div class="table-scroll"><table class="needs"><caption>Typical running resources, not download or disk sizes</caption><thead><tr><th scope="col">Module</th><th scope="col">Memory</th><th scope="col">CPU</th><th scope="col">What affects it</th></tr></thead><tbody><tr><th scope="row">Stalwart</th><td>80–200 MB</td><td><span class="cpu low">low</span></td><td>Spam checks add a little for each message.</td></tr></tbody></table></div>
+<h2>Good to know and troubleshooting</h2>
+<ul><li>Keep web admin on port 8825 private, on your LAN or Tailscale. A Cloudflare web tunnel does not replace an incoming SMTP route.</li><li>Stalwart starts with a self-signed certificate. You can paste a certificate and private key obtained elsewhere into Mail; Homedroid does not obtain a trusted certificate itself.</li><li>Back up /var/lib/stalwart inside Alpine while the module is stopped. Mail is received only while the phone is online. Check SPF, DKIM, DMARC and reverse DNS if outgoing mail is rejected.</li></ul>
+<p><a href="https://github.com/sudiptacmd/homedroid/blob/main/docs/guides/mail.md">Read the written guide on GitHub</a> for more detail.</p>
+<aside class="article-cta"><h2>Related guides</h2><ul><li><a href="/guides/domains/">Use your own domain</a></li>
+<li><a href="/guides/remote-access/">Reach your server from anywhere</a></li>
+<li><a href="/guides/files/">Use the phone as a NAS</a></li></ul><a href="/guides/">All video guides</a></aside>
+</article>
+</main>
+<footer class="wrap">
+<div class="footer-top">
+<a class="brand" href="/">
+<img src="/img/homedroid-mark.svg" width="28" height="28" alt="">Homedroid</a>
+<p>Built by <a href="https://github.com/sudiptacmd">Sudipta Goswami</a>.<br>For the phone that still has work to do.</p>
+</div>
+<nav aria-label="Footer">
+<a href="/guides/">Guides</a>
+<a href="https://github.com/sudiptacmd/homedroid">Source on GitHub</a>
+<a href="https://github.com/sudiptacmd/homedroid/releases/tag/v0.9.6-beta">0.9.6 release notes</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/LICENSE">GPL-3.0 license</a>
+<a href="https://github.com/sudiptacmd/homedroid/blob/main/THIRD_PARTY.md">Third-party credits</a>
+<a href="/dock/">Dock mode</a>
+<a href="/mail/">Mail server</a>
+<a href="/macropads/">MacroPads</a>
+<a href="/compare/">Phone vs Raspberry Pi</a>
+<a href="/llms.txt">llms.txt</a>
+</nav>
+<p class="fine">Last updated <time datetime="2026-11-26">26 November 2026</time> · 0.9.6-beta · Phone captures from an emulator; dashboard captures use demo data.</p>
+</footer>
+</body>
+</html>

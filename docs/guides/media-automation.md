@@ -1,5 +1,7 @@
 # Media automation: Prowlarr, Radarr, Sonarr and Seerr
 
+**Video:** [Watch the setup on the Homedroid website](https://homedroid.seltiv.com/guides/media-automation/)
+
 Homedroid already runs Jellyfin and qBittorrent. Add these four apps and the phone looks after
 your movie and TV library for you:
 
