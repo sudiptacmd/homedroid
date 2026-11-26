@@ -66,7 +66,7 @@ svg.i { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none;
 .hidden { display: none !important; }
 .muted { color: var(--muted); }
 .mono { font-family: var(--font-mono); font-size: calc(12.5px * var(--fs)); }
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 :focus { outline-color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 
@@ -394,7 +394,18 @@ body { font-family: var(--font-sans); }
 .side > .brand { padding: 0 10px 20px; }
 .brand-name { letter-spacing: -.04em; }
 .side > .nodesel { display: none; }
-.nav { overflow-y: auto; min-height: 0; padding: 0 4px 16px; scrollbar-width: thin; }
+/* The menu scrolls without a visible scrollbar (the classic one is heavy next to a slim rail). A soft fade on the cut-off edge plus a chevron say "more", see syncNavScroll. */
+.nav { overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 0 4px 16px; scrollbar-width: none; -ms-overflow-style: none; }
+.nav::-webkit-scrollbar { display: none; }
+.side[data-more] .nav { --fade-t: 0px; --fade-b: 0px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-t), #000 calc(100% - var(--fade-b)), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-t), #000 calc(100% - var(--fade-b)), transparent 100%); }
+.side[data-more~="up"] .nav { --fade-t: 28px; }
+.side[data-more~="down"] .nav { --fade-b: 44px; }
+.nav-more { display: none; flex: none; align-self: center; width: 30px; height: 30px; padding: 0; margin: -38px 0 8px; position: relative; z-index: 1; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); box-shadow: var(--elevation-1); cursor: pointer; place-items: center; }
+.nav-more:hover { color: var(--text); border-color: var(--line-2); }
+.nav-more svg.i { width: 16px; height: 16px; }
+.side[data-more~="down"] .nav-more:not([hidden]) { display: grid; }
+@media (prefers-reduced-motion: no-preference) { .side[data-more~="down"] .nav-more svg { animation: navnudge 2.4s ease-in-out 3; } }
+@keyframes navnudge { 0%, 70%, 100% { transform: translateY(0); } 80% { transform: translateY(3px); } }
 .nav-group { margin: 20px 10px 6px; font-size: calc(10px * var(--fs)); line-height: 16px; color: var(--muted); font-weight: 650; letter-spacing: .09em; text-transform: uppercase; }
 .nav a { min-height: 36px; padding: 8px 10px; font-size: var(--text-sm); border: 1px solid transparent; }
 .nav a[aria-current="page"] { border-color: var(--line); background: var(--surface); color: var(--text); box-shadow: var(--elevation-1); }
@@ -409,7 +420,7 @@ body { font-family: var(--font-sans); }
 .context-label b { color: var(--text); font-weight: 550; }
 .command-trigger { color: var(--muted); gap: 24px; }
 kbd { font: calc(11px * var(--fs)) var(--font-sans); padding: 2px 5px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); }
-main { grid-column: 2; padding: 36px clamp(20px, 3vw, 48px) 64px; max-width: 1440px; }
+main { grid-column: 2; padding: 36px clamp(20px, 3vw, 48px) 64px; max-width: 1640px; margin-inline: auto; }
 .page-head { margin-bottom: var(--space-8); gap: 16px; }
 .page-head h1 { font-size: var(--text-2xl); font-weight: 650; letter-spacing: -.045em; line-height: 1.25; }
 .page-head .sub { margin-top: 8px; font-size: var(--text-sm); max-width: 760px; line-height: 1.65; }
@@ -697,14 +708,23 @@ html[data-width="full"] main { max-width: none; }
 }
 @media (min-width: 861px) { .wcard[data-size="S"] { --span: 4; } .wcard[data-size="M"] { --span: 6; } .wcard[data-size="L"] { --span: 8; } .wcard[data-size="XL"] { --span: 12; } }
 @media (min-width: 861px) and (max-width: 1100px) { .wcard[data-size="S"] { --span: 6; } .wcard[data-size="L"] { --span: 12; } }
+/* Wide screens: services flow into columns instead of one stretched row each */
+#ovServices { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); overflow: hidden; }
+#ovServices > .item { border-top: 0; box-shadow: inset 0 -1px 0 var(--line), inset -1px 0 0 var(--line); min-width: 0; }
+#ovServices > .empty, #ovServices > .item:only-child { grid-column: 1 / -1; box-shadow: none; }
 /* Overview arrangements */
-html[data-ov="list"] .wgrid { grid-template-columns: minmax(0, 1fr); max-width: 820px; }
+html[data-ov="list"] .wgrid { grid-template-columns: minmax(0, 1fr); }
 html[data-ov="list"] .wcard { grid-column: 1 !important; }
 html[data-ov="list"] .stats { grid-template-columns: minmax(0, 1fr); gap: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
 html[data-ov="list"] .stat { flex-direction: row; align-items: center; gap: 16px; padding: 10px 16px; border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; }
 html[data-ov="list"] .stat:first-child { border-top: 0; }
 html[data-ov="list"] .stat .k { width: 150px; flex: none; } html[data-ov="list"] .stat .v { font-size: var(--text-xl); width: 140px; flex: none; }
-html[data-ov="list"] .stat .meter, html[data-ov="list"] .stat .spark { flex: 1; min-width: 60px; } html[data-ov="list"] .stat .s { flex: 1.2; }
+html[data-ov="list"] .stat .meter, html[data-ov="list"] .stat .spark { flex: 1 1 0; min-width: 60px; max-width: 480px; } html[data-ov="list"] .stat .s { flex: 1 1 0; min-width: 0; }
+@media (min-width: 1560px) {
+  html[data-ov="list"] .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html[data-ov="list"] .stat:nth-child(-n+2) { border-top: 0; }
+  html[data-ov="list"] .stat:nth-child(odd) { border-right: 1px solid var(--line); }
+}
 html[data-ov="big"] .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 html[data-ov="big"] .stat .v { font-size: clamp(40px, 7vw, 84px); letter-spacing: -.05em; line-height: 1; }
 html[data-ov="big"] .stat .v small { font-size: .3em; }
@@ -1158,6 +1178,7 @@ textarea.pem { min-height: 130px; resize: vertical; white-space: pre; overflow: 
         <a title="Settings" href="#settings" data-tab="settings"><svg class="i"><use href="#i-settings"/></svg><span class="nav-label">Settings</span></a>
       </div></div>
     </nav>
+    <button class="nav-more" id="navMore" type="button" aria-label="Scroll the menu down" tabindex="-1" hidden><svg class="i"><use href="#i-chev-down"/></svg></button>
     <div class="side-foot">
       <a href="#settings" class="update-pill hidden" data-update-pill><svg class="i"><use href="#i-sparkle"/></svg><span></span></a>
       <div class="hint ellipsis" id="sideDevice"></div>
@@ -2173,6 +2194,7 @@ function route() {
   tab = t in POLL ? t : 'overview';
   if (tab === 'settings') { settingsLoaded = false; settingsDirty.clear(); $('#settingsMessage').textContent = ''; }
   $$('[data-tab]').forEach(a => a.dataset.tab === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+  $('.nav a[aria-current="page"]')?.scrollIntoView({block: 'nearest'});
   $$('[data-view]').forEach(s => s.classList.toggle('hidden', s.dataset.view !== tab));
   if (tab === 'files') { files.root = rest[0] || files.root; files.path = rest.slice(1).join('/'); }
   closeMenu();
@@ -4032,6 +4054,21 @@ function buildDock() {
 }
 function markDock() { $$('#dock a').forEach(a => a.dataset.dock === tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')); }
 new MutationObserver(() => { if (prefs.layout.shell === 'kiosk') buildDock(); }).observe($('.nav'), {attributes: true, attributeFilter: ['class'], subtree: true});
+// Show that the menu scrolls: fade the cut-off edges and offer a chevron (hidden scrollbar, see .nav).
+const navEl = $('.nav'), sideEl = $('#sidebar'), navMore = $('#navMore');
+function syncNavScroll() {
+  const scrolls = navEl.scrollHeight - navEl.clientHeight > 4 && getComputedStyle(navEl).overflowY !== 'visible', more = [];
+  if (scrolls && navEl.scrollTop > 4) more.push('up');
+  if (scrolls && navEl.scrollHeight - navEl.clientHeight - navEl.scrollTop > 4) more.push('down');
+  more.length ? sideEl.dataset.more = more.join(' ') : sideEl.removeAttribute('data-more');
+  navMore.hidden = !more.includes('down');
+}
+navEl.addEventListener('scroll', syncNavScroll, {passive: true});
+new ResizeObserver(syncNavScroll).observe(navEl);
+new MutationObserver(syncNavScroll).observe(navEl, {childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden']});
+addEventListener('resize', syncNavScroll);
+navMore.addEventListener('click', () => navEl.scrollBy({top: Math.max(120, navEl.clientHeight * .7), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'}));
+syncNavScroll();
 const railTip = $('#railTip');
 document.addEventListener('mouseover', e => { const a = prefs.layout.shell === 'rail' && e.target.closest?.('.nav a'); if (!a || !innerWidth || innerWidth < 861) { railTip.hidden = true; return; } const r = a.getBoundingClientRect(); railTip.textContent = a.title; railTip.style.left = r.right + 10 + 'px'; railTip.style.top = r.top + r.height / 2 - 14 + 'px'; railTip.hidden = false; });
 document.addEventListener('mouseout', e => { if (e.target.closest?.('.nav a')) railTip.hidden = true; });

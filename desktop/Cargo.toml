@@ -1,6 +1,6 @@
 [package]
 name = "homedroid-desktop"
-version = "0.9.6"
+version = "0.9.7"
 edition = "2021"
 license = "GPL-3.0-only"
 description = "Lightweight webcam and MacroPads companion for Homedroid"
