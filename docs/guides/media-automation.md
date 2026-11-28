@@ -51,6 +51,9 @@ yourself.
 - **Sonarr** gets qBittorrent (category `tv-sonarr`) and `/media/Shows`.
 - **Prowlarr** gets Radarr and Sonarr as apps (full sync, so every indexer you add to Prowlarr
   appears in both) and qBittorrent for grabs you make in Prowlarr itself.
+- **aria2**, the lighter torrent client, is added the same way to Radarr, Sonarr and Prowlarr
+  when it is installed, instead of or beside qBittorrent. It has no categories, so everything it
+  downloads goes to `/media/Downloads`, where Radarr and Sonarr pick it up.
 - **Jellyfin** gets a **Movies** and a **Shows** library on those folders. It picks them up the
   next time it starts, which happens when an app is installed.
 - **Seerr** gets Radarr and Sonarr, with the `HD-1080p` profile, as soon as you have finished

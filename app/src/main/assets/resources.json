@@ -11,6 +11,7 @@
   "network": {"ram": "about 5 MB", "cpu": "low", "note": "Scans and speed tests run only when you start them."},
   "jellyfin": {"ram": "200–450 MB", "cpu": "high", "note": "Light when your devices play files as they are. Converting video decodes it in software and can use every core."},
   "qbittorrent": {"ram": "40–150 MB", "cpu": "medium", "note": "Grows with the number of active torrents. Checking a finished download is busy for a moment."},
+  "aria2": {"ram": "10–30 MB", "cpu": "low", "note": "Grows with the number of active torrents; no web page of its own to keep in memory."},
   "prowlarr": {"ram": "150–200 MB", "cpu": "low", "note": "Busy for a few seconds during each search."},
   "radarr": {"ram": "180–300 MB", "cpu": "low", "note": "Busier while importing downloads or rescanning a large library."},
   "sonarr": {"ram": "200–300 MB", "cpu": "low", "note": "Busier while importing downloads or rescanning a large library."},
