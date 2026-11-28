@@ -1,5 +1,5 @@
 // Run with node --test tests/media-stack.test.cjs. Needs sh, curl and jq.
-// Runs the real media-stack helper against fake Radarr, Sonarr, Prowlarr, qBittorrent and Seerr
+// Runs the real media-stack helper against fake Radarr, Sonarr, Prowlarr, qBittorrent, aria2 and Seerr
 // servers on their usual loopback ports, with its files in a temporary folder.
 const {test, before, after} = require('node:test');
 const assert = require('node:assert/strict');
@@ -22,6 +22,9 @@ const SCHEMAS = {
     {implementation: 'QBittorrent', name: '', enable: false, protocol: 'torrent', priority: 1, tags: [],
       fields: [field('host', 'localhost'), field('port', 8080), field('useSsl', false), field('urlBase'),
         field('username'), field('password'), field(cat, 'default'), field('initialState', 0)]},
+    {implementation: 'Aria2', name: '', enable: false, protocol: 'torrent', priority: 1, tags: [],
+      fields: [field('host', 'localhost'), field('port', 6800), field('rpcPath', '/rpc'), field('useSsl', false),
+        field('secretToken'), field('directory')]},
   ],
   apps: [
     {implementation: 'Radarr', name: '', syncLevel: 'addOnly', tags: [], fields: [field('prowlarrUrl'), field('baseUrl'), field('apiKey'), field('syncCategories', [2000])]},
@@ -48,7 +51,8 @@ function arr(app, ver, category, store) {
   };
 }
 
-let root, servers = [], seerrDown = false;
+let root, servers = [], seerrDown = false, aria2Calls = 0;
+const ARIA2_SECRET = 'a'.repeat(32);
 const stores = {radarr: {}, sonarr: {}, prowlarr: {}, seerr: {radarr: [], sonarr: []}};
 
 function serve(port, handler) {
@@ -100,6 +104,13 @@ before(async () => {
   await serve(8989, arr('sonarr', 'v3', 'tvCategory', stores.sonarr));
   await serve(9696, arr('prowlarr', 'v1', 'category', stores.prowlarr));
   await serve(8081, req => req.url === '/api/v2/app/version' ? [200, 'v5.2.1'] : [404, {}]);
+  // aria2's JSON-RPC: answers only with the secret from its config file.
+  await serve(6800, (req, body) => {
+    aria2Calls++;
+    if (req.url !== '/jsonrpc' || body?.method !== 'aria2.getVersion') return [404, {}];
+    if (body.params?.[0] !== `token:${ARIA2_SECRET}`) return [400, {error: {code: 1, message: 'Unauthorized'}}];
+    return [200, {id: body.id, jsonrpc: '2.0', result: {version: '1.37.0'}}];
+  });
   await serve(5055, (req, body) => {
     if (req.url === '/api/v1/settings/public') return [200, {initialized: true}];
     if (seerrDown) return [500, {message: 'database is locked'}];
@@ -181,6 +192,54 @@ test('passes started at the same moment add each connection once', async () => {
   assert.equal(stores.prowlarr['/applications'].length, 2);
 });
 
+test('aria2 is left alone until it is installed, then added beside qBittorrent', async () => {
+  aria2Calls = 0;
+  await run(['link']);
+  assert.equal(aria2Calls, 0, 'no aria2c binary, no RPC call');
+  for (const app of ['radarr', 'sonarr', 'prowlarr']) {
+    assert.deepEqual(stores[app]['/downloadclient'].map(c => c.name), ['qBittorrent']);
+  }
+
+  fs.writeFileSync(path.join(root, 'usr/bin/aria2c'), '#!/bin/sh\n', {mode: 0o755});
+  fs.mkdirSync(path.join(root, 'var/lib/aria2'), {recursive: true});
+  fs.writeFileSync(path.join(root, 'var/lib/aria2/aria2.conf'), `dir=/media/Downloads\nrpc-secret=${ARIA2_SECRET}\n`);
+  const {code, out} = await run(['link']);
+  assert.equal(code, 0, out);
+  for (const app of ['radarr', 'sonarr', 'prowlarr']) {
+    const clients = stores[app]['/downloadclient'];
+    assert.deepEqual(clients.map(c => c.name), ['qBittorrent', 'aria2'], app);
+    const aria2 = clients[1];
+    assert.equal(aria2.implementation, 'Aria2');
+    assert.equal(aria2.enable, true);
+    assert.equal(aria2.query, 'forceSave=true');
+    assert.equal(fieldOf(aria2, 'host'), '127.0.0.1');
+    assert.equal(fieldOf(aria2, 'port'), 6800);
+    assert.equal(fieldOf(aria2, 'rpcPath'), '/rpc');
+    assert.equal(fieldOf(aria2, 'secretToken'), ARIA2_SECRET);
+    assert.ok(fs.existsSync(path.join(root, 'var/lib', app, '.homedroid-linked-aria2')));
+  }
+
+  const before = JSON.stringify([stores.radarr, stores.sonarr, stores.prowlarr]);
+  await run(['link']);
+  assert.equal(JSON.stringify([stores.radarr, stores.sonarr, stores.prowlarr]), before, 'added once');
+});
+
+test('the aria2 module is set up like the other torrent client', () => {
+  const app = catalog.find(a => a.id === 'aria2');
+  assert.equal(app.port, 6800);
+  assert.equal(app.storage.shared, 'Media', 'aria2 shares the media library with Jellyfin');
+  assert.deepEqual(app.run, ['/usr/local/bin/homedroid-aria2']);
+  assert.match(app.install, /^dir=\/media\/Downloads$/m);
+  assert.match(app.install, /^rpc-listen-port=6800$/m);
+  assert.match(app.install, /^rpc-secret=\$secret$/m);
+  assert.match(app.install, /echo "RPC secret: /);
+  assert.ok(new RegExp(app.notice.pattern).test('RPC secret: 0123abcd'), 'the notice finds the secret in the log');
+  // Jellyfin's Downloads library appears with either torrent client, whichever is installed last.
+  for (const id of ['jellyfin', 'qbittorrent', 'aria2']) {
+    assert.match(catalog.find(a => a.id === id).install, /\{ \[ -x \/usr\/bin\/qbittorrent-nox \] \|\| \[ -x \/usr\/bin\/aria2c \]; \}/, id);
+  }
+});
+
 test('a Seerr error is not taken for "already connected"', async () => {
   fs.mkdirSync(path.join(root, 'var/lib/seerr'), {recursive: true});
   fs.writeFileSync(path.join(root, 'var/lib/seerr/settings.json'), JSON.stringify({main: {apiKey: KEYS.seerr}}));
@@ -232,7 +291,7 @@ test('every CPU an app is offered on has a pinned build', () => {
 test('app ports are unique and match the helper', () => {
   const ports = catalog.map(a => a.port);
   assert.equal(new Set(ports).size, ports.length);
-  for (const [id, port] of [['prowlarr', 9696], ['radarr', 7878], ['sonarr', 8989], ['seerr', 5055]]) {
+  for (const [id, port] of [['prowlarr', 9696], ['radarr', 7878], ['sonarr', 8989], ['seerr', 5055], ['aria2', 6800]]) {
     assert.equal(catalog.find(a => a.id === id).port, port);
   }
 });

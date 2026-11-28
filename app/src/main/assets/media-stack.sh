@@ -10,8 +10,8 @@
 #   media-stack keys            show the API keys
 #
 # Connections made, each only once and only if missing, so changes made in the apps are kept:
-#   Radarr, Sonarr  -> qBittorrent (download client), /media/Movies or /media/Shows (root folder)
-#   Prowlarr        -> Radarr and Sonarr (indexer sync), qBittorrent (download client)
+#   Radarr, Sonarr  -> qBittorrent and/or aria2 (download clients), /media/Movies or /media/Shows (root folder)
+#   Prowlarr        -> Radarr and Sonarr (indexer sync), qBittorrent and/or aria2 (download clients)
 #   Seerr           -> Radarr and Sonarr (requests), after its setup wizard
 #   Jellyfin        -> "Movies" and "Shows" libraries on the same folders
 set -u
@@ -20,6 +20,7 @@ set -u
 R=${MEDIA_STACK_ROOT:-}
 MEDIA=/media
 QBT=http://127.0.0.1:8081
+ARIA2=http://127.0.0.1:6800
 
 port() { case $1 in prowlarr) echo 9696 ;; radarr) echo 7878 ;; sonarr) echo 8989 ;; esac; }
 api() { case $1 in prowlarr) echo v1 ;; *) echo v3 ;; esac; }
@@ -158,6 +159,12 @@ call() { # app method path [json]
 up() { installed "$1" && call "$1" GET /system/status >/dev/null 2>&1; }
 wait_up() { i=0; until up "$1"; do i=$((i + 1)); [ $i -gt 120 ] && return 1; sleep 5; done; }
 qbt_up() { [ -x "$R/usr/bin/qbittorrent-nox" ] && curl -fsS -m 5 -o /dev/null "$QBT/api/v2/app/version" 2>/dev/null; }
+aria2_secret() { sed -n 's/^rpc-secret=//p' "$R/var/lib/aria2/aria2.conf" 2>/dev/null; }
+aria2_up() {
+  [ -x "$R/usr/bin/aria2c" ] || return 1
+  jq -nc --arg t "token:$(aria2_secret)" '{jsonrpc: "2.0", id: "media-stack", method: "aria2.getVersion", params: [$t]}' |
+    curl -fsS -m 5 -o /dev/null --data-binary @- "$ARIA2/jsonrpc" 2>/dev/null
+}
 
 # A provider from the app's schema with the given fields set, as JSON. $4 is a jq object.
 from_schema() { # app path implementation fields-json name
@@ -188,6 +195,17 @@ add_qbittorrent() { # app category-field category
   log "$(title "$1") now sends downloads to qBittorrent"
 }
 
+# Radarr, Sonarr and Prowlarr talk to aria2 over XML-RPC at /rpc. aria2 has no categories, so
+# downloads all land in its own folder (/media/Downloads), where the apps pick them up.
+add_aria2() { # app
+  aria2_up || return 2
+  has_named "$1" /downloadclient aria2 && return 0
+  body=$(from_schema "$1" /downloadclient Aria2 \
+    "$(jq -nc --arg t "$(aria2_secret)" '{host: "127.0.0.1", port: 6800, rpcPath: "/rpc", useSsl: false, secretToken: $t}')" aria2) || return 1
+  call "$1" POST '/downloadclient?forceSave=true' "$body" >/dev/null || return 1
+  log "$(title "$1") now sends downloads to aria2"
+}
+
 add_root() { # app folder
   mkdir -p "$R$2"
   call "$1" GET /rootfolder | jq -e --arg p "$2" 'any(.[]; .path == $p or .path == ($p + "/"))' >/dev/null && return 0
@@ -216,14 +234,17 @@ link() {
 link_now() {
   if up radarr; then
     once radarr qbittorrent add_qbittorrent radarr movieCategory radarr
+    once radarr aria2 add_aria2 radarr
     once radarr root add_root radarr "$MEDIA/Movies"
   fi
   if up sonarr; then
     once sonarr qbittorrent add_qbittorrent sonarr tvCategory tv-sonarr
+    once sonarr aria2 add_aria2 sonarr
     once sonarr root add_root sonarr "$MEDIA/Shows"
   fi
   if up prowlarr; then
     once prowlarr qbittorrent add_qbittorrent prowlarr category prowlarr
+    once prowlarr aria2 add_aria2 prowlarr
     once prowlarr radarr add_to_prowlarr radarr
     once prowlarr sonarr add_to_prowlarr sonarr
   fi

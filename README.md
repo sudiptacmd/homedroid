@@ -111,6 +111,7 @@ use a trusted network or an encrypted tunnel.
 | Jellyfin | Media library with phone hardware encoding through MediaCodec | 8096 |
 | Immich | Photo/video backup; machine learning disabled | 2283 |
 | qBittorrent | Downloads into Jellyfin’s shared Media folder | 8081 |
+| aria2 | Lightweight torrent client for the same folder, driven by Radarr/Sonarr over RPC | 6800 |
 | Prowlarr | Torrent indexers in one place, synced to Radarr and Sonarr | 9696 |
 | Radarr / Sonarr | Find, download and file movies / TV shows | 7878 / 8989 |
 | Jellyseerr (Seerr) | Search and request page that feeds Radarr and Sonarr | 5055 |
@@ -150,6 +151,7 @@ each module card, and the phone app on each app.
 | Network tools | about 5 MB | low | Scans and speed tests run only when you start them. |
 | Jellyfin | 200–450 MB | high | Light when your devices play files as they are. Converting video decodes it in software and can use every core. |
 | qBittorrent | 40–150 MB | medium | Grows with the number of active torrents. Checking a finished download is busy for a moment. |
+| aria2 | 10–30 MB | low | Grows with the number of active torrents; no web page of its own to keep in memory. |
 | Prowlarr | 150–200 MB | low | Busy for a few seconds during each search. |
 | Radarr | 180–300 MB | low | Busier while importing downloads or rescanning a large library. |
 | Sonarr | 200–300 MB | low | Busier while importing downloads or rescanning a large library. |
